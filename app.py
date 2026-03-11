@@ -77,26 +77,20 @@ def load_session_history(sid: str) -> list:
     return []
 
 
-# ── Message formatting ─────────────────────────────────────────────
+# ── Handlers ───────────────────────────────────────────────────────
 def make_options(mode: str) -> ClaudeAgentOptions:
     return ClaudeAgentOptions(permission_mode=mode, resume=session_id)
 
 
-def fmt_tool_use(block: ToolUseBlock) -> str:
-    args = json.dumps(block.input, indent=2) if block.input else ""
-    return f"**▶ {block.name}**\n```json\n{args}\n```"
+def tool_msg(title: str, content: str, status: str = "done") -> dict:
+    return {
+        "role": "assistant",
+        "content": content,
+        "metadata": {"title": title, "status": status},
+    }
 
 
-def fmt_tool_result(block: ToolResultBlock) -> str:
-    content = block.content or ""
-    if isinstance(content, list):
-        content = "\n".join(c.get("text", str(c)) for c in content)
-    status = " ❌" if block.is_error else ""
-    preview = str(content)[:400] + ("…" if len(str(content)) > 400 else "")
-    return f"**◀ result{status}**\n```\n{preview}\n```"
 
-
-# ── Handlers ───────────────────────────────────────────────────────
 async def send_message(prompt: str, mode: str, history: list):
     global session_id, _stop
     if not prompt.strip():
@@ -107,45 +101,68 @@ async def send_message(prompt: str, mode: str, history: list):
     history = history + [{"role": "user", "content": prompt}]
     yield history, ""
 
+    # Each entry: [title, content, status]
+    tool_calls: list[list] = []
     text = ""
-    extras = []
+
+    def snapshot():
+        tools = [tool_msg(t, c, s) for t, c, s in tool_calls]
+        cur = [{"role": "assistant", "content": text}] if text else []
+        return history + tools + cur
+
+    def close_last_pending():
+        # flip the most recent pending tool to done
+        for tc in reversed(tool_calls):
+            if tc[2] == "pending":
+                tc[2] = "done"
+                break
 
     async for msg in query(prompt=prompt, options=make_options(mode)):
         if _stop:
-            extras.append("⏹ *stopped*")
-            break
+            for tc in tool_calls:
+                tc[2] = "done"
+            yield snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}], ""
+            return
 
         if isinstance(msg, AssistantMessage):
             if msg.error:
-                history = history + [{"role": "assistant", "content": f"❌ {msg.error}"}]
-                yield history, ""
+                yield history + [{"role": "assistant", "content": f"❌ {msg.error}"}], ""
                 return
+            # New AssistantMessage = previous tool is done
+            close_last_pending()
             for block in msg.content:
                 if isinstance(block, TextBlock):
                     text += block.text
                 elif isinstance(block, ThinkingBlock):
-                    extras.append(f"💭 *thinking…*\n> {block.thinking[:200]}")
+                    tool_calls.append(["💭 Thinking", block.thinking[:500], "pending"])
                 elif isinstance(block, ToolUseBlock):
-                    extras.append(fmt_tool_use(block))
+                    args = json.dumps(block.input, indent=2) if block.input else ""
+                    tool_calls.append([f"⚙ {block.name}", f"```json\n{args}\n```", "pending"])
                 elif isinstance(block, ToolResultBlock):
-                    extras.append(fmt_tool_result(block))
-            combined = "\n\n---\n\n".join(extras + ([text] if text else []))
-            yield history + [{"role": "assistant", "content": combined}], ""
+                    content = block.content or ""
+                    if isinstance(content, list):
+                        content = "\n".join(c.get("text", str(c)) for c in content)
+                    preview = str(content)[:600] + ("…" if len(str(content)) > 600 else "")
+                    close_last_pending()
+                    tool_calls.append([f"{'❌' if block.is_error else '✓'} result", f"```\n{preview}\n```", "done"])
+            yield snapshot(), ""
 
         elif isinstance(msg, SystemMessage):
             if msg.subtype not in SKIP_SUBTYPES:
                 desc = getattr(msg, "description", None) or msg.subtype
-                extras.append(f"⚙ *{desc}*")
-                combined = "\n\n---\n\n".join(extras + ([text] if text else []))
-                yield history + [{"role": "assistant", "content": combined}], ""
+                tool_calls.append([f"⚙ {desc}", "", "done"])
+                yield snapshot(), ""
 
         elif isinstance(msg, ResultMessage):
             session_id = msg.session_id
-            break
+            # don't break — let iterator exhaust naturally to avoid SDK asyncio cancel-scope error
 
-    parts = extras + ([text] if text else [])
-    final = "\n\n---\n\n".join(parts) if parts else "*(no response)*"
-    history = history + [{"role": "assistant", "content": final}]
+    for tc in tool_calls:
+        tc[2] = "done"
+    final_text = [{"role": "assistant", "content": text}] if text else []
+    if not tool_calls and not text:
+        final_text = [{"role": "assistant", "content": "*(no response)*"}]
+    history = history + [tool_msg(t, c, s) for t, c, s in tool_calls] + final_text
     yield history, ""
 
 
@@ -189,9 +206,9 @@ with gr.Blocks(title="CC-UI") as demo:
         )
         refresh_btn = gr.Button("↻ refresh", size="sm", variant="secondary")
 
-    chatbot = gr.Chatbot(height=580, show_label=False, render_markdown=True)
+    chatbot = gr.Chatbot(height=580, show_label=False, render_markdown=True, container=False, layout="panel", buttons=[], feedback_options=[])
     msg_box = gr.Textbox(
-        placeholder="Message...", lines=1, show_label=False, submit_btn=True,
+        placeholder="Message...", lines=1, show_label=False, submit_btn=True, container=False,
     )
     with gr.Row():
         mode_dd = gr.Dropdown(
@@ -209,4 +226,4 @@ with gr.Blocks(title="CC-UI") as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Ocean())
+    demo.launch(theme=gr.themes.Ocean(), footer_links=[])
