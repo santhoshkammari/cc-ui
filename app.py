@@ -194,7 +194,7 @@ def refresh_sessions():
 
 # ── UI ─────────────────────────────────────────────────────────────
 with gr.Blocks(title="CC-UI") as demo:
-    with gr.Sidebar(label="Sessions", width=240):
+    with gr.Sidebar(label="Sessions", width=240,open=False):
         gr.Markdown("**Recents**")
         session_list = gr.Dataset(
             components=[gr.Textbox(visible=False)],
@@ -206,14 +206,15 @@ with gr.Blocks(title="CC-UI") as demo:
         )
         refresh_btn = gr.Button("↻ refresh", size="sm", variant="secondary")
 
-    chatbot = gr.Chatbot(height=580, show_label=False, render_markdown=True, container=False, layout="panel", buttons=[], feedback_options=[])
+    chatbot = gr.Chatbot(height="78vh", show_label=False, render_markdown=True, container=False, layout="panel", buttons=[], feedback_options=[])
     msg_box = gr.Textbox(
-        placeholder="Message...", lines=1, show_label=False, submit_btn=True, container=False,
+        placeholder="Message...", lines=3, max_lines=3, show_label=False, submit_btn=True, container=False,
     )
     with gr.Row():
         mode_dd = gr.Dropdown(
             choices=PERMISSION_MODES, value="bypassPermissions",
-            show_label=False, scale=0, min_width=170,
+            show_label=False, scale=0, min_width=180,
+            container=False
         )
         new_btn = gr.Button("＋ new", scale=0)
         stop_btn = gr.Button("⏹ stop", variant="stop", scale=0)
