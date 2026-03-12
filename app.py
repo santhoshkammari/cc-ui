@@ -1,37 +1,29 @@
 import os
-import json
 import glob
-import asyncio
-import subprocess
+import json
+import httpx
 import gradio as gr
-from claude_agent_sdk import (
-    query, ClaudeAgentOptions,
-    AssistantMessage, ResultMessage, SystemMessage,
-    TextBlock, ToolUseBlock, ToolResultBlock, ThinkingBlock,
-)
 
-os.environ.pop("CLAUDECODE", None)
-
+BACKEND = "http://localhost:8000"
+SESSIONS_DIR = os.path.expanduser("~/.claude/projects")
 PERMISSION_MODES = ["bypassPermissions", "acceptEdits", "dontAsk", "default", "plan"]
 MODEL_CHOICES = ["claude", "qwen"]
-SKIP_SUBTYPES = {"init", "system"}
-SESSIONS_DIR = os.path.expanduser("~/.claude/projects")
 
-# Map claude permission modes → qwen approval modes
-QWEN_APPROVAL_MAP = {
-    "bypassPermissions": "yolo",
-    "acceptEdits": "auto-edit",
-    "dontAsk": "yolo",
-    "default": "default",
-    "plan": "plan",
-}
-
-session_id: str | None = None
-_stop = False
+STATUS_ICON = {"running": "⟳", "done": "✓", "stopped": "⏹", "error": "❌"}
 
 
-# ── Session helpers ────────────────────────────────────────────────
-def _read_sessions(limit=50):
+def _tasks_samples(tasks: list) -> list:
+    """Convert tasks list to Dataset samples: [[display_label], ...]"""
+    rows = []
+    for t in tasks:
+        icon = STATUS_ICON.get(t["status"], "·")
+        label = f"{icon} {t['label'][:35]}"
+        rows.append([label])
+    return rows
+
+
+# ── Session file helpers ─────────────────────────────────────────────
+def _read_sessions(limit=20):
     sessions = []
     for f in glob.glob(f"{SESSIONS_DIR}/**/*.jsonl", recursive=True):
         if "/subagents/" in f:
@@ -52,288 +44,312 @@ def _read_sessions(limit=50):
                 continue
             sid = os.path.basename(f).replace(".jsonl", "")
             mtime = os.path.getmtime(f)
-            sessions.append((mtime, sid, summary[:55]))
+            sessions.append((mtime, sid, summary[:50]))
         except Exception:
             pass
     sessions.sort(reverse=True)
     return sessions[:limit]
 
 
-def get_session_samples():
-    return [[s[2]] for s in _read_sessions()]
-
-
-def load_session_history(sid: str) -> list:
-    for f in glob.glob(f"{SESSIONS_DIR}/**/{sid}.jsonl", recursive=True):
-        try:
-            history = []
-            with open(f) as fh:
-                for line in fh:
-                    if not line.strip():
-                        continue
-                    obj = json.loads(line)
-                    if obj.get("type") == "user":
-                        content = obj.get("message", {}).get("content", "")
-                        if isinstance(content, list):
-                            content = " ".join(c.get("text", "") for c in content if isinstance(c, dict))
-                        content = str(content).strip()
-                        if content and not content.startswith("<local-command"):
-                            history.append({"role": "user", "content": content})
-                    elif obj.get("type") == "assistant":
-                        for block in obj.get("message", {}).get("content", []):
-                            if isinstance(block, dict) and block.get("type") == "text":
-                                history.append({"role": "assistant", "content": block["text"]})
-            return history
-        except Exception:
-            pass
-    return []
-
-
-# ── Handlers ───────────────────────────────────────────────────────
-def make_options(mode: str) -> ClaudeAgentOptions:
-    return ClaudeAgentOptions(permission_mode=mode, resume=session_id)
-
-
-def tool_msg(title: str, content: str, status: str = "done") -> dict:
-    return {
-        "role": "assistant",
-        "content": content,
-        "metadata": {"title": title, "status": status},
-    }
-
-
-async def send_message(prompt: str, mode: str, model: str, history: list):
-    global session_id, _stop
-    if not prompt.strip():
-        yield history, ""
-        return
-
-    _stop = False
-    history = history + [{"role": "user", "content": prompt}]
-    yield history, ""
-
-    if model == "qwen":
-        async for h, m in _send_qwen(prompt, mode, history):
-            yield h, m
-    else:
-        async for h, m in _send_claude(prompt, mode, history):
-            yield h, m
-
-
-async def _send_claude(prompt: str, mode: str, history: list):
-    global session_id, _stop
-    tool_calls: list[list] = []
-    text = ""
-
-    def snapshot():
-        tools = [tool_msg(t, c, s) for t, c, s in tool_calls]
-        cur = [{"role": "assistant", "content": text}] if text else []
-        return history + tools + cur
-
-    def close_last_pending():
-        for tc in reversed(tool_calls):
-            if tc[2] == "pending":
-                tc[2] = "done"
-                break
-
-    async for msg in query(prompt=prompt, options=make_options(mode)):
-        if _stop:
-            for tc in tool_calls:
-                tc[2] = "done"
-            yield snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}], ""
-            return
-
-        if isinstance(msg, AssistantMessage):
-            if msg.error:
-                yield history + [{"role": "assistant", "content": f"❌ {msg.error}"}], ""
-                return
-            close_last_pending()
-            for block in msg.content:
-                if isinstance(block, TextBlock):
-                    text += block.text
-                elif isinstance(block, ThinkingBlock):
-                    tool_calls.append(["💭 Thinking", block.thinking[:500], "pending"])
-                elif isinstance(block, ToolUseBlock):
-                    args = json.dumps(block.input, indent=2) if block.input else ""
-                    tool_calls.append([f"⚙ {block.name}", f"```json\n{args}\n```", "pending"])
-                elif isinstance(block, ToolResultBlock):
-                    content = block.content or ""
-                    if isinstance(content, list):
-                        content = "\n".join(c.get("text", str(c)) for c in content)
-                    preview = str(content)[:600] + ("…" if len(str(content)) > 600 else "")
-                    close_last_pending()
-                    tool_calls.append([f"{'❌' if block.is_error else '✓'} result", f"```\n{preview}\n```", "done"])
-            yield snapshot(), ""
-
-        elif isinstance(msg, SystemMessage):
-            if msg.subtype not in SKIP_SUBTYPES:
-                desc = getattr(msg, "description", None) or msg.subtype
-                tool_calls.append([f"⚙ {desc}", "", "done"])
-                yield snapshot(), ""
-
-        elif isinstance(msg, ResultMessage):
-            session_id = msg.session_id
-
-    for tc in tool_calls:
-        tc[2] = "done"
-    final_text = [{"role": "assistant", "content": text}] if text else []
-    if not tool_calls and not text:
-        final_text = [{"role": "assistant", "content": "*(no response)*"}]
-    history = history + [tool_msg(t, c, s) for t, c, s in tool_calls] + final_text
-    yield history, ""
-
-
-async def _send_qwen(prompt: str, mode: str, history: list):
-    global session_id, _stop
-    tool_calls: list[list] = []
-    text = ""
-    approval = QWEN_APPROVAL_MAP.get(mode, "default")
-
-    cmd = ["qwen", "--output-format", "stream-json", "--approval-mode", approval]
-    if session_id:
-        cmd += ["--resume", session_id]
-
-    def snapshot():
-        tools = [tool_msg(t, c, s) for t, c, s in tool_calls]
-        cur = [{"role": "assistant", "content": text}] if text else []
-        return history + tools + cur
-
-    def close_last_pending():
-        for tc in reversed(tool_calls):
-            if tc[2] == "pending":
-                tc[2] = "done"
-                break
-
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL,
-    )
-    proc.stdin.write(prompt.encode())
-    await proc.stdin.drain()
-    proc.stdin.close()
-
-    async for line in proc.stdout:
-        if _stop:
-            proc.terminate()
-            for tc in tool_calls:
-                tc[2] = "done"
-            yield snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}], ""
-            return
-
-        line = line.decode().strip()
-        if not line:
-            continue
-        try:
-            msg = json.loads(line)
-        except Exception:
-            continue
-
-        mtype = msg.get("type")
-
-        if mtype == "assistant":
-            close_last_pending()
-            for block in msg.get("message", {}).get("content", []):
-                btype = block.get("type")
-                if btype == "text":
-                    text += block.get("text", "")
-                elif btype == "thinking":
-                    tool_calls.append(["💭 Thinking", block.get("thinking", "")[:500], "pending"])
-                elif btype == "tool_use":
-                    args = json.dumps(block.get("input", {}), indent=2)
-                    tool_calls.append([f"⚙ {block.get('name', '')}", f"```json\n{args}\n```", "pending"])
-                elif btype == "tool_result":
-                    content = block.get("content", "")
-                    if isinstance(content, list):
-                        content = "\n".join(c.get("text", str(c)) for c in content)
-                    preview = str(content)[:600] + ("…" if len(str(content)) > 600 else "")
-                    close_last_pending()
-                    is_error = block.get("is_error", False)
-                    tool_calls.append([f"{'❌' if is_error else '✓'} result", f"```\n{preview}\n```", "done"])
-            yield snapshot(), ""
-
-        elif mtype == "system" and msg.get("subtype") not in SKIP_SUBTYPES:
-            desc = msg.get("subtype", "system")
-            tool_calls.append([f"⚙ {desc}", "", "done"])
-            yield snapshot(), ""
-
-        elif mtype == "result":
-            session_id = msg.get("session_id")
-
-    await proc.wait()
-    for tc in tool_calls:
-        tc[2] = "done"
-    final_text = [{"role": "assistant", "content": text}] if text else []
-    if not tool_calls and not text:
-        final_text = [{"role": "assistant", "content": "*(no response)*"}]
-    history = history + [tool_msg(t, c, s) for t, c, s in tool_calls] + final_text
-    yield history, ""
-
-
-def stop_handler():
-    global _stop
-    _stop = True
-
-
-def new_chat():
-    global session_id
-    session_id = None
-    return [], gr.update(samples=get_session_samples())
-
-
-def on_session_select(evt: gr.SelectData):
-    global session_id
-    sessions = _read_sessions()
-    idx = evt.index
-    if idx >= len(sessions):
+# ── Directory autocomplete ───────────────────────────────────────────
+def dir_suggestions(typed: str) -> list[str]:
+    typed = os.path.expanduser(typed or "~")
+    try:
+        base = typed if os.path.isdir(typed) else os.path.dirname(typed)
+        prefix = "" if os.path.isdir(typed) else os.path.basename(typed)
+        if not os.path.isdir(base):
+            return []
+        return sorted([
+            os.path.join(base, e) for e in os.listdir(base)
+            if e.startswith(prefix) and os.path.isdir(os.path.join(base, e))
+        ])[:12]
+    except Exception:
         return []
-    sid = sessions[idx][1]
-    session_id = sid
-    return load_session_history(sid)
 
 
-def refresh_sessions():
-    return gr.update(samples=get_session_samples())
+# ── Backend calls ────────────────────────────────────────────────────
+async def _get_tasks():
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.get(f"{BACKEND}/tasks", timeout=3)
+            return r.json()
+    except Exception:
+        return []
 
 
-# ── UI ─────────────────────────────────────────────────────────────
+async def _get_task(task_id: str):
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.get(f"{BACKEND}/tasks/{task_id}", timeout=3)
+            return r.json()
+    except Exception:
+        return None
+
+
+async def _create_task(prompt, mode, model, cwd, session_id=None):
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.post(f"{BACKEND}/tasks", json={
+                "prompt": prompt, "mode": mode, "model": model,
+                "cwd": cwd, "session_id": session_id,
+            }, timeout=5)
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def _send_message(task_id, prompt):
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.post(f"{BACKEND}/tasks/{task_id}/message", json={"prompt": prompt}, timeout=5)
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def _stop_task(task_id):
+    try:
+        async with httpx.AsyncClient() as c:
+            await c.post(f"{BACKEND}/tasks/{task_id}/stop", timeout=3)
+    except Exception:
+        pass
+
+
+async def _delete_task(task_id):
+    try:
+        async with httpx.AsyncClient() as c:
+            await c.delete(f"{BACKEND}/tasks/{task_id}", timeout=3)
+    except Exception:
+        pass
+
+
+# ── Task list HTML ───────────────────────────────────────────────────
+def _tasks_html(tasks: list, active_id: str | None) -> str:
+    if not tasks:
+        return "<div style='color:#888;padding:8px;font-size:13px'>No tasks yet</div>"
+    rows = []
+    for t in tasks:
+        icon = STATUS_ICON.get(t["status"], "·")
+        label = t["label"][:35] + ("…" if len(t["label"]) > 35 else "")
+        active = t["id"] == active_id
+        bg = "background:#1e3a5f;" if active else ""
+        color = "#4fc3f7" if active else "#ccc"
+        rows.append(
+            f'<div onclick="selectTask(\'{t["id"]}\')" style="cursor:pointer;padding:6px 10px;border-radius:4px;margin:2px 0;{bg}">'
+            f'<span style="color:{color};font-size:13px">{icon} {label}</span>'
+            f'<div style="color:#666;font-size:11px;margin-top:2px">{t["status"]} · {t["cwd"][-25:]}</div>'
+            f'</div>'
+        )
+    return "".join(rows)
+
+
+# ── UI handlers ──────────────────────────────────────────────────────
+async def init_ui():
+    tasks = await _get_tasks()
+    return None, [], tasks, "", gr.update(choices=dir_suggestions("~"), value=None)
+
+
+async def timer_tick(active_id, tasks_cache):
+    """Refresh task list + active task history."""
+    tasks = await _get_tasks()
+    history = []
+    if active_id:
+        task = await _get_task(active_id)
+        if task:
+            history = task.get("history", [])
+    return tasks, history
+
+
+async def select_task(task_id, tasks_cache):
+    task = await _get_task(task_id)
+    if not task:
+        return task_id, [], gr.update()
+    return task_id, task.get("history", []), task.get("cwd", "")
+
+
+async def submit_input(prompt, mode, model, cwd, active_id, tasks_cache):
+    if not prompt.strip():
+        return active_id, [], tasks_cache, ""
+
+    # If active task exists and is done/stopped, send follow-up message
+    if active_id:
+        task = await _get_task(active_id)
+        if task and task["status"] in ("done", "stopped"):
+            await _send_message(active_id, prompt)
+            return active_id, task.get("history", []) + [{"role": "user", "content": prompt}], tasks_cache, ""
+
+    # Otherwise create new task
+    result = await _create_task(prompt, mode, model, cwd)
+    if "error" in result:
+        return active_id, [{"role": "assistant", "content": f"❌ {result['error']}"}], tasks_cache, ""
+
+    new_id = result["id"]
+    tasks = await _get_tasks()
+    task = await _get_task(new_id)
+    history = task.get("history", []) if task else []
+    return new_id, history, tasks, ""
+
+
+async def stop_active(active_id):
+    if active_id:
+        await _stop_task(active_id)
+
+
+async def delete_active(active_id, tasks_cache):
+    if active_id:
+        await _delete_task(active_id)
+    tasks = await _get_tasks()
+    new_active = tasks[0]["id"] if tasks else None
+    history = []
+    if new_active:
+        task = await _get_task(new_active)
+        history = task.get("history", []) if task else []
+    return None, history, tasks
+
+
+# ── UI ───────────────────────────────────────────────────────────────
 with gr.Blocks(title="CC-UI") as demo:
-    with gr.Sidebar(label="Sessions", width=240, open=False):
-        gr.Markdown("**Recents**")
+
+    active_id_state = gr.State(value=None)
+    tasks_state = gr.State(value=[])
+
+    with gr.Sidebar(label="⚡ CC-UI", width=240, open=True):
+        gr.Markdown("**Directory**")
+        cwd_box = gr.Textbox(placeholder="~/path/to/project", show_label=False, container=False,
+                             value=os.getcwd())
+        dir_dd = gr.Dropdown(choices=[], show_label=False, container=False, allow_custom_value=True)
+
+        gr.Markdown("**Tasks**")
+        task_list = gr.HTML(value="<div style='color:#888;font-size:13px'>Loading…</div>", elem_id="task-list")
+        with gr.Row():
+            del_btn = gr.Button("🗑 delete", size="sm", variant="secondary", scale=1)
+
+        gr.Markdown("**Recent sessions**")
         session_list = gr.Dataset(
             components=[gr.Textbox(visible=False)],
-            samples=get_session_samples(),
-            label=None,
-            headers=None,
-            samples_per_page=50,
-            type="index",
+            samples=[[s[2]] for s in _read_sessions()],
+            label=None, headers=None, samples_per_page=15, type="index",
         )
-        refresh_btn = gr.Button("↻ refresh", size="sm", variant="secondary")
 
-    chatbot = gr.Chatbot(height="78vh", show_label=False, render_markdown=True, container=False, layout="panel", buttons=[], feedback_options=[])
-    msg_box = gr.Textbox(
-        placeholder="Message...", lines=2, max_lines=2, show_label=False, submit_btn=True, container=False,
-    )
+    chatbot = gr.Chatbot(height="72vh", show_label=False, render_markdown=True,
+                         container=False, layout="panel", buttons=[], feedback_options=[])
+
+    msg_box = gr.Textbox(placeholder="New task or follow-up message…", lines=2, max_lines=2,
+                         show_label=False, submit_btn=True, container=False)
+
     with gr.Row():
-        model_dd = gr.Dropdown(
-            choices=MODEL_CHOICES, value="claude",
-            show_label=False, scale=0, min_width=120,
-            container=False
-        )
-        mode_dd = gr.Dropdown(
-            choices=PERMISSION_MODES, value="bypassPermissions",
-            show_label=False, scale=0, min_width=180,
-            container=False
-        )
-        new_btn = gr.Button("＋ new", scale=0)
+        model_dd = gr.Dropdown(choices=MODEL_CHOICES, value="claude", show_label=False,
+                               scale=0, min_width=100, container=False)
+        mode_dd = gr.Dropdown(choices=PERMISSION_MODES, value="bypassPermissions",
+                              show_label=False, scale=0, min_width=160, container=False)
         stop_btn = gr.Button("⏹ stop", variant="stop", scale=0)
 
-    msg_box.submit(send_message, inputs=[msg_box, mode_dd, model_dd, chatbot], outputs=[chatbot, msg_box])
-    stop_btn.click(stop_handler)
-    new_btn.click(new_chat, outputs=[chatbot, session_list])
-    session_list.select(on_session_select, outputs=[chatbot])
-    refresh_btn.click(refresh_sessions, outputs=[session_list])
+    timer = gr.Timer(value=2, active=True)
+
+    # JS: clicking task HTML calls this hidden textbox to trigger Python
+    task_click_box = gr.Textbox(visible=False, elem_id="task-click-input")
+
+    # Inject JS for task click handling
+    demo.load(None, js="""
+    () => {
+        window.selectTask = function(taskId) {
+            const box = document.querySelector('#task-click-input textarea') ||
+                        document.querySelector('#task-click-input input');
+            if (box) {
+                box.value = taskId;
+                box.dispatchEvent(new Event('input', {bubbles: true}));
+                // trigger change
+                const evt = new Event('change', {bubbles: true});
+                box.dispatchEvent(evt);
+            }
+        }
+    }
+    """)
+
+    # ── Wiring ───────────────────────────────────────────────────────
+    demo.load(
+        lambda: (None, [], os.getcwd()),
+        outputs=[active_id_state, tasks_state, cwd_box],
+    )
+
+    # Timer: refresh tasks list + active task history
+    async def tick(active_id, tasks_cache):
+        tasks = await _get_tasks()
+        history = []
+        if active_id:
+            task = await _get_task(active_id)
+            if task:
+                history = task.get("history", [])
+        html = _tasks_html(tasks, active_id)
+        return tasks, history, html
+
+    timer.tick(tick, inputs=[active_id_state, tasks_state], outputs=[tasks_state, chatbot, task_list])
+
+    # Task click via hidden textbox
+    task_click_box.change(
+        select_task,
+        inputs=[task_click_box, tasks_state],
+        outputs=[active_id_state, chatbot, cwd_box],
+    )
+
+    # Submit: new task or follow-up
+    msg_box.submit(
+        submit_input,
+        inputs=[msg_box, mode_dd, model_dd, cwd_box, active_id_state, tasks_state],
+        outputs=[active_id_state, chatbot, tasks_state, msg_box],
+    )
+
+    stop_btn.click(stop_active, inputs=[active_id_state])
+
+    del_btn.click(
+        delete_active,
+        inputs=[active_id_state, tasks_state],
+        outputs=[active_id_state, chatbot, tasks_state],
+    ).then(
+        lambda tasks, active_id: _tasks_html(tasks, active_id),
+        inputs=[tasks_state, active_id_state],
+        outputs=[task_list],
+    )
+
+    # Dir autocomplete
+    cwd_box.change(lambda t: gr.update(choices=dir_suggestions(t)), inputs=[cwd_box], outputs=[dir_dd])
+    dir_dd.select(lambda v: v, inputs=[dir_dd], outputs=[cwd_box])
+
+    # Load session into new task
+    def load_session_history(sid):
+        history = []
+        for f in glob.glob(f"{SESSIONS_DIR}/**/{sid}.jsonl", recursive=True):
+            try:
+                with open(f) as fh:
+                    for line in fh:
+                        if not line.strip(): continue
+                        obj = json.loads(line)
+                        if obj.get("type") == "user":
+                            content = obj.get("message", {}).get("content", "")
+                            if isinstance(content, list):
+                                content = " ".join(c.get("text","") for c in content if isinstance(c,dict))
+                            content = str(content).strip()
+                            if content and not content.startswith("<local-command"):
+                                history.append({"role": "user", "content": content})
+                        elif obj.get("type") == "assistant":
+                            for block in obj.get("message", {}).get("content", []):
+                                if isinstance(block, dict) and block.get("type") == "text":
+                                    history.append({"role": "assistant", "content": block["text"]})
+            except Exception:
+                pass
+            break
+        return history
+
+    async def on_session_select(evt: gr.SelectData):
+        sessions = _read_sessions()
+        if evt.index >= len(sessions):
+            return gr.update(), gr.update()
+        sid = sessions[evt.index][1]
+        # Create a "viewer" task with this session loaded
+        history = load_session_history(sid)
+        return history, sid
+
+    session_list.select(on_session_select, outputs=[chatbot, active_id_state])
 
 
 if __name__ == "__main__":

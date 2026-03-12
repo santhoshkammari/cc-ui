@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CC-UI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+
+  /* Sidebar */
+  #sidebar { width: 240px; min-width: 240px; background: #161b22; border-right: 1px solid #30363d; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  #sidebar-header { padding: 12px 14px; border-bottom: 1px solid #30363d; font-size: 13px; font-weight: 600; color: #8b949e; letter-spacing: .05em; text-transform: uppercase; }
+  #task-list { flex: 1; overflow-y: auto; padding: 6px; }
+  .task-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; margin-bottom: 3px; border: 1px solid transparent; transition: background .1s; }
+  .task-item:hover { background: #21262d; }
+  .task-item.active { background: #1f3a5c; border-color: #388bfd44; }
+  .task-label { font-size: 13px; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-meta { font-size: 11px; color: #6e7681; margin-top: 2px; }
+  .status-running { color: #f0883e; }
+  .status-done { color: #3fb950; }
+  .status-stopped { color: #8b949e; }
+  .status-error { color: #f85149; }
+
+  #sidebar-actions { padding: 8px; border-top: 1px solid #30363d; display: flex; gap: 6px; }
+  #sidebar-actions button { flex: 1; padding: 5px 8px; border-radius: 5px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; font-size: 12px; cursor: pointer; }
+  #sidebar-actions button:hover { background: #30363d; }
+  #sidebar-actions button.danger:hover { background: #3d1c1c; border-color: #f8514966; color: #f85149; }
+
+  /* Main */
+  #main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  #topbar { padding: 8px 14px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 10px; background: #161b22; font-size: 12px; color: #8b949e; }
+  #topbar #task-title { font-size: 14px; color: #e6edf3; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #cwd-box { background: #0d1117; border: 1px solid #30363d; border-radius: 5px; color: #8b949e; font-size: 12px; padding: 4px 8px; width: 260px; font-family: monospace; }
+  #cwd-box:focus { outline: none; border-color: #388bfd; color: #e6edf3; }
+
+  /* Chat */
+  #chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  #empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 14px; flex-direction: column; gap: 8px; }
+  #empty-state .hint { font-size: 12px; color: #6e7681; }
+
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; word-break: break-word; }
+  .msg.user { background: #1f3a5c; align-self: flex-end; border-bottom-right-radius: 3px; }
+  .msg.assistant { background: #161b22; border: 1px solid #30363d; align-self: flex-start; border-bottom-left-radius: 3px; }
+  .msg.tool { background: #0d1117; border: 1px solid #30363d; align-self: flex-start; border-radius: 6px; font-size: 12px; width: 100%; max-width: 100%; }
+  .tool-header { color: #8b949e; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .tool-header:hover { color: #e6edf3; }
+  .tool-body { padding: 0 10px 8px; display: none; }
+  .tool-body.open { display: block; }
+  .tool-body pre { background: #0d1117; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 11px; color: #e6edf3; white-space: pre-wrap; }
+  .pending { opacity: 0.6; }
+
+  /* Input */
+  #input-area { border-top: 1px solid #30363d; padding: 12px 16px; background: #161b22; }
+  #input-row { display: flex; gap: 8px; align-items: flex-end; }
+  #prompt { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; padding: 10px 14px; resize: none; font-family: inherit; min-height: 44px; max-height: 120px; overflow-y: auto; }
+  #prompt:focus { outline: none; border-color: #388bfd; }
+  #send-btn { background: #238636; border: none; border-radius: 8px; color: #fff; padding: 10px 16px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+  #send-btn:hover { background: #2ea043; }
+  #send-btn:disabled { background: #21262d; color: #8b949e; cursor: default; }
+  #controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  select { background: #21262d; border: 1px solid #30363d; border-radius: 5px; color: #e6edf3; font-size: 12px; padding: 4px 8px; cursor: pointer; }
+  select:focus { outline: none; border-color: #388bfd; }
+  #stop-btn { background: #3d1c1c; border: 1px solid #f8514944; border-radius: 5px; color: #f85149; font-size: 12px; padding: 4px 10px; cursor: pointer; }
+  #stop-btn:hover { background: #5a2020; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+  /* Markdown in chat */
+  .msg code { background: #0d1117; border: 1px solid #30363d; border-radius: 3px; padding: 1px 5px; font-size: 12px; font-family: monospace; }
+  .msg pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px; overflow-x: auto; margin: 6px 0; }
+  .msg pre code { background: none; border: none; padding: 0; font-size: 12px; }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>Tasks</span>
+    <button onclick="newTask()" style="background:#238636;border:none;border-radius:5px;color:#fff;font-size:12px;padding:3px 10px;cursor:pointer;font-weight:600;">+ New</button>
+  </div>
+  <div id="task-list"><div style="padding:12px;color:#6e7681;font-size:12px">No tasks yet</div></div>
+  <div id="sidebar-actions">
+    <button onclick="stopActive()">⏹ Stop</button>
+    <button class="danger" onclick="deleteActive()">🗑 Delete</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <span id="task-title">No task selected</span>
+    <input id="cwd-box" placeholder="/path/to/project" title="Working directory for new tasks" />
+  </div>
+
+  <div id="chat">
+    <div id="empty-state">
+      <div>Type a prompt below to start a task</div>
+      <div class="hint">Tasks run in background — switch between them freely</div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <div id="input-row">
+      <textarea id="prompt" placeholder="New task or follow-up…" rows="1"></textarea>
+      <button id="send-btn" onclick="sendPrompt()">Send</button>
+    </div>
+    <div id="controls">
+      <select id="model-sel">
+        <option value="claude">claude</option>
+        <option value="qwen">qwen</option>
+      </select>
+      <select id="mode-sel">
+        <option value="bypassPermissions">bypassPermissions</option>
+        <option value="acceptEdits">acceptEdits</option>
+        <option value="dontAsk">dontAsk</option>
+        <option value="default">default</option>
+        <option value="plan">plan</option>
+      </select>
+      <button id="stop-btn" onclick="stopActive()">⏹ stop active</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let activeTaskId = null;
+let tasks = [];
+let pollInterval = null;
+
+// ── API ──────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Render task list ─────────────────────────────────────────────────
+function renderTaskList() {
+  const el = document.getElementById('task-list');
+  if (!tasks.length) {
+    el.innerHTML = '<div style="padding:12px;color:#6e7681;font-size:12px">No tasks yet</div>';
+    return;
+  }
+  el.innerHTML = tasks.map(t => {
+    const active = t.id === activeTaskId;
+    const icon = { running: '⟳', done: '✓', stopped: '⏹', error: '❌' }[t.status] || '·';
+    const spin = t.status === 'running' ? ' spinner' : '';
+    return `<div class="task-item${active ? ' active' : ''}" onclick="selectTask('${t.id}')">
+      <div class="task-label"><span class="status-${t.status}${spin}">${icon}</span> ${esc(t.label)}</div>
+      <div class="task-meta">${t.status} · ${t.cwd.split('/').slice(-2).join('/')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render chat ───────────────────────────────────────────────────────
+function renderChat(history) {
+  const chat = document.getElementById('chat');
+  const empty = document.getElementById('empty-state');
+
+  if (!history || !history.length) {
+    chat.innerHTML = '';
+    chat.appendChild(empty || makeEmpty());
+    return;
+  }
+
+  const msgs = history.map(msg => {
+    const role = msg.role;
+    const meta = msg.metadata;
+
+    if (meta) {
+      // Tool call accordion
+      const pending = meta.status === 'pending';
+      const body = msg.content ? `<div class="tool-body">${renderMd(msg.content)}</div>` : '';
+      return `<div class="msg tool${pending ? ' pending' : ''}">
+        <div class="tool-header" onclick="toggleTool(this)">
+          <span>${pending ? '⟳' : '▶'}</span>
+          <span>${esc(meta.title)}</span>
+        </div>
+        ${body}
+      </div>`;
+    }
+
+    if (role === 'user') {
+      return `<div class="msg user">${esc(msg.content)}</div>`;
+    }
+    return `<div class="msg assistant">${renderMd(msg.content)}</div>`;
+  }).join('');
+
+  chat.innerHTML = msgs;
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function toggleTool(header) {
+  const body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
+}
+
+function makeEmpty() {
+  const d = document.createElement('div');
+  d.id = 'empty-state';
+  d.innerHTML = '<div>Type a prompt below to start a task</div><div class="hint">Tasks run in background — switch between them freely</div>';
+  return d;
+}
+
+// Simple markdown: code blocks, inline code, bold
+function renderMd(text) {
+  if (!text) return '';
+  let s = esc(text);
+  // fenced code blocks
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${code}</code></pre>`);
+  // inline code
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // bold
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // newlines
+  s = s.replace(/\n/g, '<br>');
+  return s;
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Actions ───────────────────────────────────────────────────────────
+function newTask() {
+  activeTaskId = null;
+  document.getElementById('task-title').textContent = 'New task';
+  renderChat([]);
+  renderTaskList();
+  document.getElementById('prompt').focus();
+}
+
+async function selectTask(id) {
+  activeTaskId = id;
+  const task = tasks.find(t => t.id === id);
+  if (task) {
+    document.getElementById('task-title').textContent = task.label;
+    document.getElementById('cwd-box').value = task.cwd;
+  }
+  renderTaskList();
+  const full = await api('GET', `/tasks/${id}`);
+  renderChat(full.history);
+}
+
+async function sendPrompt() {
+  const promptEl = document.getElementById('prompt');
+  const prompt = promptEl.value.trim();
+  if (!prompt) return;
+
+  const model = document.getElementById('model-sel').value;
+  const mode = document.getElementById('mode-sel').value;
+  const cwd = document.getElementById('cwd-box').value || '';
+
+  promptEl.value = '';
+  promptEl.style.height = 'auto';
+
+  // If active task is done/stopped, send follow-up
+  const active = tasks.find(t => t.id === activeTaskId);
+  if (active && (active.status === 'done' || active.status === 'stopped')) {
+    await api('POST', `/tasks/${activeTaskId}/message`, { prompt });
+    await refreshTasks();
+    return;
+  }
+
+  // Create new task
+  const result = await api('POST', '/tasks', { prompt, model, mode, cwd });
+  await refreshTasks();
+  selectTask(result.id);
+}
+
+async function stopActive() {
+  if (!activeTaskId) return;
+  await api('POST', `/tasks/${activeTaskId}/stop`);
+  await refreshTasks();
+}
+
+async function deleteActive() {
+  if (!activeTaskId) return;
+  await api('DELETE', `/tasks/${activeTaskId}`);
+  activeTaskId = null;
+  document.getElementById('task-title').textContent = 'No task selected';
+  renderChat([]);
+  await refreshTasks();
+}
+
+// ── Poll ──────────────────────────────────────────────────────────────
+async function refreshTasks() {
+  tasks = await api('GET', '/tasks');
+  renderTaskList();
+}
+
+async function pollActive() {
+  await refreshTasks();
+  if (activeTaskId) {
+    const full = await api('GET', `/tasks/${activeTaskId}`);
+    renderChat(full.history);
+    // Update title status
+    const t = tasks.find(x => x.id === activeTaskId);
+    if (t) document.getElementById('task-title').textContent = t.label + (t.status === 'running' ? ' ⟳' : '');
+  }
+}
+
+// Auto-resize textarea
+document.getElementById('prompt').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Enter to send (Shift+Enter for newline)
+document.getElementById('prompt').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendPrompt();
+  }
+});
+
+// Start polling
+setInterval(pollActive, 2000);
+refreshTasks();
+</script>
+</body>
+</html>
