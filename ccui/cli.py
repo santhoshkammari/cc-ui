@@ -4,6 +4,7 @@ import signal
 import subprocess
 
 PID_FILE = os.path.expanduser("~/.ccui.pid")
+PORT = 8000
 
 
 def start():
@@ -12,21 +13,21 @@ def start():
             pid = int(f.read().strip())
         try:
             os.kill(pid, 0)
-            print(f"ccui already running (pid {pid})")
+            print(f"ccui already running (pid {pid}) — http://127.0.0.1:{PORT}")
             return
         except ProcessLookupError:
-            pass
+            os.remove(PID_FILE)
 
-    app_path = os.path.join(os.path.dirname(__file__), "app.py")
+    backend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend.py")
     proc = subprocess.Popen(
-        [sys.executable, app_path],
+        [sys.executable, backend_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
     with open(PID_FILE, "w") as f:
         f.write(str(proc.pid))
-    print(f"ccui started (pid {proc.pid}) — http://127.0.0.1:7860")
+    print(f"ccui started (pid {proc.pid}) — http://127.0.0.1:{PORT}")
 
 
 def stop():

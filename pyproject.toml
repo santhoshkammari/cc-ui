@@ -4,9 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ccui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
-    "gradio",
+    "fastapi",
+    "uvicorn",
+    "httpx",
     "claude-agent-sdk",
 ]
 
