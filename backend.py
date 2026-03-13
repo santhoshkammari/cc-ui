@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sqlite3
 import uuid
 from datetime import datetime
 from typing import Any
@@ -36,9 +37,52 @@ QWEN_APPROVAL_MAP = {
     "plan": "plan",
 }
 
-# ── In-memory task store ─────────────────────────────────────────────
-# task = {id, label, status, history, session_id, cwd, mode, model, created_at, _stop}
+# ── SQLite task store ────────────────────────────────────────────────
+DB_PATH = os.path.join(HERE, "tasks.db")
+
+def _db():
+    return sqlite3.connect(DB_PATH)
+
+def _init_db():
+    with _db() as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
+            label TEXT, status TEXT, history TEXT,
+            session_id TEXT, cwd TEXT, mode TEXT, model TEXT,
+            prompt TEXT, created_at TEXT
+        )""")
+
+_init_db()
+
+# In-memory dict for running tasks (has _stop flag)
 _tasks: dict[str, dict] = {}
+
+def _save(task: dict):
+    with _db() as con:
+        con.execute("""INSERT OR REPLACE INTO tasks
+            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (task["id"], task["label"], task["status"],
+             json.dumps(task["history"]), task["session_id"],
+             task["cwd"], task["mode"], task["model"],
+             task["prompt"], task["created_at"]))
+
+def _load_all() -> dict[str, dict]:
+    with _db() as con:
+        rows = con.execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
+    result = {}
+    for r in rows:
+        t = {"id": r[0], "label": r[1], "status": r[2],
+             "history": json.loads(r[3]), "session_id": r[4],
+             "cwd": r[5], "mode": r[6], "model": r[7],
+             "prompt": r[8], "created_at": r[9], "_stop": False}
+        # Mark interrupted running tasks as stopped
+        if t["status"] == "running":
+            t["status"] = "stopped"
+        result[t["id"]] = t
+    return result
+
+_tasks = _load_all()
 
 
 def _tool_msg(title, content, status="done"):
@@ -75,12 +119,14 @@ async def _run_claude(task: dict):
                     tc[2] = "done"
                 task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
                 task["status"] = "stopped"
+                _save(task)
                 return
 
             if isinstance(msg, AssistantMessage):
                 if msg.error:
                     task["history"] = history + [{"role": "assistant", "content": f"❌ {msg.error}"}]
                     task["status"] = "error"
+                    _save(task)
                     return
                 close_pending()
                 for block in msg.content:
@@ -112,6 +158,7 @@ async def _run_claude(task: dict):
     except Exception as e:
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
+        _save(task)
         return
 
     for tc in tool_calls:
@@ -121,6 +168,7 @@ async def _run_claude(task: dict):
         final = [{"role": "assistant", "content": "*(no response)*"}]
     task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
     task["status"] = "done"
+    _save(task)
 
 
 async def _run_qwen(task: dict):
@@ -163,6 +211,7 @@ async def _run_qwen(task: dict):
                     tc[2] = "done"
                 task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
                 task["status"] = "stopped"
+                _save(task)
                 return
 
             line = line.decode().strip()
@@ -203,6 +252,7 @@ async def _run_qwen(task: dict):
     except Exception as e:
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
+        _save(task)
         return
 
     for tc in tool_calls:
@@ -212,6 +262,7 @@ async def _run_qwen(task: dict):
         final = [{"role": "assistant", "content": "*(no response)*"}]
     task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
     task["status"] = "done"
+    _save(task)
 
 
 # ── API models ───────────────────────────────────────────────────────
@@ -246,6 +297,7 @@ async def create_task(req: CreateTaskRequest):
         "_stop": False,
     }
     _tasks[task_id] = task
+    _save(task)
 
     # Fire and forget — runs in background
     runner = _run_qwen(task) if req.model == "qwen" else _run_claude(task)
@@ -272,6 +324,53 @@ async def send_message(task_id: str, req: SendMessageRequest):
     asyncio.create_task(runner)
 
     return {"id": task_id, "status": "running"}
+
+
+@app.get("/suggest")
+async def suggest_path(path: str = ""):
+    try:
+        path = os.path.expanduser(path) if path else ""
+        if not path:
+            return []
+
+        # Exact dir typed — list its children instantly
+        if os.path.isdir(path):
+            results = [
+                os.path.join(path, e) for e in sorted(os.listdir(path))
+                if not e.startswith(".") and os.path.isdir(os.path.join(path, e))
+            ]
+            return results[:15]
+
+        # Partial path: match in parent dir first (instant), then broader search
+        search_dir = os.path.dirname(path) or os.path.expanduser("~")
+        pattern = os.path.basename(path).lower()
+
+        # Fast: check parent dir children
+        if os.path.isdir(search_dir):
+            quick = [
+                os.path.join(search_dir, e) for e in sorted(os.listdir(search_dir))
+                if not e.startswith(".") and os.path.isdir(os.path.join(search_dir, e))
+                and pattern in e.lower()
+            ]
+            if quick:
+                return quick[:15]
+
+        # Fallback: async find from home, max 3 levels, 1s timeout
+        home = os.path.expanduser("~")
+        proc = await asyncio.create_subprocess_exec(
+            "find", home, "-maxdepth", "3", "-type", "d",
+            "-iname", f"*{pattern}*", "-not", "-path", "*/.*",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=1.0)
+        except asyncio.TimeoutError:
+            proc.kill()
+            stdout = b""
+        results = [l for l in stdout.decode().splitlines() if "/." not in l]
+        return results[:15]
+    except Exception:
+        return []
 
 
 @app.get("/tasks")
@@ -325,6 +424,8 @@ async def delete_task(task_id: str):
     if not task:
         raise HTTPException(404, "Task not found")
     task["_stop"] = True
+    with _db() as con:
+        con.execute("DELETE FROM tasks WHERE id=?", (task_id,))
     return {"status": "deleted"}
 
 
