@@ -265,6 +265,104 @@ async def _run_qwen(task: dict):
     _save(task)
 
 
+async def _run_opencode(task: dict):
+    tool_calls: list[list] = []
+    text = ""
+    history = task["history"][:]
+    session_id = None
+
+    cmd = ["opencode", "run", "--format", "json"]
+    if task["session_id"]:
+        cmd += ["--session", task["session_id"]]
+    if task["cwd"]:
+        cmd += ["--dir", task["cwd"]]
+    cmd += [task["prompt"]]
+
+    def snapshot():
+        tools = [_tool_msg(t, c, s) for t, c, s in tool_calls]
+        cur = [{"role": "assistant", "content": text}] if text else []
+        return history + tools + cur
+
+    def close_pending():
+        for tc in reversed(tool_calls):
+            if tc[2] == "pending":
+                tc[2] = "done"
+                break
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+
+        async for line in proc.stdout:
+            if task["_stop"]:
+                proc.terminate()
+                for tc in tool_calls:
+                    tc[2] = "done"
+                task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
+                task["status"] = "stopped"
+                _save(task)
+                return
+
+            line = line.decode().strip()
+            if not line:
+                continue
+            try:
+                msg = json.loads(line)
+            except Exception:
+                continue
+
+            # Capture session_id from any event
+            if msg.get("sessionID"):
+                session_id = msg["sessionID"]
+
+            mtype = msg.get("type")
+            part = msg.get("part", {})
+
+            if mtype == "text":
+                text += part.get("text", "")
+                task["history"] = snapshot()
+            elif mtype == "tool_use":
+                close_pending()
+                args = json.dumps(part.get("input", {}), indent=2)
+                tool_calls.append([f"⚙ {part.get('tool', '')}", f"```json\n{args}\n```", "pending"])
+                task["history"] = snapshot()
+            elif mtype == "tool_result":
+                content = part.get("output", "")
+                if isinstance(content, list):
+                    content = "\n".join(c.get("text", str(c)) for c in content)
+                preview = str(content)[:600] + ("…" if len(str(content)) > 600 else "")
+                close_pending()
+                tool_calls.append([f"{'❌' if part.get('error') else '✓'} result", f"```\n{preview}\n```", "done"])
+                task["history"] = snapshot()
+            elif mtype == "step_start":
+                tool_calls.append(["⚙ step", "", "pending"])
+                task["history"] = snapshot()
+            elif mtype == "step_finish":
+                close_pending()
+                task["history"] = snapshot()
+
+        await proc.wait()
+    except Exception as e:
+        task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
+        task["status"] = "error"
+        _save(task)
+        return
+
+    if session_id:
+        task["session_id"] = session_id
+    for tc in tool_calls:
+        tc[2] = "done"
+    final = [{"role": "assistant", "content": text}] if text else []
+    if not tool_calls and not text:
+        final = [{"role": "assistant", "content": "*(no response)*"}]
+    task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
+    task["status"] = "done"
+    _save(task)
+
+
 # ── API models ───────────────────────────────────────────────────────
 class CreateTaskRequest(BaseModel):
     prompt: str
@@ -300,7 +398,12 @@ async def create_task(req: CreateTaskRequest):
     _save(task)
 
     # Fire and forget — runs in background
-    runner = _run_qwen(task) if req.model == "qwen" else _run_claude(task)
+    if req.model == "qwen":
+        runner = _run_qwen(task)
+    elif req.model == "opencode":
+        runner = _run_opencode(task)
+    else:
+        runner = _run_claude(task)
     asyncio.create_task(runner)
 
     return {"id": task_id, "label": label, "status": "running"}
@@ -320,7 +423,12 @@ async def send_message(task_id: str, req: SendMessageRequest):
     task["status"] = "running"
     task["_stop"] = False
 
-    runner = _run_qwen(task) if task["model"] == "qwen" else _run_claude(task)
+    if task["model"] == "qwen":
+        runner = _run_qwen(task)
+    elif task["model"] == "opencode":
+        runner = _run_opencode(task)
+    else:
+        runner = _run_claude(task)
     asyncio.create_task(runner)
 
     return {"id": task_id, "status": "running"}
