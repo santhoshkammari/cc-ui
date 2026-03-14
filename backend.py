@@ -325,23 +325,18 @@ async def _run_opencode(task: dict):
                 text += part.get("text", "")
                 task["history"] = snapshot()
             elif mtype == "tool_use":
-                close_pending()
-                args = json.dumps(part.get("input", {}), indent=2)
-                tool_calls.append([f"⚙ {part.get('tool', '')}", f"```json\n{args}\n```", "pending"])
-                task["history"] = snapshot()
-            elif mtype == "tool_result":
-                content = part.get("output", "")
-                if isinstance(content, list):
-                    content = "\n".join(c.get("text", str(c)) for c in content)
-                preview = str(content)[:600] + ("…" if len(str(content)) > 600 else "")
-                close_pending()
-                tool_calls.append([f"{'❌' if part.get('error') else '✓'} result", f"```\n{preview}\n```", "done"])
-                task["history"] = snapshot()
-            elif mtype == "step_start":
-                tool_calls.append(["⚙ step", "", "pending"])
-                task["history"] = snapshot()
-            elif mtype == "step_finish":
-                close_pending()
+                # opencode sends one event per tool call with state.input + state.output
+                state = part.get("state", {})
+                tool_name = part.get("tool", "tool")
+                title = state.get("title") or tool_name
+                args = json.dumps(state.get("input", {}), indent=2)
+                output = state.get("output", "")
+                if isinstance(output, list):
+                    output = "\n".join(c.get("text", str(c)) for c in output)
+                preview = str(output)[:600] + ("…" if len(str(output)) > 600 else "")
+                is_error = state.get("metadata", {}).get("exit", 0) != 0
+                content = f"```json\n{args}\n```\n**Output:**\n```\n{preview}\n```"
+                tool_calls.append([f"{'❌' if is_error else '⚙'} {title}", content, "done"])
                 task["history"] = snapshot()
 
         await proc.wait()
@@ -539,4 +534,4 @@ async def delete_task(task_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
