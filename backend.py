@@ -80,8 +80,13 @@ def _init_db():
             id TEXT PRIMARY KEY,
             label TEXT, status TEXT, history TEXT,
             session_id TEXT, cwd TEXT, mode TEXT, model TEXT,
-            prompt TEXT, created_at TEXT
+            prompt TEXT, created_at TEXT, finished_at TEXT
         )""")
+        try:
+            con.execute("ALTER TABLE tasks ADD COLUMN finished_at TEXT")
+            con.commit()
+        except Exception:
+            pass  # column already exists
 
 _init_db()
 
@@ -91,12 +96,12 @@ _tasks: dict[str, dict] = {}
 def _save(task: dict):
     with _db() as con:
         con.execute("""INSERT OR REPLACE INTO tasks
-            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (task["id"], task["label"], task["status"],
              json.dumps(task["history"]), task["session_id"],
              task["cwd"], task["mode"], task["model"],
-             task["prompt"], task["created_at"]))
+             task["prompt"], task["created_at"], task.get("finished_at")))
 
 def _load_all() -> dict[str, dict]:
     with _db() as con:
@@ -106,7 +111,8 @@ def _load_all() -> dict[str, dict]:
         t = {"id": r[0], "label": r[1], "status": r[2],
              "history": json.loads(r[3]), "session_id": r[4],
              "cwd": r[5], "mode": r[6], "model": r[7],
-             "prompt": r[8], "created_at": r[9], "_stop": False}
+             "prompt": r[8], "created_at": r[9],
+             "finished_at": r[10] if len(r) > 10 else None, "_stop": False}
         # Mark interrupted running tasks as stopped
         if t["status"] == "running":
             t["status"] = "stopped"
@@ -150,6 +156,7 @@ async def _run_claude(task: dict):
                     tc[2] = "done"
                 task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
                 task["status"] = "stopped"
+                task["finished_at"] = datetime.now().isoformat()
                 _save(task)
                 return
 
@@ -157,6 +164,7 @@ async def _run_claude(task: dict):
                 if msg.error:
                     task["history"] = history + [{"role": "assistant", "content": f"❌ {msg.error}"}]
                     task["status"] = "error"
+                    task["finished_at"] = datetime.now().isoformat()
                     _save(task)
                     return
                 close_pending()
@@ -189,6 +197,7 @@ async def _run_claude(task: dict):
     except Exception as e:
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
+        task["finished_at"] = datetime.now().isoformat()
         _save(task)
         return
 
@@ -199,6 +208,7 @@ async def _run_claude(task: dict):
         final = [{"role": "assistant", "content": "*(no response)*"}]
     task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
     task["status"] = "done"
+    task["finished_at"] = datetime.now().isoformat()
     _save(task)
 
 
@@ -242,6 +252,7 @@ async def _run_qwen(task: dict):
                     tc[2] = "done"
                 task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
                 task["status"] = "stopped"
+                task["finished_at"] = datetime.now().isoformat()
                 _save(task)
                 return
 
@@ -283,6 +294,7 @@ async def _run_qwen(task: dict):
     except Exception as e:
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
+        task["finished_at"] = datetime.now().isoformat()
         _save(task)
         return
 
@@ -293,6 +305,7 @@ async def _run_qwen(task: dict):
         final = [{"role": "assistant", "content": "*(no response)*"}]
     task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
     task["status"] = "done"
+    task["finished_at"] = datetime.now().isoformat()
     _save(task)
 
 
@@ -334,6 +347,7 @@ async def _run_opencode(task: dict):
                     tc[2] = "done"
                 task["history"] = snapshot() + [{"role": "assistant", "content": "⏹ *stopped*"}]
                 task["status"] = "stopped"
+                task["finished_at"] = datetime.now().isoformat()
                 _save(task)
                 return
 
@@ -374,6 +388,7 @@ async def _run_opencode(task: dict):
     except Exception as e:
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
+        task["finished_at"] = datetime.now().isoformat()
         _save(task)
         return
 
@@ -386,6 +401,7 @@ async def _run_opencode(task: dict):
         final = [{"role": "assistant", "content": "*(no response)*"}]
     task["history"] = history + [_tool_msg(t, c, s) for t, c, s in tool_calls] + final
     task["status"] = "done"
+    task["finished_at"] = datetime.now().isoformat()
     _save(task)
 
 
@@ -521,6 +537,7 @@ async def list_tasks():
             "label": t["label"],
             "status": t["status"],
             "created_at": t["created_at"],
+            "finished_at": t.get("finished_at"),
             "preview": last,
             "cwd": t["cwd"],
         })
