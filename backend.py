@@ -532,6 +532,42 @@ async def delete_task(task_id: str):
     return {"status": "deleted"}
 
 
+@app.get("/tasks/{task_id}/gitdiff")
+async def get_gitdiff(task_id: str):
+    task = _tasks.get(task_id)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    cwd = task["cwd"] or os.getcwd()
+    try:
+        # Check if git repo
+        p = await asyncio.create_subprocess_exec(
+            "git", "-C", cwd, "rev-parse", "--is-inside-work-tree",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        await p.communicate()
+        if p.returncode != 0:
+            return {"is_git": False, "status": "", "diff": ""}
+
+        # git status --short
+        p1 = await asyncio.create_subprocess_exec(
+            "git", "-C", cwd, "status", "--short",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        s_out, _ = await p1.communicate()
+
+        # git diff HEAD
+        p2 = await asyncio.create_subprocess_exec(
+            "git", "-C", cwd, "diff", "HEAD",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        d_out, _ = await p2.communicate()
+
+        return {
+            "is_git": True,
+            "status": s_out.decode(errors="replace"),
+            "diff": d_out.decode(errors="replace"),
+        }
+    except Exception:
+        return {"is_git": False, "status": "", "diff": ""}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
