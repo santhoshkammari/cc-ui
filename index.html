@@ -201,7 +201,10 @@
         <option value="default">default</option>
         <option value="plan">plan</option>
       </select>
-      <input id="dash-cwd" placeholder="/path/to/project" autocomplete="off" style="background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#8b949e;font-size:12px;padding:4px 8px;width:200px;font-family:monospace;" />
+      <div id="dash-cwd-wrap" style="position:relative;">
+        <input id="dash-cwd" placeholder="/path/to/project" autocomplete="off" style="background:#0d1117;border:1px solid #30363d;border-radius:5px;color:#8b949e;font-size:12px;padding:4px 8px;width:220px;font-family:monospace;" />
+        <div id="dash-cwd-drop" style="position:absolute;top:100%;left:0;width:100%;background:#161b22;border:1px solid #388bfd;border-radius:5px;z-index:999;display:none;max-height:200px;overflow-y:auto;"></div>
+      </div>
     </div>
   </div>
   </div><!-- end dash-content -->
@@ -591,6 +594,54 @@ document.getElementById('prompt').addEventListener('keydown', function(e) {
 
   document.addEventListener('click', e => {
     if (!e.target.closest('#cwd-wrap')) drop.style.display = 'none';
+  });
+})();
+
+// ── Dash CWD autocomplete ─────────────────────────────────────────────
+(function() {
+  const inp = document.getElementById('dash-cwd');
+  const drop = document.getElementById('dash-cwd-drop');
+  let selIdx = -1, opts = [], t;
+
+  function show(items) {
+    opts = items; selIdx = -1;
+    drop.innerHTML = items.map((p, i) =>
+      `<div class="cwd-opt" data-i="${i}">${p}</div>`).join('');
+    drop.style.display = items.length ? 'block' : 'none';
+    drop.querySelectorAll('.cwd-opt').forEach(el =>
+      el.addEventListener('mousedown', e => { e.preventDefault(); pick(+el.dataset.i); }));
+  }
+
+  function pick(i) {
+    inp.value = opts[i] + '/';
+    drop.style.display = 'none';
+    inp.focus();
+    inp.dispatchEvent(new Event('input'));
+  }
+
+  function highlight() {
+    drop.querySelectorAll('.cwd-opt').forEach((el, i) =>
+      el.classList.toggle('sel', i === selIdx));
+  }
+
+  inp.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const res = await fetch(`${API}/suggest?path=${encodeURIComponent(inp.value)}`);
+      show(await res.json());
+    }, 50);
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (drop.style.display === 'none') return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); selIdx = Math.min(selIdx + 1, opts.length - 1); highlight(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); selIdx = Math.max(selIdx - 1, 0); highlight(); }
+    else if (e.key === 'Enter' || e.key === 'Tab') { if (selIdx >= 0) { e.preventDefault(); pick(selIdx); } }
+    else if (e.key === 'Escape') { drop.style.display = 'none'; }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#dash-cwd-wrap')) drop.style.display = 'none';
   });
 })();
 

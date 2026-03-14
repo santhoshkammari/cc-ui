@@ -1,3 +1,34 @@
+"""
+CC-UI Backend — FastAPI server for the two-layer task manager UI.
+
+## Layers (frontend architecture)
+- Layer 1: Kanban dashboard (index.html) — Running / Done / Stopped columns, bottom chat bar to create tasks
+- Layer 2: Task detail — left chat panel (75%) + right git diff panel (25%), opened by clicking a card
+
+## Key concepts
+- Tasks run as async background coroutines (_run_claude / _run_qwen / _run_opencode)
+- Each task has a session_id enabling follow-up messages to resume the same Claude session
+- Tasks persist in tasks.db (SQLite); history is JSON-serialized list of message dicts
+- _tasks dict holds in-memory state; _stop flag signals runners to abort
+
+## Task status lifecycle
+  created → running → done | stopped | error
+
+## Message history format (stored in task["history"])
+  {"role": "user", "content": "..."}                                          # user prompt
+  {"role": "assistant", "content": "..."}                                     # text response
+  {"role": "assistant", "content": "...", "metadata": {"title": "...", "status": "done|pending"}}  # tool call
+
+## Endpoints
+  POST /tasks                  — create + start task
+  GET  /tasks                  — list all (summary)
+  GET  /tasks/{id}             — full task with history
+  POST /tasks/{id}/message     — follow-up to existing session
+  POST /tasks/{id}/stop        — signal runner to stop
+  DELETE /tasks/{id}           — delete task
+  GET  /tasks/{id}/gitdiff     — git status --short + git diff HEAD for task's cwd
+  GET  /suggest?path=          — directory autocomplete for cwd input
+"""
 import asyncio
 import json
 import os
