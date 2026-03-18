@@ -211,6 +211,20 @@ async def _run_claude(task: dict):
     task["finished_at"] = datetime.now().isoformat()
     _save(task)
 
+VLLM_BASE_URL = "http://192.168.170.76:8000"
+VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
+
+
+async def _run_vllm(task: dict):
+    """Routes to local vLLM server by overriding the Anthropic base URL."""
+    os.environ["ANTHROPIC_BASE_URL"] = VLLM_BASE_URL
+    os.environ["ANTHROPIC_API_KEY"] = "dummy"
+    try:
+        await _run_claude(task)
+    finally:
+        os.environ.pop("ANTHROPIC_BASE_URL", None)
+        os.environ.pop("ANTHROPIC_API_KEY", None)
+
 
 async def _run_qwen(task: dict):
     tool_calls: list[list] = []
@@ -444,6 +458,8 @@ async def create_task(req: CreateTaskRequest):
         runner = _run_qwen(task)
     elif req.model == "opencode":
         runner = _run_opencode(task)
+    elif req.model == "vllm":
+        runner = _run_vllm(task)
     else:
         runner = _run_claude(task)
     asyncio.create_task(runner)
@@ -469,6 +485,8 @@ async def send_message(task_id: str, req: SendMessageRequest):
         runner = _run_qwen(task)
     elif task["model"] == "opencode":
         runner = _run_opencode(task)
+    elif task["model"] == "vllm":
+        runner = _run_vllm(task)
     else:
         runner = _run_claude(task)
     asyncio.create_task(runner)
