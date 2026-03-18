@@ -217,8 +217,8 @@ VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
 
 async def _run_vllm(task: dict):
     """Routes to local vLLM server by overriding the Anthropic base URL."""
-    os.environ["ANTHROPIC_BASE_URL"] = VLLM_BASE_URL
-    os.environ["ANTHROPIC_API_KEY"] = "dummy"
+    os.environ["ANTHROPIC_BASE_URL"] = task.get("vllm_url") or VLLM_BASE_URL
+    os.environ["ANTHROPIC_API_KEY"] = task.get("vllm_key") or "dummy"
     try:
         await _run_claude(task)
     finally:
@@ -425,7 +425,9 @@ class CreateTaskRequest(BaseModel):
     mode: str = "bypassPermissions"
     model: str = "claude"
     cwd: str = ""
-    session_id: str | None = None  # for continuing existing session
+    session_id: str | None = None
+    vllm_url: str | None = None
+    vllm_key: str | None = None
 
 
 class SendMessageRequest(BaseModel):
@@ -449,6 +451,8 @@ async def create_task(req: CreateTaskRequest):
         "prompt": req.prompt,
         "created_at": datetime.now().isoformat(),
         "_stop": False,
+        "vllm_url": req.vllm_url,
+        "vllm_key": req.vllm_key,
     }
     _tasks[task_id] = task
     _save(task)
