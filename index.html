@@ -176,6 +176,59 @@
   #dash-prompt:focus { outline: none; border-color: var(--green); }
   #dash-controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
   #dash-cwd:focus { outline: none; border-color: var(--blue); color: var(--tx0); }
+
+  /* ── macOS Glass theme ─────────────────────────────────────────── */
+  .glass-theme body {
+    background: radial-gradient(ellipse at top left, #1a1a2e 0%, #0a0a0f 60%, #000 100%);
+  }
+  .glass-theme #nav-sidebar,
+  .glass-theme #sidebar,
+  .glass-theme #topbar,
+  .glass-theme #input-area,
+  .glass-theme #dash-input-area,
+  .glass-theme #dash-header,
+  .glass-theme #settings-box,
+  .glass-theme .kanban-col,
+  .glass-theme #git-panel,
+  .glass-theme #git-panel-header {
+    background: var(--bg1) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-color: var(--bd) !important;
+  }
+  .glass-theme .task-card,
+  .glass-theme .msg.assistant,
+  .glass-theme .msg.tool {
+    background: var(--bg0) !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+    border-color: var(--bd) !important;
+  }
+  .glass-theme #chat,
+  .glass-theme #main,
+  .glass-theme #dash-content,
+  .glass-theme #layer1,
+  .glass-theme #layer2 {
+    background: transparent !important;
+  }
+  /* Glowing accent ring on focused inputs */
+  .glass-theme input:focus,
+  .glass-theme textarea:focus,
+  .glass-theme select:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 30%, transparent) !important;
+  }
+  /* Subtle inner highlight on glass panels */
+  .glass-theme #nav-sidebar::before,
+  .glass-theme #sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .glass-theme #nav-sidebar,
+  .glass-theme #sidebar { position: relative; }
 </style>
 </head>
 <body>
@@ -750,14 +803,25 @@ document.getElementById('back-btn').addEventListener('click', () => showLayer(1)
 
 // ── Themes ───────────────────────────────────────────────────────────
 const THEMES = {
-  'GitHub Dark':  { bg0:'#0d1117', bg1:'#161b22', bg2:'#21262d', bd:'#30363d', tx0:'#e6edf3', tx1:'#8b949e', tx2:'#6e7681', blue:'#388bfd', green:'#3fb950', orange:'#f0883e', red:'#f85149', 'usr-bg':'#1f3a5c', 'diff-add':'#0d1f10', 'diff-del':'#1f0d0d' },
-  'GitHub Light': { bg0:'#ffffff', bg1:'#f6f8fa', bg2:'#eaeef2', bd:'#d0d7de', tx0:'#24292f', tx1:'#57606a', tx2:'#8b959e', blue:'#0969da', green:'#1a7f37', orange:'#bc4c00', red:'#cf222e', 'usr-bg':'#ddf4ff', 'diff-add':'#dafbe1', 'diff-del':'#ffebe9' },
-  'Gruvbox':      { bg0:'#282828', bg1:'#3c3836', bg2:'#504945', bd:'#665c54', tx0:'#ebdbb2', tx1:'#a89984', tx2:'#928374', blue:'#83a598', green:'#b8bb26', orange:'#fe8019', red:'#fb4934', 'usr-bg':'#1d2021', 'diff-add':'#1d2021', 'diff-del':'#3c1f1e' },
-  'One Dark':     { bg0:'#282c34', bg1:'#21252b', bg2:'#2c313a', bd:'#3e4451', tx0:'#abb2bf', tx1:'#828997', tx2:'#5c6370', blue:'#61afef', green:'#98c379', orange:'#e5c07b', red:'#e06c75', 'usr-bg':'#2c3e50', 'diff-add':'#1a2d1a', 'diff-del':'#2d1a1a' },
-  'Monokai':      { bg0:'#272822', bg1:'#1e1f1c', bg2:'#383830', bd:'#49483e', tx0:'#f8f8f2', tx1:'#75715e', tx2:'#5c5c52', blue:'#66d9e8', green:'#a6e22e', orange:'#fd971f', red:'#f92672', 'usr-bg':'#1e2920', 'diff-add':'#1a2e1a', 'diff-del':'#2e1a1a' },
-  'Nord':         { bg0:'#2e3440', bg1:'#3b4252', bg2:'#434c5e', bd:'#4c566a', tx0:'#eceff4', tx1:'#d8dee9', tx2:'#a0a8b8', blue:'#81a1c1', green:'#a3be8c', orange:'#d08770', red:'#bf616a', 'usr-bg':'#3b4f6b', 'diff-add':'#293d29', 'diff-del':'#3d2929' },
-  'Solarized':    { bg0:'#002b36', bg1:'#073642', bg2:'#094555', bd:'#147564', tx0:'#839496', tx1:'#657b83', tx2:'#586e75', blue:'#268bd2', green:'#859900', orange:'#cb4b16', red:'#dc322f', 'usr-bg':'#003847', 'diff-add':'#003820', 'diff-del':'#3a0c00' },
-  'Catppuccin':   { bg0:'#1e1e2e', bg1:'#181825', bg2:'#313244', bd:'#45475a', tx0:'#cdd6f4', tx1:'#bac2de', tx2:'#a6adc8', blue:'#89b4fa', green:'#a6e3a1', orange:'#fab387', red:'#f38ba8', 'usr-bg':'#1e2a4a', 'diff-add':'#1a2e1a', 'diff-del':'#2e1a22' },
+  'GitHub Dark':      { bg0:'#0d1117', bg1:'#161b22', bg2:'#21262d', bd:'#30363d', tx0:'#e6edf3', tx1:'#8b949e', tx2:'#6e7681', blue:'#388bfd', green:'#3fb950', orange:'#f0883e', red:'#f85149', 'usr-bg':'#1f3a5c', 'diff-add':'#0d1f10', 'diff-del':'#1f0d0d' },
+  'GitHub Light':     { bg0:'#ffffff', bg1:'#f6f8fa', bg2:'#eaeef2', bd:'#d0d7de', tx0:'#24292f', tx1:'#57606a', tx2:'#8b959e', blue:'#0969da', green:'#1a7f37', orange:'#bc4c00', red:'#cf222e', 'usr-bg':'#ddf4ff', 'diff-add':'#dafbe1', 'diff-del':'#ffebe9' },
+  'Gruvbox':          { bg0:'#282828', bg1:'#3c3836', bg2:'#504945', bd:'#665c54', tx0:'#ebdbb2', tx1:'#a89984', tx2:'#928374', blue:'#83a598', green:'#b8bb26', orange:'#fe8019', red:'#fb4934', 'usr-bg':'#1d2021', 'diff-add':'#1d2021', 'diff-del':'#3c1f1e' },
+  'One Dark':         { bg0:'#282c34', bg1:'#21252b', bg2:'#2c313a', bd:'#3e4451', tx0:'#abb2bf', tx1:'#828997', tx2:'#5c6370', blue:'#61afef', green:'#98c379', orange:'#e5c07b', red:'#e06c75', 'usr-bg':'#2c3e50', 'diff-add':'#1a2d1a', 'diff-del':'#2d1a1a' },
+  'Monokai':          { bg0:'#272822', bg1:'#1e1f1c', bg2:'#383830', bd:'#49483e', tx0:'#f8f8f2', tx1:'#75715e', tx2:'#5c5c52', blue:'#66d9e8', green:'#a6e22e', orange:'#fd971f', red:'#f92672', 'usr-bg':'#1e2920', 'diff-add':'#1a2e1a', 'diff-del':'#2e1a1a' },
+  'Nord':             { bg0:'#2e3440', bg1:'#3b4252', bg2:'#434c5e', bd:'#4c566a', tx0:'#eceff4', tx1:'#d8dee9', tx2:'#a0a8b8', blue:'#81a1c1', green:'#a3be8c', orange:'#d08770', red:'#bf616a', 'usr-bg':'#3b4f6b', 'diff-add':'#293d29', 'diff-del':'#3d2929' },
+  'Solarized':        { bg0:'#002b36', bg1:'#073642', bg2:'#094555', bd:'#147564', tx0:'#839496', tx1:'#657b83', tx2:'#586e75', blue:'#268bd2', green:'#859900', orange:'#cb4b16', red:'#dc322f', 'usr-bg':'#003847', 'diff-add':'#003820', 'diff-del':'#3a0c00' },
+  'Catppuccin':       { bg0:'#1e1e2e', bg1:'#181825', bg2:'#313244', bd:'#45475a', tx0:'#cdd6f4', tx1:'#bac2de', tx2:'#a6adc8', blue:'#89b4fa', green:'#a6e3a1', orange:'#fab387', red:'#f38ba8', 'usr-bg':'#1e2a4a', 'diff-add':'#1a2e1a', 'diff-del':'#2e1a22' },
+  // ── macOS themes ──────────────────────────────────────────────────
+  // Colors from Apple HIG / macOS Sequoia system palette (2024-2025)
+  // Dark: systemBackground=#1c1c1e, secondaryBg=#2c2c2e, tertiaryBg=#3a3a3c
+  // Light: systemBackground=#f2f2f7, secondaryBg=#ffffff, tertiaryBg=#e5e5ea
+  // Accent blue dark=#0a84ff, light=#007aff  green=#30d158/#34c759
+  'macOS Dark':       { bg0:'#1c1c1e', bg1:'#2c2c2e', bg2:'#3a3a3c', bd:'#48484a', tx0:'#f5f5f7', tx1:'#aeaeb2', tx2:'#636366', blue:'#0a84ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#0a3055', 'diff-add':'#0d2b14', 'diff-del':'#2d1010' },
+  'macOS Light':      { bg0:'#f2f2f7', bg1:'#ffffff', bg2:'#e5e5ea', bd:'#c7c7cc', tx0:'#1c1c1e', tx1:'#6c6c70', tx2:'#aeaeb2', blue:'#007aff', green:'#34c759', orange:'#ff9500', red:'#ff3b30', 'usr-bg':'#d6eaff', 'diff-add':'#d4f5dc', 'diff-del':'#ffd5d3' },
+  'macOS Midnight':   { bg0:'#000000', bg1:'#0d0d0f', bg2:'#1c1c1e', bd:'#2c2c2e', tx0:'#f5f5f7', tx1:'#8e8e93', tx2:'#48484a', blue:'#0a84ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#071a2e', 'diff-add':'#071a0d', 'diff-del':'#1f0a0a' },
+  'macOS Sequoia':    { bg0:'#141416', bg1:'#1e1e22', bg2:'#28282e', bd:'#38383f', tx0:'#f0f0f5', tx1:'#9898a0', tx2:'#5c5c66', blue:'#2997ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#0d2744', 'diff-add':'#0a2210', 'diff-del':'#281010' },
+  'macOS Glass Dark': { bg0:'#12121480', bg1:'#1e1e2280', bg2:'#2c2c3080', bd:'#ffffff18', tx0:'#f5f5f7', tx1:'#aeaeb2', tx2:'#636366', blue:'#0a84ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#0a3055aa', 'diff-add':'#0d2b1466', 'diff-del':'#2d101066', glass:'1' },
+  'macOS Glass Light':{ bg0:'#f2f2f7cc', bg1:'#ffffffcc', bg2:'#e5e5eacc', bd:'#00000014', tx0:'#1c1c1e', tx1:'#6c6c70', tx2:'#aeaeb2', blue:'#007aff', green:'#34c759', orange:'#ff9500', red:'#ff3b30', 'usr-bg':'#d6eaffaa', 'diff-add':'#d4f5dcaa', 'diff-del':'#ffd5d3aa', glass:'1' },
 };
 
 let pendingTheme = null;
@@ -766,23 +830,34 @@ function applyTheme(name) {
   const t = THEMES[name];
   if (!t) return;
   const root = document.documentElement;
-  for (const [k, v] of Object.entries(t)) root.style.setProperty('--' + k, v);
+  for (const [k, v] of Object.entries(t)) {
+    if (k !== 'glass') root.style.setProperty('--' + k, v);
+  }
+  document.body.classList.toggle('glass-theme', !!t.glass);
+  // macOS themes get a subtle gradient body bg
+  const isMac = name.startsWith('macOS');
+  document.body.style.background = isMac && !t.glass
+    ? `radial-gradient(ellipse at 30% 0%, color-mix(in srgb, ${t.blue} 8%, ${t.bg0}) 0%, ${t.bg0} 55%)`
+    : '';
   localStorage.setItem('theme', name);
 }
 
 function buildThemeGrid() {
   const grid = document.getElementById('theme-grid');
   const current = localStorage.getItem('theme') || 'GitHub Dark';
-  grid.innerHTML = Object.entries(THEMES).map(([name, t]) => `
+  grid.innerHTML = Object.entries(THEMES).map(([name, t]) => {
+    const previewBg = t.glass ? `linear-gradient(135deg,#1a1a2e,#0a0a0f)` : t.bg1;
+    return `
     <div class="theme-swatch${name === current ? ' selected' : ''}" data-theme="${name}">
-      <div class="swatch-preview" style="background:${t.bg1}">
+      <div class="swatch-preview" style="background:${previewBg}">
         <span style="background:${t.blue}"></span>
         <span style="background:${t.green}"></span>
         <span style="background:${t.orange}"></span>
         <span style="background:${t.red}"></span>
       </div>
       <div class="swatch-name">${name}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   grid.querySelectorAll('.theme-swatch').forEach(el => {
     el.addEventListener('click', () => {
       grid.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
