@@ -274,6 +274,21 @@
           <option value="plan">plan</option>
         </select>
         <button id="stop-btn" onclick="stopActive()">⏹ stop active</button>
+        <div style="position:relative;margin-left:auto">
+          <button id="vllm-cfg-btn" title="vLLM settings" style="background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:13px;padding:4px 8px;cursor:pointer">⚙ vllm</button>
+          <div id="vllm-popup" style="display:none;position:absolute;bottom:34px;right:0;background:var(--bg1);border:1px solid var(--bd);border-radius:8px;padding:14px;width:260px;z-index:100;box-shadow:0 4px 16px #0005">
+            <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">vLLM Config</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <input id="vp-ip"    placeholder="IP  (e.g. 192.168.170.76)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+              <input id="vp-port"  placeholder="Port  (default: 8000)"      style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+              <input id="vp-model" placeholder="Model name / path"          style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+              <input id="vp-key"   placeholder="API key  (default: dummy)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px">
+              <button id="vp-apply" style="background:var(--blue);border:none;border-radius:5px;color:#fff;font-size:12px;padding:5px 14px;cursor:pointer;font-weight:600">Apply</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -527,8 +542,10 @@ async function sendNewTask() {
   promptEl.style.height = 'auto';
   const body = { prompt, model, mode, cwd };
   if (model === 'vllm') {
-    body.vllm_url = localStorage.getItem('vllm_url') || 'http://192.168.170.76:8000';
+    body.vllm_url = vllmUrl();
     body.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
+    const m = localStorage.getItem('vllm_model');
+    if (m) body.vllm_model = m;
   }
   await api('POST', '/tasks', body);
   await refreshTasks();
@@ -788,6 +805,36 @@ document.getElementById('settings-apply').addEventListener('click', () => {
 document.getElementById('settings-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('settings-overlay'))
     document.getElementById('settings-overlay').classList.remove('open');
+});
+
+// ── vLLM popup ───────────────────────────────────────────────────────
+function vllmUrl() {
+  const ip   = localStorage.getItem('vllm_ip')   || '192.168.170.76';
+  const port = localStorage.getItem('vllm_port') || '8000';
+  return `http://${ip}:${port}`;
+}
+function loadVllmPopup() {
+  document.getElementById('vp-ip').value    = localStorage.getItem('vllm_ip')    || '192.168.170.76';
+  document.getElementById('vp-port').value  = localStorage.getItem('vllm_port')  || '8000';
+  document.getElementById('vp-model').value = localStorage.getItem('vllm_model') || '/home/ng6309/datascience/santhosh/models/qwen3.5-9b';
+  document.getElementById('vp-key').value   = localStorage.getItem('vllm_key')   || 'dummy';
+}
+document.getElementById('vllm-cfg-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const p = document.getElementById('vllm-popup');
+  if (p.style.display === 'none') { loadVllmPopup(); p.style.display = 'block'; }
+  else p.style.display = 'none';
+});
+document.getElementById('vp-apply').addEventListener('click', () => {
+  localStorage.setItem('vllm_ip',    document.getElementById('vp-ip').value.trim()    || '192.168.170.76');
+  localStorage.setItem('vllm_port',  document.getElementById('vp-port').value.trim()  || '8000');
+  localStorage.setItem('vllm_model', document.getElementById('vp-model').value.trim() || '');
+  localStorage.setItem('vllm_key',   document.getElementById('vp-key').value.trim()   || 'dummy');
+  document.getElementById('vllm-popup').style.display = 'none';
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#vllm-cfg-btn') && !e.target.closest('#vllm-popup'))
+    document.getElementById('vllm-popup').style.display = 'none';
 });
 
 // Apply saved theme on load
