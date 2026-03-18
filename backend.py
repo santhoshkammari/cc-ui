@@ -127,7 +127,7 @@ def _tool_msg(title, content, status="done"):
 
 
 # ── Claude runner ────────────────────────────────────────────────────
-async def _run_claude(task: dict):
+async def _run_claude(task: dict, extra_env: dict | None = None):
     tool_calls: list[list] = []
     text = ""
     history = task["history"][:]  # snapshot at start
@@ -147,6 +147,7 @@ async def _run_claude(task: dict):
         permission_mode=task["mode"],
         resume=task["session_id"],
         cwd=task["cwd"] or None,
+        env={**os.environ, **(extra_env or {})},
     )
 
     try:
@@ -216,14 +217,11 @@ VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
 
 
 async def _run_vllm(task: dict):
-    """Routes to local vLLM server by overriding the Anthropic base URL."""
-    os.environ["ANTHROPIC_BASE_URL"] = task.get("vllm_url") or VLLM_BASE_URL
-    os.environ["ANTHROPIC_API_KEY"] = task.get("vllm_key") or "dummy"
-    try:
-        await _run_claude(task)
-    finally:
-        os.environ.pop("ANTHROPIC_BASE_URL", None)
-        os.environ.pop("ANTHROPIC_API_KEY", None)
+    """Routes to local vLLM server by passing env overrides via ClaudeAgentOptions."""
+    await _run_claude(task, extra_env={
+        "ANTHROPIC_BASE_URL": task.get("vllm_url") or VLLM_BASE_URL,
+        "ANTHROPIC_API_KEY": task.get("vllm_key") or "dummy",
+    })
 
 
 async def _run_qwen(task: dict):
