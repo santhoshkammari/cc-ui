@@ -233,12 +233,20 @@
 
   /* ── iOS safe area ───────────────────────────────────────────────── */
   @supports (padding-top: env(safe-area-inset-top)) {
-    body {
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+    #dash-header {
+      padding-top: calc(16px + env(safe-area-inset-top));
+    }
+    #topbar {
+      padding-top: calc(16px + env(safe-area-inset-top));
     }
     #input-area, #dash-input-area {
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    #nav-sidebar {
+      padding-top: calc(16px + env(safe-area-inset-top));
+    }
+    #git-panel {
+      padding-top: calc(16px + env(safe-area-inset-top));
     }
   }
 
