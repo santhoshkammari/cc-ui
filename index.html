@@ -231,6 +231,26 @@
   .glass-theme #nav-sidebar,
   .glass-theme #sidebar { position: relative; }
 
+  /* ── Kanban scroll dots ──────────────────────────────────────────── */
+  #kanban-dots {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 0;
+    flex-shrink: 0;
+  }
+  .kdot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--bd);
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .kdot.active { background: var(--blue); }
+  @media (max-width: 768px) {
+    #kanban-dots { display: flex; }
+  }
+
   /* ── iOS safe area ───────────────────────────────────────────────── */
   @supports (padding-top: env(safe-area-inset-top)) {
     #dash-header {
@@ -315,8 +335,29 @@
     #controls { flex-wrap: wrap; }
     #dash-controls { flex-wrap: wrap; }
 
-    /* Kanban stacks vertically */
-    #kanban { flex-direction: column; overflow-y: auto; }
+    /* Kanban: horizontal swipeable columns */
+    #kanban {
+      flex-direction: row;
+      overflow-x: scroll;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      gap: 0;
+      padding: 12px 0;
+    }
+    .kanban-col {
+      min-width: 100vw;
+      width: 100vw;
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      margin: 0 12px;
+      min-width: calc(100vw - 24px);
+      width: calc(100vw - 24px);
+      scroll-snap-align: center;
+    }
 
     /* Input area CWD box full width */
     #dash-cwd { width: 100% !important; }
@@ -358,6 +399,11 @@
       <div class="col-header"><span class="col-dot dot-stopped"></span>Stopped / Error</div>
       <div class="col-cards" id="cards-stopped"></div>
     </div>
+  </div>
+  <div id="kanban-dots">
+    <span class="kdot active" data-col="0"></span>
+    <span class="kdot" data-col="1"></span>
+    <span class="kdot" data-col="2"></span>
   </div>
   <div id="dash-input-area">
     <div id="dash-input-row">
@@ -512,6 +558,24 @@ document.getElementById('sidebar-backdrop').addEventListener('click', () => {
   document.getElementById('git-panel').classList.remove('open');
   document.getElementById('sidebar-backdrop').classList.remove('open');
 });
+
+// Kanban swipe dots
+(function() {
+  const kanban = document.getElementById('kanban');
+  const dots = document.querySelectorAll('.kdot');
+  dots.forEach(d => {
+    d.addEventListener('click', () => {
+      const col = +d.dataset.col;
+      const cols = kanban.querySelectorAll('.kanban-col');
+      if (cols[col]) cols[col].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    });
+  });
+  kanban.addEventListener('scroll', () => {
+    const idx = Math.round(kanban.scrollLeft / kanban.offsetWidth);
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  }, { passive: true });
+})();
+
 let tasks = [];
 let pollInterval = null;
 
