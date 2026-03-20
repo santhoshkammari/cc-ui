@@ -566,6 +566,8 @@ async def list_tasks():
             "finished_at": t.get("finished_at"),
             "preview": last,
             "cwd": t["cwd"],
+            "model": t.get("model"),
+            "mode": t.get("mode"),
         })
     return result
 
