@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>CC-UI</title>
 <style>
   :root {
@@ -230,6 +230,19 @@
   }
   .glass-theme #nav-sidebar,
   .glass-theme #sidebar { position: relative; }
+
+  /* ── iOS safe area ───────────────────────────────────────────────── */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    #dash-header, #topbar {
+      padding-top: calc(8px + env(safe-area-inset-top));
+    }
+    #nav-sidebar {
+      padding-top: env(safe-area-inset-top);
+    }
+    #input-area, #dash-input-area {
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  }
 
   /* ── Mobile sidebar toggle ───────────────────────────────────────── */
   #nav-toggle, #git-toggle {
