@@ -751,7 +751,20 @@ function renderChat(history) {
   }).join('');
 
   const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80;
+
+  // preserve open tool bodies across re-renders
+  const openTools = new Set();
+  chat.querySelectorAll('.tool-body.open').forEach(el => {
+    const idx = [...chat.querySelectorAll('.tool-body')].indexOf(el);
+    if (idx >= 0) openTools.add(idx);
+  });
+
   chat.innerHTML = msgs;
+
+  chat.querySelectorAll('.tool-body').forEach((el, idx) => {
+    if (openTools.has(idx)) el.classList.add('open');
+  });
+
   if (atBottom) chat.scrollTop = chat.scrollHeight;
 }
 
