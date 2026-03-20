@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CC-UI</title>
 <style>
   :root {
@@ -229,9 +230,85 @@
   }
   .glass-theme #nav-sidebar,
   .glass-theme #sidebar { position: relative; }
+
+  /* ── Mobile sidebar toggle ───────────────────────────────────────── */
+  #nav-toggle, #git-toggle {
+    display: none;
+    background: var(--bg2);
+    border: 1px solid var(--bd);
+    border-radius: 5px;
+    color: var(--tx1);
+    font-size: 16px;
+    padding: 4px 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  #nav-toggle:hover, #git-toggle:hover { color: var(--tx0); background: var(--bd); }
+
+  /* Mobile overlay backdrop */
+  #sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 500;
+  }
+  #sidebar-backdrop.open { display: block; }
+
+  /* ── Responsive: mobile ──────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    #nav-toggle, #git-toggle { display: flex; align-items: center; }
+
+    /* Nav sidebar (layer 1) */
+    #nav-sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      z-index: 600;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+    }
+    #nav-sidebar.open { transform: translateX(0); }
+
+    /* Dash header gets the toggle */
+    #dash-header { gap: 10px; }
+
+    /* Git panel (layer 2) */
+    #git-panel {
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      z-index: 600;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      width: 85vw !important;
+      min-width: 0 !important;
+      max-width: 340px !important;
+    }
+    #git-panel.open { transform: translateX(0); }
+
+    /* Topbar gets git toggle */
+    #topbar { flex-wrap: wrap; gap: 6px; }
+    #task-title { min-width: 0; }
+    #cwd-wrap { width: 100%; order: 3; }
+    #cwd-box { width: 100% !important; }
+
+    /* Controls wrap on mobile */
+    #controls { flex-wrap: wrap; }
+    #dash-controls { flex-wrap: wrap; }
+
+    /* Kanban stacks vertically */
+    #kanban { flex-direction: column; overflow-y: auto; }
+
+    /* Input area CWD box full width */
+    #dash-cwd { width: 100% !important; }
+    #dash-cwd-wrap { width: 100%; }
+  }
 </style>
 </head>
 <body>
+
+<!-- Mobile sidebar backdrop -->
+<div id="sidebar-backdrop"></div>
 
 <!-- Layer 1: Dashboard -->
 <div id="layer1">
@@ -245,6 +322,7 @@
   </div>
   <div id="dash-content">
   <div id="dash-header">
+    <button id="nav-toggle" onclick="toggleNavSidebar()">☰</button>
     <span id="dash-title">Tasks</span>
     <button id="new-task-btn">+ New Task</button>
   </div>
@@ -310,10 +388,11 @@
     <div id="topbar">
       <button id="back-btn">← Back</button>
       <span id="task-title">No task selected</span>
-      <div id="cwd-wrap">
+      <div id="cwd-wrap" style="flex:1">
         <input id="cwd-box" placeholder="/path/to/project" title="Working directory for new tasks" autocomplete="off" />
         <div id="cwd-drop"></div>
       </div>
+      <button id="git-toggle" onclick="toggleGitPanel()">⎇</button>
     </div>
 
     <div id="chat">
@@ -393,6 +472,27 @@
 <script>
 const API = 'http://localhost:8001';
 let activeTaskId = null;
+
+// Mobile sidebar logic
+function toggleNavSidebar() {
+  const nav = document.getElementById('nav-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const isOpen = nav.classList.toggle('open');
+  backdrop.classList.toggle('open', isOpen);
+}
+
+function toggleGitPanel() {
+  const git = document.getElementById('git-panel');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const isOpen = git.classList.toggle('open');
+  backdrop.classList.toggle('open', isOpen);
+}
+
+document.getElementById('sidebar-backdrop').addEventListener('click', () => {
+  document.getElementById('nav-sidebar').classList.remove('open');
+  document.getElementById('git-panel').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+});
 let tasks = [];
 let pollInterval = null;
 
