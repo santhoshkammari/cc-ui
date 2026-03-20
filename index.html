@@ -231,6 +231,26 @@
   .glass-theme #nav-sidebar,
   .glass-theme #sidebar { position: relative; }
 
+  /* ── Mobile send buttons ─────────────────────────────────────────── */
+  #send-btn, #dash-send-btn {
+    display: none;
+    background: var(--blue);
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 18px;
+    width: 40px;
+    min-width: 40px;
+    height: 44px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    #send-btn, #dash-send-btn { display: flex; }
+  }
+
   /* ── Mobile sidebar toggle ───────────────────────────────────────── */
   #nav-toggle, #git-toggle {
     display: none;
@@ -343,6 +363,7 @@
   <div id="dash-input-area">
     <div id="dash-input-row">
       <textarea id="dash-prompt" placeholder="Type a task and press Enter…" rows="1"></textarea>
+      <button id="dash-send-btn" onclick="sendNewTask()">↑</button>
     </div>
     <div id="dash-controls">
       <select id="dash-model">
@@ -388,7 +409,7 @@
     <div id="topbar">
       <button id="back-btn">← Back</button>
       <span id="task-title">No task selected</span>
-      <div id="cwd-wrap" style="flex:1">
+      <div id="cwd-wrap">
         <input id="cwd-box" placeholder="/path/to/project" title="Working directory for new tasks" autocomplete="off" />
         <div id="cwd-drop"></div>
       </div>
@@ -405,6 +426,7 @@
     <div id="input-area">
       <div id="input-row">
         <textarea id="prompt" placeholder="Follow-up message…" rows="1"></textarea>
+        <button id="send-btn" onclick="sendPrompt()">↑</button>
       </div>
       <div id="controls">
         <select id="model-sel">
@@ -783,10 +805,10 @@ document.getElementById('prompt').addEventListener('input', function() {
 
 // Enter to send (Shift+Enter for newline)
 document.getElementById('prompt').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendPrompt();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
+});
+document.getElementById('prompt').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
 });
 
 // ── CWD autocomplete ──────────────────────────────────────────────────
@@ -891,6 +913,9 @@ document.getElementById('dash-prompt').addEventListener('input', function() {
   this.style.height = Math.min(this.scrollHeight, 120) + 'px';
 });
 document.getElementById('dash-prompt').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendNewTask(); }
+});
+document.getElementById('dash-prompt').addEventListener('keypress', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendNewTask(); }
 });
 // New Task button focuses the dash prompt
