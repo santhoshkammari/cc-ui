@@ -818,7 +818,9 @@ async function selectTask(id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
     document.getElementById('task-title').textContent = task.label;
-    document.getElementById('cwd-box').value = task.cwd;
+    document.getElementById('cwd-box').value = task.cwd || '';
+    if (task.model) document.getElementById('model-sel').value = task.model;
+    if (task.mode)  document.getElementById('mode-sel').value  = task.mode;
   }
   renderTaskList();
   const full = await api('GET', `/tasks/${id}`);
