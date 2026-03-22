@@ -1038,6 +1038,12 @@ const THEMES = {
   'macOS Sequoia':    { bg0:'#141416', bg1:'#1e1e22', bg2:'#28282e', bd:'#38383f', tx0:'#f0f0f5', tx1:'#9898a0', tx2:'#5c5c66', blue:'#2997ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#0d2744', 'diff-add':'#0a2210', 'diff-del':'#281010' },
   'macOS Glass Dark': { bg0:'#12121480', bg1:'#1e1e2280', bg2:'#2c2c3080', bd:'#ffffff18', tx0:'#f5f5f7', tx1:'#aeaeb2', tx2:'#636366', blue:'#0a84ff', green:'#30d158', orange:'#ff9f0a', red:'#ff453a', 'usr-bg':'#0a3055aa', 'diff-add':'#0d2b1466', 'diff-del':'#2d101066', glass:'1' },
   'macOS Glass Light':{ bg0:'#f2f2f7cc', bg1:'#ffffffcc', bg2:'#e5e5eacc', bd:'#00000014', tx0:'#1c1c1e', tx1:'#6c6c70', tx2:'#aeaeb2', blue:'#007aff', green:'#34c759', orange:'#ff9500', red:'#ff3b30', 'usr-bg':'#d6eaffaa', 'diff-add':'#d4f5dcaa', 'diff-del':'#ffd5d3aa', glass:'1' },
+  // ── Anthropic / Claude themes ─────────────────────────────────────
+  // Claude.ai: bg=#faf9f5 (Pampas cream), accent=#d97757 (terracotta orange)
+  // Dark: bg=#141413 (near-black), accent=#d97757, mid=#b0aea5
+  'Claude Light':     { bg0:'#faf9f5', bg1:'#f0ede4', bg2:'#e8e4d9', bd:'#ccc9be', tx0:'#141413', tx1:'#5c5a54', tx2:'#9b998f', blue:'#6a9bcc', green:'#788c5d', orange:'#d97757', red:'#c0392b', 'usr-bg':'#e8e4d9', 'diff-add':'#e8f0d8', 'diff-del':'#fce8e0' },
+  'Claude Dark':      { bg0:'#141413', bg1:'#1c1b19', bg2:'#252420', bd:'#3a3830', tx0:'#faf9f5', tx1:'#b0aea5', tx2:'#6e6c64', blue:'#6a9bcc', green:'#788c5d', orange:'#d97757', red:'#e05a45', 'usr-bg':'#2a1f1a', 'diff-add':'#1a2210', 'diff-del':'#2a150f' },
+  'Claude Warm':      { bg0:'#fdf6ee', bg1:'#f5ede0', bg2:'#ecddd0', bd:'#d8c9b8', tx0:'#2c1f14', tx1:'#7a6555', tx2:'#a89880', blue:'#6a9bcc', green:'#788c5d', orange:'#c15f3c', red:'#b83a2a', 'usr-bg':'#f0e0d0', 'diff-add':'#e0eed0', 'diff-del':'#f8e0d8' },
 };
 
 let pendingTheme = null;
@@ -1050,10 +1056,11 @@ function applyTheme(name) {
     if (k !== 'glass') root.style.setProperty('--' + k, v);
   }
   document.body.classList.toggle('glass-theme', !!t.glass);
-  // macOS themes get a subtle gradient body bg
+  // macOS and Claude themes get a subtle gradient body bg
   const isMac = name.startsWith('macOS');
-  document.body.style.background = isMac && !t.glass
-    ? `radial-gradient(ellipse at 30% 0%, color-mix(in srgb, ${t.blue} 8%, ${t.bg0}) 0%, ${t.bg0} 55%)`
+  const isClaude = name.startsWith('Claude');
+  document.body.style.background = (isMac || isClaude) && !t.glass
+    ? `radial-gradient(ellipse at 30% 0%, color-mix(in srgb, ${t.orange} 8%, ${t.bg0}) 0%, ${t.bg0} 60%)`
     : '';
   localStorage.setItem('theme', name);
 }
