@@ -2,6 +2,18 @@
 
 A simple dashboard for running AI coding agents (Claude Code, Qwen, OpenCode) as background tasks with live git diff.
 
+<h1 align="center">cc-ui ⚡</h1>
+
+<p align="center">
+  Minimal UI components / ideas — simple, fast, no BS.
+</p>
+
+<p align="center">
+  <img src="https://visitor-badge.laobi.icu/badge?page_id=santhoshkammari.cc-ui" />
+  <img src="https://img.shields.io/github/stars/santhoshkammari/cc-ui?style=social" />
+  <img src="https://img.shields.io/github/forks/santhoshkammari/cc-ui?style=social" />
+</p>
+
 ## Quick Start
 
 ```bash
@@ -11,6 +23,7 @@ python backend.py
 Open [http://localhost:8001](http://localhost:8001)
 
 ![CC-UI](image.png)
+
 
 ## Features
 
