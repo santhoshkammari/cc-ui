@@ -10,6 +10,8 @@ python backend.py
 
 Open [http://localhost:8001](http://localhost:8001)
 
+![CC-UI](image.png)
+
 ## Features
 
 - **Kanban board** — Tasks organized by status (Running, Done, Stopped)
