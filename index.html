@@ -150,12 +150,6 @@
   .nav-item.active { background: var(--usr-bg); color: var(--tx0); }
   .nav-icon { font-size: 15px; }
 
-  /* Dashboard header */
-  #dash-header { padding: 12px 20px; background: var(--bg1); border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
-  #dash-title { font-size: 16px; font-weight: 600; color: var(--tx0); }
-  #new-task-btn { background: var(--green); border: none; border-radius: 6px; color: #fff; font-size: 13px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
-  #new-task-btn:hover { background: var(--green); }
-
   /* Kanban board */
   #kanban { flex: 1; display: flex; gap: 16px; padding: 20px; overflow: hidden; }
   .kanban-col { flex: 1; display: flex; flex-direction: column; background: var(--bg1); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
@@ -203,7 +197,6 @@
   .glass-theme #topbar,
   .glass-theme #input-area,
   .glass-theme #dash-input-area,
-  .glass-theme #dash-header,
   .glass-theme #settings-box,
   .glass-theme .kanban-col,
   .glass-theme #git-panel,
@@ -285,9 +278,6 @@
 
   /* ── iOS safe area ───────────────────────────────────────────────── */
   @supports (padding-top: env(safe-area-inset-top)) {
-    #dash-header {
-      padding-top: calc(16px + env(safe-area-inset-top));
-    }
     #topbar {
       padding-top: calc(16px + env(safe-area-inset-top));
     }
@@ -341,9 +331,6 @@
       height: 100dvh;
     }
     #nav-sidebar.open { transform: translateX(0); }
-
-    /* Dash header gets the toggle */
-    #dash-header { gap: 10px; }
 
     /* Git panel (layer 2) */
     #git-panel {
@@ -410,11 +397,6 @@
     <div class="nav-item" id="nav-settings" style="cursor:pointer"><span class="nav-icon">⚙</span> Settings</div>
   </div>
   <div id="dash-content">
-  <div id="dash-header">
-    <button id="nav-toggle" onclick="toggleNavSidebar()">☰</button>
-    <span id="dash-title">Tasks</span>
-    <button id="new-task-btn">+ New Task</button>
-  </div>
   <div id="kanban">
     <div class="kanban-col" id="col-running">
       <div class="col-header"><span class="col-dot dot-running"></span>Running</div>
@@ -1104,10 +1086,6 @@ document.getElementById('dash-prompt').addEventListener('keydown', function(e) {
 });
 document.getElementById('dash-prompt').addEventListener('keypress', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendNewTask(); }
-});
-// New Task button focuses the dash prompt
-document.getElementById('new-task-btn').addEventListener('click', () => {
-  document.getElementById('dash-prompt').focus();
 });
 
 // Back button
