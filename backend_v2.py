@@ -406,6 +406,22 @@ async def stop_task(task_id: str):
     return {"status": "stopping"}
 
 
+@app.post("/tasks/{task_id}/resume")
+async def resume_task(task_id: str):
+    task = _tasks.get(task_id)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    if task["status"] == "running":
+        raise HTTPException(409, "Task is already running")
+    resume_prompt = "Continue from where you stopped."
+    task["history"].append({"role": "user", "content": resume_prompt})
+    task["prompt"] = resume_prompt
+    task["status"] = "running"
+    task["_stop"] = False
+    asyncio.create_task(_run_task(task))
+    return {"id": task_id, "status": "running"}
+
+
 @app.delete("/tasks/{task_id}")
 async def delete_task(task_id: str):
     task = _tasks.pop(task_id, None)
