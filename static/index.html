@@ -41,15 +41,14 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 #main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
 
 /* ── Chat View (The AI Mouth) ──────────────────────────────── */
-#view-chat{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 24px 32px;gap:24px}
-.chat-hero{text-align:center;max-width:860px}
-.chat-hero h1{font-size:26px;font-weight:600;margin-bottom:6px;color:var(--tx0)}
-.chat-hero p{color:var(--tx2);font-size:14px}
+#view-chat{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 24px 32px;gap:28px;background:radial-gradient(ellipse at 50% 0%,rgba(212,162,122,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(143,173,127,.04) 0%,transparent 50%),var(--bg0)}
+.chat-hero{text-align:center;max-width:774px}
+.chat-hero h1{font-size:32px;font-weight:700;margin-bottom:6px;color:var(--tx0);letter-spacing:-.02em;background:linear-gradient(135deg,var(--tx0) 0%,var(--accent) 50%,var(--green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .chat-input-wrap{max-width:860px;width:100%}
-.chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius);transition:border-color .2s,box-shadow .2s}
-.chat-input-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;transition:border-color .25s,box-shadow .25s,transform .15s;box-shadow:0 2px 20px rgba(0,0,0,.15),0 0 0 0 var(--accent-dim)}
+.chat-input-box:focus-within{border-color:var(--accent);box-shadow:0 4px 30px rgba(0,0,0,.2),0 0 0 3px var(--accent-dim);transform:translateY(-1px)}
 .chat-input-box.dragover{border-color:var(--accent);border-style:dashed;background:var(--accent-dim)}
-.chat-textarea{width:100%;min-height:110px;max-height:280px;background:transparent;border:none;color:var(--tx0);font-size:15px;line-height:1.6;padding:16px 20px 8px;resize:none;outline:none;font-family:inherit}
+.chat-textarea{width:100%;min-height:150px;max-height:360px;background:transparent;border:none;color:var(--tx0);font-size:16px;line-height:1.7;padding:20px 24px 10px;resize:none;outline:none;font-family:inherit}
 .chat-textarea::placeholder{color:var(--tx2)}
 .chat-attachments{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;min-height:0}
 .attach-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:3px 8px 3px 10px;font-size:11px;color:var(--tx1);animation:chipIn .15s ease}
@@ -101,12 +100,9 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 .attach-btn:hover{color:var(--accent)}
 .branch-pill{display:inline-flex;align-items:center;gap:4px;background:var(--diff-add);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--green);cursor:pointer;transition:background .12s}
 .branch-pill:hover{background:rgba(48,209,88,.15)}
-.chat-send{margin-left:auto;background:var(--accent);border:none;border-radius:10px;width:32px;height:32px;color:var(--bg0);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .1s;flex-shrink:0;font-weight:700}
-.chat-send:hover{opacity:.85;transform:scale(1.05)}
+.chat-send{margin-left:auto;background:linear-gradient(135deg,var(--accent),#c4885a);border:none;border-radius:12px;width:34px;height:34px;color:var(--bg0);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .12s,box-shadow .12s;flex-shrink:0;font-weight:700}
+.chat-send:hover{opacity:.9;transform:scale(1.08);box-shadow:0 2px 12px rgba(212,162,122,.3)}
 .chat-send:disabled{opacity:.3;cursor:default;transform:none}
-.quick-actions{max-width:860px;width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.qa-pill{background:var(--bg1);border:1px solid var(--bd);border-radius:20px;color:var(--tx1);font-size:12px;padding:7px 16px;cursor:pointer;transition:all .15s}
-.qa-pill:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
 /* Template dropdown */
 .tpl-menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:260px;background:var(--bg1);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;display:none;padding:4px 0;animation:panelIn .12s ease}
 .tpl-menu.open{display:block}
@@ -359,8 +355,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
   <div id="view-chat">
     <div class="chat-hero">
       <button class="mob-toggle" onclick="toggleSidebar()" style="margin-bottom:12px">☰</button>
-      <h1>What shall I build?</h1>
-      <p>Your AI workforce — ship features, review code, sleep peacefully</p>
+      <h1>Ship · Sleep · Repeat</h1>
     </div>
     <div class="chat-input-wrap">
       <div class="chat-input-box" id="chat-dropzone">
@@ -405,14 +400,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
         </div>
       </div>
     </div>
-    <div class="quick-actions">
-      <button class="qa-pill" onclick="qa('Summarize latest changes in this repo')">📋 Summarize</button>
-      <button class="qa-pill" onclick="qa('Review my latest code changes for bugs and improvements')">🔍 Review</button>
-      <button class="qa-pill" onclick="qa('Write comprehensive tests for the project')">🧪 Tests</button>
-      <button class="qa-pill" onclick="qa('Fix bugs in the current project')">🐛 Fix bugs</button>
-      <button class="qa-pill" onclick="qa('Refactor and optimize the codebase')">⚡ Optimize</button>
-      <button class="qa-pill" onclick="qa('Add documentation and type hints')">📝 Document</button>
-    </div>
+    
   </div>
 
   <!-- Tasks View -->
