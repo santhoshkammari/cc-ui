@@ -328,7 +328,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 
 <!-- ═══ Sidebar ═══ -->
 <div id="sidebar">
-  <div id="sidebar-logo"><span>⚡</span> CC-UI</div>
+  <div id="sidebar-logo"><span>◆</span> CC-UI</div>
   <div id="sidebar-search-wrap">
     <input id="sidebar-search" type="text" placeholder="Search threads…" />
   </div>
@@ -359,8 +359,8 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
   <div id="view-chat">
     <div class="chat-hero">
       <button class="mob-toggle" onclick="toggleSidebar()" style="margin-bottom:12px">☰</button>
-      <h1>What would you like me to do?</h1>
-      <p>Your personal AI assistant — ship features while you sleep</p>
+      <h1>What shall I build?</h1>
+      <p>Your AI workforce — ship features, review code, sleep peacefully</p>
     </div>
     <div class="chat-input-wrap">
       <div class="chat-input-box" id="chat-dropzone">
@@ -1234,7 +1234,7 @@ const THEMES = {
   'macOS Dark':  {bg0:'#1c1c1e',bg1:'#2c2c2e',bg2:'#3a3a3c',bd:'#48484a',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a','usr-bg':'#0a3055','diff-add':'#0d2b14','diff-del':'#2d1010'},
   'macOS Light': {bg0:'#f2f2f7',bg1:'#ffffff',bg2:'#e5e5ea',bd:'#c7c7cc',tx0:'#1c1c1e',tx1:'#6c6c70',tx2:'#aeaeb2',blue:'#007aff',green:'#34c759',orange:'#ff9500',red:'#ff3b30','usr-bg':'#d6eaff','diff-add':'#d4f5dc','diff-del':'#ffd5d3'},
   'GitHub Dark':  {bg0:'#0d1117',bg1:'#161b22',bg2:'#21262d',bd:'#30363d',tx0:'#e6edf3',tx1:'#8b949e',tx2:'#6e7681',blue:'#388bfd',green:'#3fb950',orange:'#f0883e',red:'#f85149','usr-bg':'#1f3a5c','diff-add':'#0d1f10','diff-del':'#1f0d0d'},
-  'Claude Dark':  {bg0:'#141413',bg1:'#1c1b19',bg2:'#252420',bd:'#3a3830',tx0:'#faf9f5',tx1:'#b0aea5',tx2:'#6e6c64',blue:'#6a9bcc',green:'#788c5d',orange:'#d97757',red:'#e05a45','usr-bg':'#2a1f1a','diff-add':'#1a2210','diff-del':'#2a150f'},
+  'Claude Dark':  {bg0:'#1a1915',bg1:'#23211c',bg2:'#2e2b25',bd:'#3d3a32',tx0:'#e8e4db',tx1:'#b5b0a5',tx2:'#7a766c',blue:'#d4a27a',green:'#8fad7f',orange:'#d4915a',red:'#c75f5f','usr-bg':'#2a2218','diff-add':'#1a2510','diff-del':'#2d1510'},
   'Nord':         {bg0:'#2e3440',bg1:'#3b4252',bg2:'#434c5e',bd:'#4c566a',tx0:'#eceff4',tx1:'#d8dee9',tx2:'#a0a8b8',blue:'#81a1c1',green:'#a3be8c',orange:'#d08770',red:'#bf616a','usr-bg':'#3b4f6b','diff-add':'#293d29','diff-del':'#3d2929'},
   'Catppuccin':   {bg0:'#1e1e2e',bg1:'#181825',bg2:'#313244',bd:'#45475a',tx0:'#cdd6f4',tx1:'#bac2de',tx2:'#a6adc8',blue:'#89b4fa',green:'#a6e3a1',orange:'#fab387',red:'#f38ba8','usr-bg':'#1e2a4a','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
   'Monokai':      {bg0:'#272822',bg1:'#1e1f1c',bg2:'#383830',bd:'#49483e',tx0:'#f8f8f2',tx1:'#75715e',tx2:'#5c5c52',blue:'#66d9e8',green:'#a6e22e',orange:'#fd971f',red:'#f92672','usr-bg':'#1e2920','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
@@ -1251,10 +1251,17 @@ const THEMES = {
 function applyTheme(name) {
   const t = THEMES[name]; if (!t) return;
   for (const [k,v] of Object.entries(t)) document.documentElement.style.setProperty('--'+k, v);
+  // Derive accent from the theme's blue
+  const b = t.blue || '#d4a27a';
+  document.documentElement.style.setProperty('--accent', b);
+  // Parse hex to rgba for dim/border
+  const r = parseInt(b.slice(1,3),16), g = parseInt(b.slice(3,5),16), bl = parseInt(b.slice(5,7),16);
+  document.documentElement.style.setProperty('--accent-dim', `rgba(${r},${g},${bl},.12)`);
+  document.documentElement.style.setProperty('--accent-border', `rgba(${r},${g},${bl},.25)`);
   localStorage.setItem('theme', name);
 }
 function buildThemeGrid() {
-  const current = localStorage.getItem('theme') || 'macOS Dark';
+  const current = localStorage.getItem('theme') || 'Claude Dark';
   document.getElementById('theme-grid').innerHTML = Object.entries(THEMES).map(([name, t]) => `
     <div class="theme-sw${name===current?' sel':''}" onclick="selectTheme(this,'${name}')">
       <div class="sw-preview" style="background:${t.bg1}"><span style="background:${t.blue}"></span><span style="background:${t.green}"></span><span style="background:${t.orange}"></span><span style="background:${t.red}"></span></div>
@@ -1328,7 +1335,7 @@ async function refreshAll() {
 }
 
 // ── Init ────────────────────────────────────────────────────────
-applyTheme(localStorage.getItem('theme') || 'macOS Dark');
+applyTheme(localStorage.getItem('theme') || 'Claude Dark');
 setupCwd('new-cwd', 'new-cwd-drop');
 autoResize(document.getElementById('new-prompt'), sendNewTask);
 autoResize(document.getElementById('detail-prompt'), sendFollowUp);
@@ -1336,6 +1343,21 @@ loadProviders();
 refreshAll();
 setInterval(refreshAll, 2000);
 buildThemeGrid();
+
+// ── Keyboard shortcuts ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const isMod = e.ctrlKey || e.metaKey;
+  // Ctrl+K — focus chat
+  if (isMod && e.key === 'k') { e.preventDefault(); showView('chat'); document.getElementById('new-prompt').focus(); }
+  // Ctrl+J — show tasks
+  if (isMod && e.key === 'j') { e.preventDefault(); showView('tasks'); }
+  // Escape — close pickers
+  if (e.key === 'Escape') { document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open')); }
+  // Ctrl+U — attach file
+  if (isMod && e.key === 'u') { e.preventDefault(); document.getElementById('file-picker').click(); }
+  // Ctrl+B — toggle sidebar
+  if (isMod && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
+});
 </script>
 </body>
 </html>
