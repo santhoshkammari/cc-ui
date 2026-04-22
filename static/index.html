@@ -84,7 +84,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 .task-card:hover{border-color:var(--blue);transform:translateX(2px)}
 .task-card.st-running{border-left-color:var(--orange)}
 .task-card.st-done{border-left-color:var(--green)}
-.task-card.st-stopped,.task-card.st-error{border-left-color:var(--red)88}
+.task-card.st-stopped,.task-card.st-error{border-left-color:var(--red)}
 .tc-row{display:flex;align-items:center;gap:10px}
 .tc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .tc-dot.running{background:var(--orange);animation:pulse 1.5s ease infinite}
@@ -213,7 +213,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 .prov-dot{width:8px;height:8px;border-radius:50%}
 .prov-dot.ok{background:var(--green)}.prov-dot.err{background:var(--red)}.prov-dot.unk{background:var(--tx2)}
 .prov-name{font-size:13px;color:var(--tx0);flex:1}
-#theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+#theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:20px}
 .theme-sw{border:2px solid transparent;border-radius:var(--radius-sm);padding:8px 6px;cursor:pointer;text-align:center;transition:border-color .12s}
 .theme-sw:hover{border-color:var(--blue)}.theme-sw.sel{border-color:var(--blue)}
 .sw-preview{width:100%;height:28px;border-radius:5px;margin-bottom:5px;display:flex;gap:3px;padding:4px}
@@ -459,7 +459,7 @@ async function api(m, p, b) {
 }
 
 // ── Utility ─────────────────────────────────────────────────────
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function timeAgo(iso) {
   if (!iso) return '';
   const s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -965,6 +965,14 @@ const THEMES = {
   'Catppuccin':   {bg0:'#1e1e2e',bg1:'#181825',bg2:'#313244',bd:'#45475a',tx0:'#cdd6f4',tx1:'#bac2de',tx2:'#a6adc8',blue:'#89b4fa',green:'#a6e3a1',orange:'#fab387',red:'#f38ba8','usr-bg':'#1e2a4a','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
   'Monokai':      {bg0:'#272822',bg1:'#1e1f1c',bg2:'#383830',bd:'#49483e',tx0:'#f8f8f2',tx1:'#75715e',tx2:'#5c5c52',blue:'#66d9e8',green:'#a6e22e',orange:'#fd971f',red:'#f92672','usr-bg':'#1e2920','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
   'Solarized':    {bg0:'#002b36',bg1:'#073642',bg2:'#094555',bd:'#147564',tx0:'#839496',tx1:'#657b83',tx2:'#586e75',blue:'#268bd2',green:'#859900',orange:'#cb4b16',red:'#dc322f','usr-bg':'#003847','diff-add':'#003820','diff-del':'#3a0c00'},
+  'Tokyo Night':  {bg0:'#1a1b26',bg1:'#16161e',bg2:'#292e42',bd:'#3b4261',tx0:'#c0caf5',tx1:'#a9b1d6',tx2:'#565f89',blue:'#7aa2f7',green:'#9ece6a',orange:'#ff9e64',red:'#f7768e','usr-bg':'#1f2335','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
+  'Rosé Pine':    {bg0:'#191724',bg1:'#1f1d2e',bg2:'#26233a',bd:'#403d52',tx0:'#e0def4',tx1:'#908caa',tx2:'#6e6a86',blue:'#9ccfd8',green:'#31748f',orange:'#f6c177',red:'#eb6f92','usr-bg':'#2a273f','diff-add':'#1a2e24','diff-del':'#2e1a24'},
+  'Poimandres':   {bg0:'#1b1e28',bg1:'#171922',bg2:'#252b37',bd:'#303340',tx0:'#e4f0fb',tx1:'#a6accd',tx2:'#767c9d',blue:'#add7ff',green:'#5de4c7',orange:'#fffac2',red:'#d0679d','usr-bg':'#1e2430','diff-add':'#152e24','diff-del':'#2e1528'},
+  'Ayu Dark':     {bg0:'#0b0e14',bg1:'#0d1017',bg2:'#131721',bd:'#1c2433',tx0:'#bfbdb6',tx1:'#73767a',tx2:'#565b66',blue:'#39bae6',green:'#7fd962',orange:'#e6b450',red:'#d95757','usr-bg':'#0d1520','diff-add':'#0d2b14','diff-del':'#2d1010'},
+  'Vesper':       {bg0:'#101010',bg1:'#1a1a1a',bg2:'#232323',bd:'#333333',tx0:'#d4d4d4',tx1:'#999999',tx2:'#666666',blue:'#99c1f1',green:'#8ab977',orange:'#ffa657',red:'#ff6b6b','usr-bg':'#1a2030','diff-add':'#142014','diff-del':'#201414'},
+  'Dracula':      {bg0:'#282a36',bg1:'#21222c',bg2:'#343746',bd:'#44475a',tx0:'#f8f8f2',tx1:'#bfbfbf',tx2:'#6272a4',blue:'#8be9fd',green:'#50fa7b',orange:'#ffb86c',red:'#ff5555','usr-bg':'#2a2040','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Gruvbox':      {bg0:'#1d2021',bg1:'#282828',bg2:'#3c3836',bd:'#504945',tx0:'#ebdbb2',tx1:'#bdae93',tx2:'#928374',blue:'#83a598',green:'#b8bb26',orange:'#fe8019',red:'#fb4934','usr-bg':'#2a2520','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Midnight':     {bg0:'#0f0f23',bg1:'#151528',bg2:'#1a1a35',bd:'#2a2a50',tx0:'#ccccff',tx1:'#8888bb',tx2:'#555588',blue:'#6666ff',green:'#00cc7a',orange:'#ffcc00',red:'#ff3366','usr-bg':'#1a1a40','diff-add':'#0d2b14','diff-del':'#2d1010'},
 };
 function applyTheme(name) {
   const t = THEMES[name]; if (!t) return;

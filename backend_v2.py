@@ -95,6 +95,8 @@ scheduler = Scheduler(DB_PATH, task_callback=_create_task_callback)
 
 # ── Task persistence ─────────────────────────────────────────────────
 def _save(task: dict):
+    if task.get("_deleted"):
+        return
     with _db() as con:
         con.execute("""INSERT OR REPLACE INTO tasks
             (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at, total_cost, usage, branch)
@@ -144,9 +146,11 @@ def _merge_usage(task: dict, usage: dict | None):
 async def _run_task(task: dict):
     """Run a task using the unified provider interface."""
     model_name = task["model"]
+    log.info("_run_task starting: model=%s prompt=%s", model_name, task["prompt"][:60])
     try:
         provider = get_provider(model_name)
     except ValueError as e:
+        log.error("_run_task: provider not found: %s", e)
         task["history"].append({"role": "assistant", "content": f"❌ {e}"})
         task["status"] = "error"
         task["finished_at"] = datetime.now().isoformat()
@@ -156,23 +160,24 @@ async def _run_task(task: dict):
     _providers[task["id"]] = provider
 
     config = ProviderConfig(
-        model=task.get("extra", {}).get("vllm_model", ""),
+        model=task.get("extra", {}).get("vllm_model") or task.get("extra", {}).get("model_override") or "",
         mode=task["mode"],
         cwd=task["cwd"],
         session_id=task["session_id"],
-        base_url=task.get("extra", {}).get("vllm_url", ""),
-        api_key=task.get("extra", {}).get("vllm_key", ""),
+        base_url=task.get("extra", {}).get("vllm_url") or task.get("extra", {}).get("base_url") or "",
+        api_key=task.get("extra", {}).get("vllm_key") or task.get("extra", {}).get("api_key") or "",
         extra=task.get("extra", {}),
     )
 
     history_snapshot = task["history"][:]
     tool_calls: list[list] = []  # [title, content, status]
+    agent_groups: list[dict] = []  # agent group entries
     text_buf = ""
 
     def snapshot():
         tools = [{"role": "assistant", "content": c, "metadata": {"title": t, "status": s}} for t, c, s in tool_calls]
         cur = [{"role": "assistant", "content": text_buf}] if text_buf else []
-        return history_snapshot + tools + cur
+        return history_snapshot + agent_groups + tools + cur
 
     def close_pending():
         for tc in reversed(tool_calls):
@@ -216,11 +221,10 @@ async def _run_task(task: dict):
                 task["history"] = snapshot()
 
             elif event.type == EventType.AGENT_GROUP:
-                # Add/update agent group in history
                 agent_id = event.metadata.get("agent_id", "")
                 found = False
-                for entry in task["history"]:
-                    if entry.get("role") == "agent-group" and entry.get("agent_id") == agent_id:
+                for entry in agent_groups:
+                    if entry.get("agent_id") == agent_id:
                         entry.update(event.metadata)
                         entry["role"] = "agent-group"
                         found = True
@@ -228,7 +232,8 @@ async def _run_task(task: dict):
                 if not found:
                     entry = {"role": "agent-group"}
                     entry.update(event.metadata)
-                    task["history"].append(entry)
+                    agent_groups.append(entry)
+                task["history"] = snapshot()
 
             elif event.type == EventType.COST:
                 if event.metadata.get("session_id"):
@@ -251,6 +256,7 @@ async def _run_task(task: dict):
             _save(task)
 
     except Exception as e:
+        log.exception("_run_task exception: %s", e)
         task["history"] = snapshot() + [{"role": "assistant", "content": f"❌ {e}"}]
         task["status"] = "error"
         task["finished_at"] = datetime.now().isoformat()
@@ -261,9 +267,10 @@ async def _run_task(task: dict):
     for tc in tool_calls:
         tc[2] = "done"
     final = [{"role": "assistant", "content": text_buf}] if text_buf else []
-    if not tool_calls and not text_buf:
+    if not tool_calls and not text_buf and not agent_groups:
         final = [{"role": "assistant", "content": "*(no response)*"}]
-    task["history"] = history_snapshot + [
+    log.info("_run_task done: text_buf=%s tools=%d agents=%d", repr(text_buf)[:80], len(tool_calls), len(agent_groups))
+    task["history"] = history_snapshot + agent_groups + [
         {"role": "assistant", "content": c, "metadata": {"title": t, "status": s}}
         for t, c, s in tool_calls
     ] + final
@@ -428,6 +435,10 @@ async def delete_task(task_id: str):
     if not task:
         raise HTTPException(404, "Task not found")
     task["_stop"] = True
+    task["_deleted"] = True
+    provider = _providers.pop(task_id, None)
+    if provider:
+        await provider.stop()
     with _db() as con:
         con.execute("DELETE FROM tasks WHERE id=?", (task_id,))
     return {"status": "deleted"}

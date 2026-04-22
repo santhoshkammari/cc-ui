@@ -1,8 +1,16 @@
-"""GitHub Copilot provider — uses gh copilot CLI or Copilot API."""
+"""GitHub Copilot provider — uses `gh copilot` CLI extension.
+
+Copilot CLI modes:
+  gh copilot suggest -t shell "prompt"   — shell command suggestion
+  gh copilot suggest -t gh "prompt"      — gh CLI suggestion
+  gh copilot explain "prompt"            — explain code/command
+
+This is single-shot (non-streaming). For agentic use, consider
+GitHub Copilot Coding Agent via the API instead.
+"""
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 from typing import AsyncIterator
 
@@ -12,7 +20,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class CopilotProvider(BaseProvider):
     name = "copilot"
     display_name = "GitHub Copilot"
-    supports_streaming = True
+    supports_streaming = False
     supports_tools = False
     supports_sessions = False
 
@@ -23,43 +31,73 @@ class CopilotProvider(BaseProvider):
     async def run(self, prompt: str, config: ProviderConfig, history=None) -> AsyncIterator[ProviderEvent]:
         self._stop = False
 
-        # Try copilot-cli first, fall back to gh copilot suggest
-        cmd = self._build_command(prompt, config)
+        import shutil
+        if not shutil.which("gh"):
+            yield ProviderEvent(type=EventType.ERROR, content="gh CLI not installed")
+            return
+
+        # Check if copilot extension is available
+        check = await asyncio.create_subprocess_exec(
+            "gh", "copilot", "--help",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, check_err = await check.communicate()
+        if check.returncode != 0:
+            yield ProviderEvent(
+                type=EventType.ERROR,
+                content="GitHub Copilot extension not installed.\n"
+                        "Install with: `gh extension install github/gh-copilot`\n"
+                        "Then authenticate: `gh auth refresh -s copilot`",
+            )
+            return
+
+        # Determine mode from extra config
+        copilot_mode = config.extra.get("copilot_mode", "suggest")
+        target_type = config.extra.get("copilot_type", "shell")
+
+        if copilot_mode == "explain":
+            cmd = ["gh", "copilot", "explain", prompt]
+        else:
+            cmd = ["gh", "copilot", "suggest", "-t", target_type, prompt]
 
         try:
             self._proc = await asyncio.create_subprocess_exec(
                 *cmd,
-                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.DEVNULL,
+                env={**os.environ, "GH_FORCE_TTY": "0"},
             )
 
-            if cmd[0] == "gh":
-                # gh copilot suggest reads from stdin
-                self._proc.stdin.write(prompt.encode())
-                await self._proc.stdin.drain()
-                self._proc.stdin.close()
-
             stdout, stderr = await self._proc.communicate()
-            output = stdout.decode().strip()
 
             if self._stop:
                 yield ProviderEvent(type=EventType.TEXT, content="⏹ *stopped*")
                 yield ProviderEvent(type=EventType.DONE)
                 return
 
+            output = stdout.decode().strip()
+            err_output = stderr.decode().strip()
+
             if self._proc.returncode != 0:
-                err = stderr.decode().strip() or "Copilot command failed"
-                yield ProviderEvent(type=EventType.ERROR, content=err)
+                yield ProviderEvent(
+                    type=EventType.ERROR,
+                    content=err_output or f"Copilot exited with code {self._proc.returncode}",
+                )
                 return
 
             if output:
                 yield ProviderEvent(type=EventType.TEXT, content=output)
+            elif err_output:
+                yield ProviderEvent(type=EventType.TEXT, content=err_output)
+            else:
+                yield ProviderEvent(type=EventType.TEXT, content="*(no suggestion)*")
 
         except FileNotFoundError:
             yield ProviderEvent(
                 type=EventType.ERROR,
-                content="GitHub Copilot CLI not found. Install: gh extension install github/gh-copilot",
+                content="gh CLI not found in PATH",
             )
             return
         except Exception as e:
@@ -67,11 +105,6 @@ class CopilotProvider(BaseProvider):
             return
 
         yield ProviderEvent(type=EventType.DONE)
-
-    def _build_command(self, prompt: str, config: ProviderConfig) -> list[str]:
-        """Build the copilot CLI command."""
-        # Use GitHub Copilot in CLI via gh extension
-        return ["gh", "copilot", "suggest", "-t", "shell", prompt]
 
     async def stop(self):
         self._stop = True
@@ -85,11 +118,15 @@ class CopilotProvider(BaseProvider):
             return {"status": "unavailable", "provider": self.name, "reason": "gh CLI not installed"}
         try:
             proc = await asyncio.create_subprocess_exec(
-                "gh", "copilot", "--version",
-                stdout=asyncio.subprocess.PIPE,
+                "gh", "copilot", "--help",
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
             await proc.wait()
-            return {"status": "ok" if proc.returncode == 0 else "unavailable", "provider": self.name}
+            return {
+                "status": "ok" if proc.returncode == 0 else "unavailable",
+                "provider": self.name,
+                "note": "extension missing" if proc.returncode != 0 else None,
+            }
         except Exception:
             return {"status": "unavailable", "provider": self.name}

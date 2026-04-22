@@ -1,4 +1,11 @@
-"""OpenCode provider — wraps `opencode run --format json`."""
+"""OpenCode provider — wraps `opencode run --format json`.
+
+Event types from opencode CLI:
+  step_start  — new LLM turn begins
+  text        — streaming text chunk
+  tool_use    — tool announced + completed (state has input/output/error)
+  step_finish — step done with token/cost info
+"""
 from __future__ import annotations
 
 import asyncio
@@ -28,11 +35,16 @@ class OpenCodeProvider(BaseProvider):
             cmd += ["--dir", config.cwd]
         cmd += [prompt]
 
+        session_id = None
+        total_cost = 0.0
+        usage = {}
+
         try:
             self._proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.DEVNULL,
             )
 
             async for line in self._proc.stdout:
@@ -43,29 +55,36 @@ class OpenCodeProvider(BaseProvider):
                     return
 
                 line = line.decode().strip()
-                if not line:
+                if not line or not line.startswith("{"):
                     continue
                 try:
                     msg = json.loads(line)
                 except Exception:
                     continue
 
-                session_id = msg.get("sessionID")
+                session_id = msg.get("sessionID", session_id)
                 mtype = msg.get("type")
                 part = msg.get("part", {})
 
                 if mtype == "text":
                     yield ProviderEvent(type=EventType.TEXT, content=part.get("text", ""))
 
+                elif mtype == "error":
+                    error_data = msg.get("error", {})
+                    error_msg = error_data.get("data", {}).get("message", "") or error_data.get("name", "Unknown error")
+                    yield ProviderEvent(type=EventType.ERROR, content=f"OpenCode error: {error_msg}")
+                    return
+
                 elif mtype == "tool_use":
                     state = part.get("state", {})
                     tool_name = part.get("tool", "tool")
-                    title = state.get("title") or tool_name
+                    title = part.get("title", tool_name) or tool_name
                     args = json.dumps(state.get("input", {}), indent=2)
-                    output = state.get("output", "")
+                    output = state.get("output", "") or state.get("error", "")
                     if isinstance(output, list):
                         output = "\n".join(c.get("text", str(c)) for c in output)
-                    is_error = state.get("metadata", {}).get("exit", 0) != 0
+                    status = state.get("status", "")
+                    is_error = status == "error" or bool(state.get("error"))
 
                     yield ProviderEvent(
                         type=EventType.TOOL_START,
@@ -77,16 +96,30 @@ class OpenCodeProvider(BaseProvider):
                         metadata={"is_error": is_error},
                     )
 
-                if session_id:
-                    yield ProviderEvent(
-                        type=EventType.COST,
-                        metadata={"session_id": session_id},
-                    )
+                elif mtype == "step_finish":
+                    tokens = part.get("tokens", {})
+                    cache = tokens.get("cache", {})
+                    step_cost = part.get("cost", 0.0)
+                    total_cost += step_cost
+                    usage["input_tokens"] = usage.get("input_tokens", 0) + tokens.get("input", 0)
+                    usage["output_tokens"] = usage.get("output_tokens", 0) + tokens.get("output", 0)
+                    usage["cache_read_input_tokens"] = usage.get("cache_read_input_tokens", 0) + cache.get("read", 0)
+                    usage["cache_creation_input_tokens"] = usage.get("cache_creation_input_tokens", 0) + cache.get("write", 0)
 
             await self._proc.wait()
         except Exception as e:
             yield ProviderEvent(type=EventType.ERROR, content=str(e))
             return
+
+        if session_id or total_cost:
+            yield ProviderEvent(
+                type=EventType.COST,
+                metadata={
+                    "session_id": session_id,
+                    "total_cost_usd": total_cost,
+                    "usage": usage,
+                },
+            )
 
         yield ProviderEvent(type=EventType.DONE)
 

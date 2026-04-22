@@ -87,6 +87,10 @@ class QwenProvider(BaseProvider):
                             )
 
                 elif mtype == "result":
+                    if msg.get("is_error"):
+                        error_msg = msg.get("error", {}).get("message", "Unknown error")
+                        yield ProviderEvent(type=EventType.ERROR, content=f"Qwen error: {error_msg}")
+                        return
                     yield ProviderEvent(
                         type=EventType.COST,
                         metadata={"session_id": msg.get("session_id")},

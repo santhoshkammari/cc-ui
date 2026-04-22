@@ -50,12 +50,14 @@ class VLLMProvider(BaseProvider):
             )
 
             text_buf = ""
+            last_chunk = None
             async for chunk in stream:
                 if self._stop:
                     yield ProviderEvent(type=EventType.TEXT, content="⏹ *stopped*")
                     yield ProviderEvent(type=EventType.DONE)
                     return
 
+                last_chunk = chunk
                 delta = chunk.choices[0].delta if chunk.choices else None
                 if delta and delta.content:
                     text_buf += delta.content
@@ -64,7 +66,7 @@ class VLLMProvider(BaseProvider):
                 if chunk.choices and chunk.choices[0].finish_reason:
                     break
 
-            if chunk and hasattr(chunk, 'usage') and chunk.usage:
+            if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
                 yield ProviderEvent(
                     type=EventType.COST,
                     metadata={"usage": {
