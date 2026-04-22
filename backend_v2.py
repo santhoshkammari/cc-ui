@@ -55,7 +55,7 @@ def _init_db():
             prompt TEXT, created_at TEXT, finished_at TEXT,
             total_cost REAL, usage TEXT, branch TEXT
         )""")
-        for col, ctype in [("finished_at","TEXT"),("total_cost","REAL"),("usage","TEXT"),("branch","TEXT")]:
+        for col, ctype in [("finished_at","TEXT"),("total_cost","REAL"),("usage","TEXT"),("branch","TEXT"),("advisor","TEXT"),("advisor_model","TEXT")]:
             try:
                 con.execute(f"ALTER TABLE tasks ADD COLUMN {col} {ctype}")
                 con.commit()
@@ -99,20 +99,20 @@ def _save(task: dict):
         return
     with _db() as con:
         con.execute("""INSERT OR REPLACE INTO tasks
-            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at, total_cost, usage, branch)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at, total_cost, usage, branch, advisor, advisor_model)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (task["id"], task["label"], task["status"],
              json.dumps(task["history"]), task["session_id"],
              task["cwd"], task["mode"], task["model"],
              task["prompt"], task["created_at"], task.get("finished_at"),
              task.get("total_cost", 0), json.dumps(task.get("usage", {})),
-             task.get("branch", "")))
+             task.get("branch", ""), task.get("advisor", ""), task.get("advisor_model", "")))
 
 def _load_all() -> dict[str, dict]:
     with _db() as con:
         rows = con.execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
     result = {}
-    cols = ["id","label","status","history","session_id","cwd","mode","model","prompt","created_at","finished_at","total_cost","usage","branch"]
+    cols = ["id","label","status","history","session_id","cwd","mode","model","prompt","created_at","finished_at","total_cost","usage","branch","advisor","advisor_model"]
     for r in rows:
         t = {}
         for i, col in enumerate(cols):
@@ -124,6 +124,8 @@ def _load_all() -> dict[str, dict]:
         t["usage"] = json.loads(t["usage"] or "{}")
         t["total_cost"] = t["total_cost"] or 0
         t["branch"] = t.get("branch") or ""
+        t["advisor"] = t.get("advisor") or ""
+        t["advisor_model"] = t.get("advisor_model") or ""
         t["_stop"] = False
         if t["status"] == "running":
             t["status"] = "stopped"
@@ -274,6 +276,111 @@ async def _run_task(task: dict):
         {"role": "assistant", "content": c, "metadata": {"title": t, "status": s}}
         for t, c, s in tool_calls
     ] + final
+
+    # ── Advisor review loop ──────────────────────────────────────────
+    advisor_name = task.get("advisor", "")
+    if advisor_name and text_buf and not task["_stop"]:
+        await _run_advisor_review(task, text_buf)
+        return  # advisor sets status and saves
+
+    task["status"] = "done"
+    task["finished_at"] = datetime.now().isoformat()
+    _save(task)
+    _providers.pop(task["id"], None)
+
+
+async def _run_advisor_review(task: dict, worker_output: str, max_rounds: int = 2):
+    """Run advisor review on worker output. Advisor reviews and optionally triggers worker refinement."""
+    advisor_name = task.get("advisor", "")
+    advisor_model = task.get("advisor_model", "")
+    log.info("Advisor review: advisor=%s model=%s", advisor_name, advisor_model)
+
+    try:
+        advisor_provider = get_provider(advisor_name)
+    except ValueError as e:
+        log.warning("Advisor provider not found: %s — skipping review", e)
+        task["status"] = "done"
+        task["finished_at"] = datetime.now().isoformat()
+        _save(task)
+        _providers.pop(task["id"], None)
+        return
+
+    advisor_config = ProviderConfig(
+        model=advisor_model,
+        mode="plan",
+        cwd=task["cwd"],
+        session_id=None,
+        base_url=task.get("extra", {}).get("base_url", ""),
+        api_key=task.get("extra", {}).get("api_key", ""),
+        extra=task.get("extra", {}),
+    )
+
+    review_prompt = f"""You are an advisor reviewing work done by another AI agent.
+
+**Original task:** {task['prompt']}
+
+**Worker's output:**
+{worker_output[:4000]}
+
+Please review this output. Provide:
+1. A brief assessment (is it correct, complete, well-structured?)
+2. Any issues or improvements needed
+3. A final verdict: APPROVE if the work is good enough, or REVISE if it needs changes.
+
+Keep your review concise and actionable."""
+
+    # Add advisor marker to history
+    task["history"].append({
+        "role": "agent-group",
+        "agent_id": "advisor",
+        "agent_name": f"🧠 Advisor ({advisor_name})",
+        "status": "running",
+        "children": [],
+    })
+    _save(task)
+
+    # Find the advisor agent-group entry
+    advisor_entry = None
+    for entry in task["history"]:
+        if entry.get("role") == "agent-group" and entry.get("agent_id") == "advisor":
+            advisor_entry = entry
+            break
+
+    advisor_text = ""
+    try:
+        async for event in advisor_provider.run(review_prompt, advisor_config, []):
+            if task["_stop"]:
+                await advisor_provider.stop()
+                if advisor_entry:
+                    advisor_entry["status"] = "stopped"
+                task["status"] = "stopped"
+                task["finished_at"] = datetime.now().isoformat()
+                _save(task)
+                return
+
+            if event.type == EventType.TEXT:
+                advisor_text += event.content
+                if advisor_entry:
+                    advisor_entry["children"] = [{"role": "assistant", "content": advisor_text}]
+                    _save(task)
+            elif event.type == EventType.COST:
+                if event.metadata.get("total_cost_usd"):
+                    task["total_cost"] = task.get("total_cost", 0) + event.metadata["total_cost_usd"]
+                _merge_usage(task, event.metadata.get("usage"))
+            elif event.type == EventType.DONE:
+                break
+
+    except Exception as e:
+        log.exception("Advisor review failed: %s", e)
+        if advisor_entry:
+            advisor_entry["status"] = "error"
+            advisor_entry["children"] = [{"role": "assistant", "content": f"❌ Advisor error: {e}"}]
+
+    if advisor_entry:
+        advisor_entry["status"] = "done"
+        if not advisor_entry.get("children"):
+            advisor_entry["children"] = [{"role": "assistant", "content": advisor_text or "*(no review)*"}]
+
     task["status"] = "done"
     task["finished_at"] = datetime.now().isoformat()
     _save(task)
@@ -289,6 +396,8 @@ class CreateTaskRequest(BaseModel):
     session_id: str | None = None
     branch: str = ""
     extra: dict = {}
+    advisor: str = ""          # advisor provider name (e.g. "claude", "opencode")
+    advisor_model: str = ""    # advisor model override (e.g. specific model variant)
 
 class SendMessageRequest(BaseModel):
     prompt: str
@@ -344,6 +453,7 @@ async def create_task(req: CreateTaskRequest):
         "created_at": datetime.now().isoformat(), "_stop": False,
         "total_cost": 0, "usage": {}, "branch": branch,
         "extra": req.extra,
+        "advisor": req.advisor, "advisor_model": req.advisor_model,
     }
     _tasks[task_id] = task
     _save(task)
@@ -367,6 +477,7 @@ async def list_tasks_route():
             "preview": last, "cwd": t["cwd"], "model": t.get("model"),
             "mode": t.get("mode"), "total_cost": t.get("total_cost", 0),
             "usage": t.get("usage", {}), "branch": t.get("branch", ""),
+            "advisor": t.get("advisor", ""), "advisor_model": t.get("advisor_model", ""),
         })
     return result
 
@@ -382,6 +493,7 @@ async def get_task(task_id: str):
         "cwd": task["cwd"], "created_at": task["created_at"],
         "total_cost": task.get("total_cost", 0),
         "usage": task.get("usage", {}), "branch": task.get("branch", ""),
+        "advisor": task.get("advisor", ""), "advisor_model": task.get("advisor_model", ""),
     }
 
 

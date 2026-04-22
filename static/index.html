@@ -58,6 +58,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 .chat-controls{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid rgba(72,72,74,.3)}
 .chat-controls select,.chat-controls .ctrl-input{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:11px;padding:6px 10px;cursor:pointer;outline:none}
 .chat-controls select:focus,.chat-controls .ctrl-input:focus{border-color:var(--blue)}
+#new-advisor{border-color:rgba(175,82,222,.3)}
 .ctrl-input{font-family:'SF Mono','Fira Code',monospace;width:200px}
 .attach-btn{background:none;border:none;color:var(--tx2);font-size:16px;cursor:pointer;padding:2px 4px;transition:color .15s}
 .attach-btn:hover{color:var(--blue)}
@@ -331,6 +332,9 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
             <option value="plan">Plan</option>
             <option value="default">Interactive</option>
           </select>
+          <select id="new-advisor" title="Advisor (optional — reviews worker output)">
+            <option value="">No Advisor</option>
+          </select>
           <div class="branch-pill" id="branch-pill" onclick="pickBranch()">⎇ <span id="branch-name">default</span></div>
           <div class="cwd-wrap">
             <input class="ctrl-input" id="new-cwd" placeholder="/path/to/project" autocomplete="off" />
@@ -530,6 +534,9 @@ async function loadProviders() {
   const html = providers.map(p => `<option value="${p.name}">${p.display_name||p.name}</option>`).join('');
   document.getElementById('new-model').innerHTML = html;
   document.getElementById('d-model').innerHTML = html;
+  // Advisor dropdown: "No Advisor" + all providers
+  const advisorHtml = '<option value="">🧠 No Advisor</option>' + providers.map(p => `<option value="${p.name}">🧠 ${p.display_name||p.name}</option>`).join('');
+  document.getElementById('new-advisor').innerHTML = advisorHtml;
   renderAgentGrid();
 }
 
@@ -597,7 +604,10 @@ function sendNewTask() {
   attachments = [];
   renderAttachments();
 
-  const body = { prompt, model, mode, cwd, branch: branch==='default'?'':branch, extra: {} };
+  const body = { prompt, model, mode, cwd, branch: branch==='default'?'':branch, extra: {},
+    advisor: document.getElementById('new-advisor').value || '',
+    advisor_model: '',
+  };
   if (['vllm','kivi','inhouse'].includes(model)) {
     const ip = localStorage.getItem('vllm_ip') || '127.0.0.1';
     const port = localStorage.getItem('vllm_port') || '9999';
@@ -637,6 +647,13 @@ function renderAttachments() {
   ).join('');
 }
 function rmAttach(i) { attachments.splice(i,1); renderAttachments(); }
+
+// Advisor select highlight
+document.getElementById('new-advisor').addEventListener('change', function() {
+  this.style.background = this.value ? 'rgba(175,82,222,.08)' : '';
+  this.style.borderColor = this.value ? 'rgba(175,82,222,.4)' : '';
+  this.style.color = this.value ? '#af52de' : '';
+});
 
 // Branch picker
 function pickBranch() {
@@ -704,6 +721,7 @@ function renderTasks() {
         <span class="tc-dot ${st}"></span>
         <span class="tc-title">${esc(t.label)}</span>
         ${t.model?`<span class="tc-model">${esc(t.model)}</span>`:''}
+        ${t.advisor?`<span class="tc-model" style="background:rgba(175,82,222,.15);color:#af52de" title="Advisor: ${esc(t.advisor)}">🧠 ${esc(t.advisor)}</span>`:''}
         <span class="tc-time">${timeAgo(t.created_at)}</span>
       </div>
       ${t.preview?`<div class="tc-preview">${esc(t.preview)}</div>`:''}
