@@ -367,7 +367,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
         <textarea class="chat-textarea" id="new-prompt" placeholder="Describe a task, paste a file path, or drop files here…" rows="3"></textarea>
         <div class="chat-attachments" id="new-attachments"></div>
         <div class="chat-controls">
-          <button class="attach-btn" onclick="document.getElementById('file-picker').click()" title="Attach files">📎</button>
+          <button class="attach-btn" onclick="document.getElementById('file-picker').click()" title="Attach files (Ctrl+U)">📎</button>
           <input type="file" id="file-picker" multiple style="display:none" />
           <div class="picker-pill" id="model-picker" onclick="togglePicker(this)">
             <span class="picker-dot" id="mp-dot" style="background:#30d158"></span>
@@ -395,21 +395,23 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
               <div class="picker-list" id="ap-list"></div>
             </div>
           </div>
-          <div class="branch-pill" id="branch-pill" onclick="pickBranch()">⎇ <span id="branch-name">default</span></div>
+          <div style="flex:1"></div>
+          <div class="branch-pill" id="branch-pill" onclick="pickBranch()" title="Git branch">⎇ <span id="branch-name">default</span></div>
           <div class="cwd-wrap">
-            <input class="ctrl-input" id="new-cwd" placeholder="/path/to/project" autocomplete="off" />
+            <input class="ctrl-input" id="new-cwd" placeholder="~/project" autocomplete="off" title="Working directory" />
             <div class="cwd-drop" id="new-cwd-drop"></div>
           </div>
-          <button class="chat-send" id="send-new-btn" onclick="sendNewTask()">↑</button>
+          <button class="chat-send" id="send-new-btn" onclick="sendNewTask()" title="Send (Enter)">↑</button>
         </div>
       </div>
     </div>
     <div class="quick-actions">
-      <button class="qa-pill" onclick="qa('Summarize latest changes')">📋 Summarize changes</button>
-      <button class="qa-pill" onclick="qa('Review my latest code')">🔍 Review code</button>
-      <button class="qa-pill" onclick="qa('Suggest improvements')">💡 Improvements</button>
+      <button class="qa-pill" onclick="qa('Summarize latest changes in this repo')">📋 Summarize</button>
+      <button class="qa-pill" onclick="qa('Review my latest code changes for bugs and improvements')">🔍 Review</button>
+      <button class="qa-pill" onclick="qa('Write comprehensive tests for the project')">🧪 Tests</button>
       <button class="qa-pill" onclick="qa('Fix bugs in the current project')">🐛 Fix bugs</button>
-      <button class="qa-pill" onclick="qa('Write tests for the project')">🧪 Write tests</button>
+      <button class="qa-pill" onclick="qa('Refactor and optimize the codebase')">⚡ Optimize</button>
+      <button class="qa-pill" onclick="qa('Add documentation and type hints')">📝 Document</button>
     </div>
   </div>
 
