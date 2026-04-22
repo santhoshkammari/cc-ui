@@ -128,7 +128,7 @@ async def list_models():
         "object": "list",
         "data": [
             {"id": MOCK_MODEL, "object": "model", "created": int(time.time()), "owned_by": "mock"},
-            {"id": "mock-qwen-7b", "object": "model", "created": int(time.time()), "owned_by": "mock"},
+            {"id": "mock-llama-8b", "object": "model", "created": int(time.time()), "owned_by": "mock"},
         ],
     }
 

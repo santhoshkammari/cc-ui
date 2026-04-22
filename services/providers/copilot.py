@@ -20,6 +20,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class CopilotProvider(BaseProvider):
     name = "copilot"
     display_name = "GitHub Copilot"
+    description = "GitHub's AI pair programmer via the gh CLI extension. Generates shell commands, explains code, and suggests solutions. Modes: suggest (shell/gh) or explain."
     supports_streaming = False
     supports_tools = False
     supports_sessions = False

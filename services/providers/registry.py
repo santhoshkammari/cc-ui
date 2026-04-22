@@ -74,12 +74,6 @@ def _auto_register():
         log.debug("OpenCode provider not available: %s", e)
 
     try:
-        from .qwen import QwenProvider
-        register("qwen", QwenProvider, aliases=["qwen-code"])
-    except ImportError as e:
-        log.debug("Qwen provider not available: %s", e)
-
-    try:
         from .vllm import VLLMProvider
         register("vllm", VLLMProvider, aliases=["vllm-local"])
     except ImportError as e:

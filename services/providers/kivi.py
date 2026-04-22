@@ -13,6 +13,7 @@ DEFAULT_KIVI_MODEL = "mock-model-v1"
 class KiviProvider(BaseProvider):
     name = "kivi"
     display_name = "Kivi (Local)"
+    description = "Lightweight local inference via OpenAI-compatible API. Similar to vLLM but for smaller models. Supports streaming and tool-use formatted responses."
     supports_streaming = True
     supports_tools = True
     supports_sessions = False

@@ -8,12 +8,13 @@ from typing import AsyncIterator
 from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 
 DEFAULT_VLLM_URL = "http://192.168.170.76:8000"
-DEFAULT_VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
+DEFAULT_VLLM_MODEL = "local-model"
 
 
 class VLLMProvider(BaseProvider):
     name = "vllm"
     display_name = "vLLM (Local)"
+    description = "Self-hosted models via vLLM's OpenAI-compatible API. Run any HuggingFace model locally with GPU acceleration. Configure IP, port, and model in Settings."
     supports_streaming = True
     supports_tools = False
     supports_sessions = False

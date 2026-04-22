@@ -13,6 +13,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class InhouseProvider(BaseProvider):
     name = "inhouse"
     display_name = "AI Framework (In-house)"
+    description = "Custom AI framework from lab/src/ai. Unified interface for multiple backends (OpenAI, Anthropic, local). Supports tool calling, structured output, and batch processing."
     supports_streaming = True
     supports_tools = True
     supports_sessions = False

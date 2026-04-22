@@ -12,6 +12,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class GeminiProvider(BaseProvider):
     name = "gemini"
     display_name = "Google Gemini"
+    description = "Google's multimodal AI. Fast streaming text generation via the Gemini API. Best for quick questions, summaries, and brainstorming. Requires GEMINI_API_KEY."
     supports_streaming = True
     supports_tools = False
     supports_sessions = False

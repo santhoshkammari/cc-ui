@@ -12,6 +12,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class ClaudeProvider(BaseProvider):
     name = "claude"
     display_name = "Claude Code"
+    description = "Anthropic's agentic coding assistant. Reads/writes files, runs shell commands, manages git, and reasons through complex multi-step tasks. Supports session resumption and sub-agent orchestration."
     supports_streaming = True
     supports_tools = True
     supports_sessions = True

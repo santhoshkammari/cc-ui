@@ -12,6 +12,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class OrchestratorProvider(BaseProvider):
     name = "claudeagents"
     display_name = "Multi-Agent Orchestrator"
+    description = "Supervisor-worker pattern for parallel execution. Breaks complex tasks into subtasks, runs them across multiple Claude agents simultaneously, then synthesizes results. Best for large refactors, multi-file changes, and research tasks."
     supports_streaming = True
     supports_tools = True
     supports_sessions = False

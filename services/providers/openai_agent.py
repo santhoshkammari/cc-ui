@@ -12,6 +12,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class OpenAIAgentProvider(BaseProvider):
     name = "openai-agent"
     display_name = "OpenAI Agent"
+    description = "OpenAI's agent SDK with built-in tool use, handoffs, and guardrails. Runs multi-step workflows with GPT models. Supports streaming and sub-agent delegation. Requires OPENAI_API_KEY."
     supports_streaming = True
     supports_tools = True
     supports_sessions = False

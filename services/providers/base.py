@@ -2,7 +2,7 @@
 Base provider protocol for all AI integrations.
 
 Every provider implements this interface so the system can swap
-between Claude, Gemini, Copilot, Qwen, VLLM, etc. with zero friction.
+between Claude, Gemini, Copilot, VLLM, etc. with zero friction.
 """
 from __future__ import annotations
 
@@ -92,6 +92,7 @@ class BaseProvider(ABC):
 
     name: str = "base"
     display_name: str = "Base Provider"
+    description: str = ""
     supports_streaming: bool = True
     supports_tools: bool = False
     supports_sessions: bool = False
@@ -120,6 +121,7 @@ class BaseProvider(ABC):
         return {
             "name": self.name,
             "display_name": self.display_name,
+            "description": self.description,
             "streaming": self.supports_streaming,
             "tools": self.supports_tools,
             "sessions": self.supports_sessions,

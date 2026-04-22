@@ -18,6 +18,7 @@ from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 class OpenCodeProvider(BaseProvider):
     name = "opencode"
     display_name = "OpenCode"
+    description = "Open-source agentic coding CLI. File editing, shell access, and step-by-step reasoning with tool use. Supports persistent sessions and multiple LLM backends."
     supports_streaming = True
     supports_tools = True
     supports_sessions = True
