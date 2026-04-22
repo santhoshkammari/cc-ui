@@ -22,7 +22,14 @@ class OpenCodeProvider(BaseProvider):
     supports_streaming = True
     supports_tools = True
     supports_sessions = True
-    available_models = ["anthropic/claude-sonnet-4-20250514", "openai/gpt-4.1"]
+    available_models = [
+        "opencode/big-pickle", "opencode/gpt-5-nano", "opencode/ling-2.6-flash-free",
+        "opencode/minimax-m2.5-free", "opencode/nemotron-3-super-free",
+        "anthropic/claude-sonnet-4-20250514", "anthropic/claude-opus-4-20250514",
+        "anthropic/claude-haiku-4.5-20241022",
+        "openai/gpt-4.1", "openai/gpt-4.1-mini", "openai/o3", "openai/o4-mini",
+        "google/gemini-2.5-flash", "google/gemini-2.5-pro",
+    ]
 
     def __init__(self):
         self._stop = False
@@ -31,6 +38,8 @@ class OpenCodeProvider(BaseProvider):
     async def run(self, prompt: str, config: ProviderConfig, history=None) -> AsyncIterator[ProviderEvent]:
         self._stop = False
         cmd = ["opencode", "run", "--format", "json"]
+        if config.model:
+            cmd += ["--model", config.model]
         if config.session_id:
             cmd += ["--session", config.session_id]
         if config.cwd:

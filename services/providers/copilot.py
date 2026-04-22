@@ -28,7 +28,11 @@ class CopilotProvider(BaseProvider):
     supports_tools = True
     supports_sessions = True
     supports_agents = True
-    available_models = ["gpt-5.4", "gpt-5-mini", "claude-sonnet-4.6", "claude-haiku-4.5", "claude-opus-4.6"]
+    available_models = [
+        "gpt-5.4", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini",
+        "claude-sonnet-4.6", "claude-haiku-4.5", "claude-opus-4.6",
+        "o3-mini", "o4-mini",
+    ]
 
     def __init__(self):
         self._stop = False

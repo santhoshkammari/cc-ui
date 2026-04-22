@@ -849,7 +849,9 @@ function rmAttach(i) { attachments.splice(i,1); renderAttachments(); }
 
 // Branch picker
 function pickBranch() {
-  api('GET', '/git/branches').then(branches => {
+  const cwd = document.getElementById('new-cwd').value.trim();
+  const q = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
+  api('GET', '/git/branches' + q).then(branches => {
     const names = branches.map(b => b.name).filter(n => !n.startsWith('origin/'));
     const choice = prompt('Branch name:\n\nExisting: ' + names.join(', ') + '\n\nLeave empty for default:');
     if (choice !== null) document.getElementById('branch-name').textContent = choice || 'default';
