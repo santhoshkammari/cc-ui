@@ -11,3 +11,5 @@ build/
 .env
 *.log
 node_modules/
+*.png
+.playwright-mcp/
