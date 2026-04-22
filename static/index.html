@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CC-UI</title>
+<style>
+:root {
+  --bg0:#1a1915; --bg1:#23211c; --bg2:#2e2b25; --bd:#3d3a32;
+  --tx0:#e8e4db; --tx1:#b5b0a5; --tx2:#7a766c;
+  --blue:#d4a27a; --green:#8fad7f; --orange:#d4915a; --red:#c75f5f;
+  --usr-bg:#2a2218; --code-bg:#1a1915;
+  --diff-add:#1a2510; --diff-del:#2d1510;
+  --sidebar-w:220px; --radius:14px; --radius-sm:8px;
+  --accent:#d4a27a; --accent-dim:rgba(212,162,122,.12); --accent-border:rgba(212,162,122,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;height:100vh;display:flex;overflow:hidden}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;height:100vh}
+#sidebar-logo{padding:16px 18px 12px;font-size:16px;font-weight:700;color:var(--tx0);display:flex;align-items:center;gap:8px}
+#sidebar-logo span{font-size:18px}
+#sidebar-search-wrap{position:relative;margin:0 12px 8px}
+#sidebar-search{background:var(--bg0);border:1px solid var(--bd);border-radius:var(--radius-sm);color:var(--tx0);font-size:13px;padding:7px 10px 7px 28px;width:100%;outline:none}
+#sidebar-search:focus{border-color:var(--accent)}
+#sidebar-search-wrap::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--tx2);font-size:12px;pointer-events:none}
+.nav-section{padding:4px 12px;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.08em;margin-top:14px}
+.nav-item{padding:7px 14px;margin:1px 8px;font-size:13px;color:var(--tx1);cursor:pointer;border-radius:var(--radius-sm);display:flex;align-items:center;gap:9px;transition:background .1s}
+.nav-item:hover{background:var(--bg2);color:var(--tx0)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent)}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--orange);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;min-width:18px;text-align:center}
+#sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--bd)}
+.sidebar-user{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer}
+.sidebar-user:hover{background:var(--bg2)}
+.sidebar-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff}
+.sidebar-username{font-size:13px;color:var(--tx0)}
+
+/* ── Main ──────────────────────────────────────────────────── */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+
+/* ── Chat View (The AI Mouth) ──────────────────────────────── */
+#view-chat{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 24px 32px;gap:24px}
+.chat-hero{text-align:center;max-width:860px}
+.chat-hero h1{font-size:26px;font-weight:600;margin-bottom:6px;color:var(--tx0)}
+.chat-hero p{color:var(--tx2);font-size:14px}
+.chat-input-wrap{max-width:860px;width:100%}
+.chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius);transition:border-color .2s,box-shadow .2s}
+.chat-input-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.chat-input-box.dragover{border-color:var(--accent);border-style:dashed;background:var(--accent-dim)}
+.chat-textarea{width:100%;min-height:110px;max-height:280px;background:transparent;border:none;color:var(--tx0);font-size:15px;line-height:1.6;padding:16px 20px 8px;resize:none;outline:none;font-family:inherit}
+.chat-textarea::placeholder{color:var(--tx2)}
+.chat-attachments{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;min-height:0}
+.attach-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:3px 8px 3px 10px;font-size:11px;color:var(--tx1);animation:chipIn .15s ease}
+@keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.attach-chip .chip-rm{cursor:pointer;color:var(--tx2);font-size:13px;line-height:1}
+.attach-chip .chip-rm:hover{color:var(--red)}
+.chat-controls{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid var(--bd)}
+.chat-controls select,.chat-controls .ctrl-input{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:11px;padding:5px 8px;cursor:pointer;outline:none}
+.chat-controls select:focus,.chat-controls .ctrl-input:focus{border-color:var(--accent)}
+.chat-ctx-row{display:flex;align-items:center;gap:6px;padding:4px 14px 8px;font-size:11px}
+.chat-ctx-row .ctx-label{color:var(--tx2);font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.chat-shortcut{position:absolute;bottom:4px;right:14px;font-size:10px;color:var(--tx2);pointer-events:none;opacity:.6}
+/* Custom picker pill */
+.picker-pill{position:relative;display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:4px 8px 4px 7px;font-size:11px;color:var(--tx0);cursor:pointer;user-select:none;transition:border-color .15s,box-shadow .15s}
+.picker-pill:hover,.picker-pill.open{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.picker-pill.advisor-pill{border-color:rgba(175,82,222,.3)}
+.picker-pill.advisor-pill:hover,.picker-pill.advisor-pill.open{border-color:#af52de;box-shadow:0 0 0 2px rgba(175,82,222,.12)}
+.picker-pill.advisor-pill.active{background:rgba(175,82,222,.1);border-color:#af52de;color:#d4a0f5}
+.picker-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.picker-label{font-weight:500;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.picker-model{font-size:9px;color:var(--tx2);font-weight:400;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.picker-chevron{font-size:8px;color:var(--tx2);margin-left:2px;transition:transform .15s}
+.picker-pill.open .picker-chevron{transform:rotate(180deg)}
+/* Picker dropdown panel */
+.picker-panel{position:absolute;bottom:calc(100% + 6px);left:0;min-width:280px;max-height:380px;background:var(--bg1);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden;z-index:999;display:none;animation:panelIn .12s ease}
+.picker-pill.open .picker-panel{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.picker-search{width:100%;background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx0);font-size:12px;padding:10px 12px;outline:none}
+.picker-search::placeholder{color:var(--tx2)}
+.picker-list{max-height:300px;overflow-y:auto;padding:4px 0}
+.picker-list::-webkit-scrollbar{width:4px}.picker-list::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.picker-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:background .1s}
+.picker-item:hover{background:var(--bg2)}
+.picker-item.selected{background:var(--accent-dim)}
+.picker-item .pi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.picker-item .pi-info{flex:1;min-width:0}
+.picker-item .pi-name{font-size:12px;color:var(--tx0);font-weight:500}
+.picker-item .pi-desc{font-size:10px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-item .pi-check{color:var(--accent);font-size:14px;flex-shrink:0;opacity:0}
+.picker-item.selected .pi-check{opacity:1}
+/* Model sub-list */
+.picker-models{padding:2px 0 4px 28px}
+.picker-mitem{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;color:var(--tx1);transition:background .1s}
+.picker-mitem:hover{background:var(--bg2);color:var(--tx0)}
+.picker-mitem.selected{color:var(--accent);font-weight:500}
+.picker-mitem .pm-check{font-size:12px;opacity:0}.picker-mitem.selected .pm-check{opacity:1}
+.ctrl-input{font-family:'SF Mono','Fira Code',monospace;width:160px;font-size:10px !important;padding:4px 8px !important}
+.attach-btn{background:none;border:none;color:var(--tx2);font-size:15px;cursor:pointer;padding:2px 4px;transition:color .15s}
+.attach-btn:hover{color:var(--accent)}
+.branch-pill{display:inline-flex;align-items:center;gap:4px;background:var(--diff-add);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--green);cursor:pointer;transition:background .12s}
+.branch-pill:hover{background:rgba(48,209,88,.15)}
+.chat-send{margin-left:auto;background:var(--accent);border:none;border-radius:10px;width:32px;height:32px;color:var(--bg0);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .12s,transform .1s;flex-shrink:0;font-weight:700}
+.chat-send:hover{opacity:.85;transform:scale(1.05)}
+.chat-send:disabled{opacity:.3;cursor:default;transform:none}
+.quick-actions{max-width:860px;width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.qa-pill{background:var(--bg1);border:1px solid var(--bd);border-radius:20px;color:var(--tx1);font-size:12px;padding:7px 16px;cursor:pointer;transition:all .15s}
+.qa-pill:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+/* Template dropdown */
+.tpl-menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:260px;background:var(--bg1);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;display:none;padding:4px 0;animation:panelIn .12s ease}
+.tpl-menu.open{display:block}
+.tpl-item{padding:8px 14px;cursor:pointer;font-size:12px;color:var(--tx1);transition:background .1s}
+.tpl-item:hover{background:var(--bg2);color:var(--tx0)}
+.tpl-item .tpl-name{font-weight:500;margin-bottom:2px}
+.tpl-item .tpl-desc{font-size:10px;color:var(--tx2)}
+
+/* ── Tasks View ────────────────────────────────────────────── */
+#view-tasks{display:none;flex-direction:column;height:100%;overflow:hidden}
+.tasks-header{padding:20px 24px 0;flex-shrink:0;display:flex;align-items:center;gap:12px}
+.tasks-header h1{font-size:22px;font-weight:600}
+.tasks-header .tasks-count{font-size:13px;color:var(--tx2)}
+.filter-bar{display:flex;gap:4px;padding:12px 24px;flex-shrink:0}
+.filter-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .15s;border:1px solid transparent;user-select:none}
+.filter-tab:hover{color:var(--tx1);background:var(--bg1)}
+.filter-tab.active{color:var(--accent);background:var(--accent-dim);border-color:var(--accent-border)}
+.task-list{flex:1;overflow-y:auto;padding:4px 24px 24px;display:flex;flex-direction:column;gap:6px}
+.task-card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:14px 16px;cursor:pointer;transition:all .12s;border-left:3px solid transparent;position:relative}
+.task-card:hover{border-color:var(--accent);transform:translateX(2px)}
+.task-card.st-running{border-left-color:var(--orange)}
+.task-card.st-done{border-left-color:var(--green)}
+.task-card.st-stopped,.task-card.st-error{border-left-color:var(--red)}
+.tc-row{display:flex;align-items:center;gap:10px}
+.tc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tc-dot.running{background:var(--orange);animation:pulse 1.5s ease infinite}
+.tc-dot.done{background:var(--green)}
+.tc-dot.stopped,.tc-dot.error{background:var(--tx2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.tc-title{font-size:14px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tc-model{font-size:10px;color:var(--accent);font-weight:600;padding:2px 8px;background:var(--accent-dim);border-radius:4px;white-space:nowrap}
+.tc-time{font-size:11px;color:var(--tx2);white-space:nowrap}
+.tc-preview{font-size:12px;color:var(--tx2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-footer{display:flex;align-items:center;gap:8px;margin-top:8px}
+.tc-cost{font-size:11px;color:var(--green);font-weight:600}
+.tc-tokens{font-size:11px;color:var(--tx2)}
+.tc-actions{display:flex;gap:4px;margin-left:auto}
+.card-btn{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--tx1);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .12s}
+.card-btn:hover{color:var(--tx0);border-color:var(--tx1)}
+.card-btn.stop{color:var(--red);border-color:rgba(255,69,58,.25)}
+.card-btn.stop:hover{background:rgba(255,69,58,.12)}
+.card-btn.resume{color:var(--green);border-color:rgba(48,209,88,.25)}
+.card-btn.resume:hover{background:rgba(48,209,88,.12)}
+.card-btn.del{color:var(--tx2);border-color:transparent;background:transparent;padding:4px 6px}
+.card-btn.del:hover{color:var(--red)}
+.tc-notification{position:absolute;top:8px;right:12px;font-size:10px;color:var(--orange);font-weight:600;animation:fadeInOut 2s ease infinite}
+@keyframes fadeInOut{0%,100%{opacity:.5}50%{opacity:1}}
+.task-empty{text-align:center;color:var(--tx2);padding:40px;font-size:14px}
+
+/* ── Task Detail ───────────────────────────────────────────── */
+#view-detail{display:none;flex-direction:column;height:100%;overflow:hidden}
+.detail-topbar{padding:8px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--bg1);font-size:12px;flex-shrink:0}
+.back-btn{background:none;border:1px solid var(--bd);border-radius:6px;color:var(--tx1);font-size:12px;padding:4px 10px;cursor:pointer}
+.back-btn:hover{color:var(--tx0);background:var(--bg2)}
+.detail-title{font-size:14px;color:var(--tx0);font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.detail-cost{font-size:11px;color:var(--green);font-weight:600}
+.detail-tokens{font-size:11px;color:var(--tx2)}
+.detail-body{display:flex;flex:1;overflow:hidden}
+.detail-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#detail-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:85%;padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6;word-break:break-word}
+.msg.user{background:var(--usr-bg);align-self:flex-end;border-bottom-right-radius:3px}
+.msg.assistant{background:var(--bg1);border:1px solid var(--bd);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.tool{background:var(--bg0);border:1px solid var(--bd);align-self:flex-start;border-radius:var(--radius-sm);font-size:12px;width:100%;max-width:100%}
+.tool-header{color:var(--tx1);padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none;font-size:12px}
+.tool-header:hover{color:var(--tx0)}
+.tool-header .chev{transition:transform .15s;font-size:10px}
+.tool-header .chev.open{transform:rotate(90deg)}
+.tool-body{padding:0 10px 8px;display:none;overflow:hidden}
+.tool-body.open{display:block}
+.tool-body pre{background:var(--bg0);padding:8px;border-radius:4px;overflow-x:auto;font-size:11px;color:var(--tx0);white-space:pre-wrap;max-height:300px;overflow-y:auto}
+.pending{opacity:.55}
+.agent-group{background:var(--bg0);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:var(--radius-sm);width:100%;max-width:100%;margin:4px 0;font-size:12px}
+.agent-group.ag-done{border-left-color:var(--green)}
+.agent-group.ag-error{border-left-color:var(--red)}
+.ag-header{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;color:var(--tx1);font-weight:600}
+.ag-header:hover{color:var(--tx0)}
+.ag-badge{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600}
+.ag-badge.running{background:rgba(255,159,10,.15);color:var(--orange)}
+.ag-badge.done{background:rgba(48,209,88,.15);color:var(--green)}
+.ag-badge.error{background:rgba(255,69,58,.15);color:var(--red)}
+.ag-body{display:none;padding:0 10px 8px}
+.ag-body.open{display:block}
+.ag-body .msg{max-width:100%;margin:4px 0;font-size:12px}
+.detail-input{border-top:1px solid var(--bd);padding:12px 16px;background:var(--bg1);flex-shrink:0}
+.detail-input-row{display:flex;gap:8px;align-items:flex-end}
+#detail-prompt{flex:1;background:var(--bg0);border:1px solid var(--bd);border-radius:var(--radius-sm);color:var(--tx0);font-size:14px;padding:10px 14px;resize:none;font-family:inherit;min-height:44px;max-height:120px;overflow-y:auto;outline:none}
+#detail-prompt:focus{border-color:var(--accent)}
+.detail-controls{display:flex;gap:8px;margin-top:8px;align-items:center}
+.detail-controls select{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--tx0);font-size:11px;padding:4px 8px;cursor:pointer;outline:none}
+.stop-btn{background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.25);border-radius:6px;color:var(--red);font-size:11px;padding:4px 10px;cursor:pointer;transition:background .12s}
+.stop-btn:hover{background:rgba(255,69,58,.2)}
+
+/* Git panel */
+#git-panel{width:0;overflow:hidden;transition:width .2s ease;border-left:1px solid var(--bd);background:var(--bg0);display:flex;flex-direction:column}
+#git-panel.open{width:300px;min-width:260px}
+.gp-head{padding:10px 14px;background:var(--bg1);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--tx1);text-transform:uppercase;letter-spacing:.05em}
+.gp-badge{background:var(--diff-add);color:var(--green);font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;text-transform:none;letter-spacing:0}
+.gp-section{padding:10px 14px;border-bottom:1px solid var(--bd)}
+.gp-label{font-size:10px;font-weight:600;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.gp-section pre{font-size:11px;font-family:monospace;color:var(--tx1);white-space:pre-wrap;line-height:1.5}
+#gp-diff-area{flex:1;overflow-y:auto;padding:10px 14px}
+
+/* ── PR View ───────────────────────────────────────────────── */
+#view-prs{display:none;flex-direction:column;height:100%;overflow:hidden}
+.pr-header{padding:16px 24px;flex-shrink:0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px}
+.pr-header h1{font-size:20px;font-weight:600}
+.pr-task-sel{background:var(--bg1);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:12px;padding:6px 12px;outline:none;max-width:400px;flex:1}
+.pr-task-sel:focus{border-color:var(--accent)}
+.pr-content{display:flex;flex:1;overflow:hidden}
+.pr-files{width:220px;border-right:1px solid var(--bd);overflow-y:auto;padding:8px;flex-shrink:0}
+.pr-file{padding:6px 10px;border-radius:6px;font-size:12px;color:var(--tx1);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s;font-family:monospace}
+.pr-file:hover{background:var(--bg2)}
+.pr-file.active{background:var(--accent-dim);color:var(--accent)}
+.pr-file-icon{font-size:9px}
+.pr-file-icon.A{color:var(--green)}
+.pr-file-icon.M{color:var(--orange)}
+.pr-file-icon.D{color:var(--red)}
+.pr-diff{flex:1;overflow:auto;padding:0}
+.pr-diff-content{font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.7}
+.dl{display:flex;min-height:20px}
+.dl-num{width:48px;text-align:right;padding:0 8px;color:var(--tx2);user-select:none;flex-shrink:0;font-size:11px;opacity:.6}
+.dl-code{flex:1;padding:0 12px;white-space:pre-wrap;word-break:break-all}
+.dl.add{background:var(--diff-add)}.dl.add .dl-code{color:var(--green)}
+.dl.del{background:var(--diff-del)}.dl.del .dl-code{color:var(--red)}
+.dl.hunk{background:var(--bg1);color:var(--accent);font-size:11px;padding:4px 0}
+.dl.hunk .dl-code{opacity:.7}
+.pr-empty{padding:40px;text-align:center;color:var(--tx2);font-size:13px}
+.pr-file-header{padding:8px 16px;background:var(--bg1);border-bottom:1px solid var(--bd);font-size:12px;font-weight:600;color:var(--accent);position:sticky;top:0;z-index:1}
+
+/* ── Shared views: Scheduler/Monitor/Settings ──────────────── */
+.sub-view{display:none;flex-direction:column;height:100%;overflow:auto;padding:24px}
+.sub-view h2{font-size:20px;font-weight:600;margin-bottom:16px}
+.job-card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.job-name{font-size:13px;font-weight:500;color:var(--tx0);flex:1}
+.job-schedule{font-size:11px;color:var(--tx2)}
+.job-toggle{width:36px;height:20px;border-radius:10px;background:var(--bg2);border:none;cursor:pointer;position:relative;transition:background .2s}
+.job-toggle.on{background:var(--green)}
+.job-toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.job-toggle.on::after{left:18px}
+.job-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.metric-card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:14px}
+.metric-label{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:600;color:var(--tx0)}
+.metric-val.good{color:var(--green)}.metric-val.warn{color:var(--orange)}.metric-val.bad{color:var(--red)}
+.prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.prov-card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:10px 12px;display:flex;align-items:center;gap:8px}
+.prov-dot{width:8px;height:8px;border-radius:50%}
+.prov-dot.ok{background:var(--green)}.prov-dot.err{background:var(--red)}.prov-dot.unk{background:var(--tx2)}
+.prov-name{font-size:13px;color:var(--tx0);flex:1}
+#theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:20px}
+.theme-sw{border:2px solid transparent;border-radius:var(--radius-sm);padding:8px 6px;cursor:pointer;text-align:center;transition:border-color .12s}
+.theme-sw:hover{border-color:var(--accent)}.theme-sw.sel{border-color:var(--accent)}
+.sw-preview{width:100%;height:28px;border-radius:5px;margin-bottom:5px;display:flex;gap:3px;padding:4px}
+.sw-preview span{flex:1;border-radius:3px}
+.sw-name{color:var(--tx1);font-size:10px}
+.settings-section{margin-bottom:24px}
+.settings-label{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.cfg-input{background:var(--bg1);border:1px solid var(--bd);border-radius:6px;color:var(--tx0);padding:8px 12px;font-size:13px;font-family:monospace;outline:none;width:100%}
+.cfg-input:focus{border-color:var(--accent)}
+.btn-primary{background:var(--accent);border:none;border-radius:6px;color:var(--bg0);padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-primary:hover{opacity:.9}
+
+/* Agent Profile Cards */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.agent-card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius);padding:16px;transition:border-color .15s,box-shadow .15s}
+.agent-card:hover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.agent-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.agent-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.agent-card-title{font-size:14px;font-weight:600;color:var(--tx0)}
+.agent-card-name{font-size:11px;color:var(--tx2);font-family:monospace}
+.agent-card-desc{font-size:12px;color:var(--tx1);line-height:1.5;margin-bottom:12px}
+.agent-badges{display:flex;flex-wrap:wrap;gap:5px}
+.agent-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.02em}
+.agent-badge.streaming{background:var(--accent-dim);color:var(--accent)}
+.agent-badge.tools{background:rgba(48,209,88,.15);color:var(--green)}
+.agent-badge.sessions{background:rgba(255,159,10,.15);color:var(--orange)}
+.agent-badge.agents{background:rgba(191,90,242,.15);color:#bf5af2}
+.agent-badge.local{background:rgba(99,99,102,.2);color:var(--tx1)}
+
+/* Diff shared */
+.diff-file-hdr{color:var(--accent);font-weight:600;font-size:11px;padding:4px 6px;background:var(--bg1);border-radius:4px;margin-bottom:4px;word-break:break-all}
+.diff-add{color:var(--green);background:var(--diff-add);display:block;padding:0 4px;border-radius:2px;font-size:11px;font-family:monospace}
+.diff-del{color:var(--red);background:var(--diff-del);display:block;padding:0 4px;border-radius:2px;font-size:11px;font-family:monospace}
+.diff-ctx{color:var(--tx2);display:block;padding:0 4px;font-size:11px;font-family:monospace}
+.diff-hunk{color:var(--tx1);font-size:10px;padding:2px 0;font-family:monospace}
+
+/* CWD dropdown */
+.cwd-wrap{position:relative}
+.cwd-drop{position:absolute;top:100%;left:0;width:100%;background:var(--bg1);border:1px solid var(--accent);border-radius:6px;z-index:999;display:none;max-height:200px;overflow-y:auto}
+.cwd-opt{padding:5px 10px;font-size:12px;font-family:monospace;color:var(--tx0);cursor:pointer}
+.cwd-opt:hover,.cwd-opt.sel{background:var(--usr-bg)}
+
+/* Markdown */
+.msg code{background:var(--bg0);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-size:12px;font-family:'SF Mono',monospace}
+.msg pre{background:var(--bg0);border:1px solid var(--bd);border-radius:6px;padding:10px;overflow-x:auto;margin:6px 0}
+.msg pre code{background:none;border:none;padding:0;font-size:12px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+/* Spinner */
+.spin{display:inline-block;animation:sp 1s linear infinite}
+@keyframes sp{100%{transform:rotate(360deg)}}
+
+/* Mobile */
+@media(max-width:768px){
+  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:700;transform:translateX(-100%);transition:transform .25s ease}
+  #sidebar.open{transform:translateX(0)}
+  .mob-toggle{display:flex !important}
+  #git-panel.open{width:85vw !important;min-width:0 !important;position:fixed;right:0;top:0;bottom:0;z-index:700}
+  .pr-files{width:140px}
+}
+.mob-toggle{display:none;background:none;border:1px solid var(--bd);border-radius:6px;color:var(--tx1);font-size:16px;padding:4px 8px;cursor:pointer;align-items:center}
+</style>
+</head>
+<body>
+
+<!-- ═══ Sidebar ═══ -->
+<div id="sidebar">
+  <div id="sidebar-logo"><span>◆</span> CC-UI</div>
+  <div id="sidebar-search-wrap">
+    <input id="sidebar-search" type="text" placeholder="Search threads…" />
+  </div>
+
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" data-view="chat"><span class="nav-icon">💬</span> Chat</div>
+  <div class="nav-item" data-view="tasks"><span class="nav-icon">📋</span> Tasks <span class="nav-badge" id="running-count" style="display:none">0</span></div>
+  <div class="nav-item" data-view="prs"><span class="nav-icon">🔀</span> PRs</div>
+  <div class="nav-item" data-view="scheduler"><span class="nav-icon">⏱</span> Automations</div>
+  <div class="nav-item" data-view="monitor"><span class="nav-icon">♡</span> Monitor</div>
+  <div class="nav-item" data-view="settings"><span class="nav-icon">⚙</span> Settings</div>
+
+  <div class="nav-section">Recent Threads</div>
+  <div id="thread-list"></div>
+
+  <div id="sidebar-footer">
+    <div class="sidebar-user" onclick="showView('settings')">
+      <div class="sidebar-avatar">S</div>
+      <div class="sidebar-username">Santhosh</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Main Content ═══ -->
+<div id="main">
+
+  <!-- Chat View -->
+  <div id="view-chat">
+    <div class="chat-hero">
+      <button class="mob-toggle" onclick="toggleSidebar()" style="margin-bottom:12px">☰</button>
+      <h1>What shall I build?</h1>
+      <p>Your AI workforce — ship features, review code, sleep peacefully</p>
+    </div>
+    <div class="chat-input-wrap">
+      <div class="chat-input-box" id="chat-dropzone">
+        <textarea class="chat-textarea" id="new-prompt" placeholder="Describe a task, paste a file path, or drop files here…" rows="3"></textarea>
+        <div class="chat-attachments" id="new-attachments"></div>
+        <div class="chat-controls">
+          <button class="attach-btn" onclick="document.getElementById('file-picker').click()" title="Attach files (Ctrl+U)">📎</button>
+          <input type="file" id="file-picker" multiple style="display:none" />
+          <div class="picker-pill" id="model-picker" onclick="togglePicker(this)">
+            <span class="picker-dot" id="mp-dot" style="background:#30d158"></span>
+            <span class="picker-label" id="mp-label">Claude Code</span>
+            <span class="picker-model" id="mp-model"></span>
+            <span class="picker-chevron">▾</span>
+            <div class="picker-panel" id="mp-panel" onclick="event.stopPropagation()">
+              <input class="picker-search" placeholder="Find providers…" oninput="filterPicker('model',this.value)" />
+              <div class="picker-list" id="mp-list"></div>
+            </div>
+          </div>
+          <select id="new-mode">
+            <option value="bypassPermissions">Autonomous</option>
+            <option value="acceptEdits">Accept Edits</option>
+            <option value="plan">Plan</option>
+            <option value="default">Interactive</option>
+          </select>
+          <div class="picker-pill advisor-pill" id="advisor-picker" onclick="togglePicker(this)">
+            <span class="picker-dot" id="ap-dot" style="background:var(--tx2)"></span>
+            <span class="picker-label" id="ap-label">No Advisor</span>
+            <span class="picker-model" id="ap-model"></span>
+            <span class="picker-chevron">▾</span>
+            <div class="picker-panel" id="ap-panel" onclick="event.stopPropagation()">
+              <input class="picker-search" placeholder="Find advisor…" oninput="filterPicker('advisor',this.value)" />
+              <div class="picker-list" id="ap-list"></div>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div class="branch-pill" id="branch-pill" onclick="pickBranch()" title="Git branch">⎇ <span id="branch-name">default</span></div>
+          <div class="cwd-wrap">
+            <input class="ctrl-input" id="new-cwd" placeholder="~/project" autocomplete="off" title="Working directory" />
+            <div class="cwd-drop" id="new-cwd-drop"></div>
+          </div>
+          <button class="chat-send" id="send-new-btn" onclick="sendNewTask()" title="Send (Enter)">↑</button>
+        </div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="qa-pill" onclick="qa('Summarize latest changes in this repo')">📋 Summarize</button>
+      <button class="qa-pill" onclick="qa('Review my latest code changes for bugs and improvements')">🔍 Review</button>
+      <button class="qa-pill" onclick="qa('Write comprehensive tests for the project')">🧪 Tests</button>
+      <button class="qa-pill" onclick="qa('Fix bugs in the current project')">🐛 Fix bugs</button>
+      <button class="qa-pill" onclick="qa('Refactor and optimize the codebase')">⚡ Optimize</button>
+      <button class="qa-pill" onclick="qa('Add documentation and type hints')">📝 Document</button>
+    </div>
+  </div>
+
+  <!-- Tasks View -->
+  <div id="view-tasks">
+    <div class="tasks-header">
+      <button class="mob-toggle" onclick="toggleSidebar()">☰</button>
+      <h1>Tasks</h1>
+      <span class="tasks-count" id="total-count"></span>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="task-list" id="task-list"></div>
+  </div>
+
+  <!-- Task Detail View -->
+  <div id="view-detail">
+    <div class="detail-topbar">
+      <button class="back-btn" onclick="showView('tasks')">← Tasks</button>
+      <button class="mob-toggle" onclick="toggleSidebar()">☰</button>
+      <span class="detail-title" id="d-title">Task</span>
+      <span class="detail-cost" id="d-cost"></span>
+      <span class="detail-tokens" id="d-tokens"></span>
+      <button onclick="toggleGitPanel()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--tx1);font-size:12px;padding:4px 8px;cursor:pointer">⎇ Git</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-main">
+        <div id="detail-messages"></div>
+        <div class="detail-input">
+          <div class="detail-input-row">
+            <textarea id="detail-prompt" placeholder="Follow-up message…" rows="1"></textarea>
+            <button class="chat-send" onclick="sendFollowUp()">↑</button>
+          </div>
+          <div class="detail-controls">
+            <select id="d-model"></select>
+            <select id="d-mode">
+              <option value="bypassPermissions">Autonomous</option>
+              <option value="acceptEdits">Accept Edits</option>
+              <option value="plan">Plan</option>
+              <option value="default">Interactive</option>
+            </select>
+            <button class="stop-btn" onclick="stopTask()">⏹ Stop</button>
+          </div>
+        </div>
+      </div>
+      <div id="git-panel">
+        <div class="gp-head"><span>Git</span><span class="gp-badge" id="gp-badge" style="display:none">repo</span></div>
+        <div class="gp-section"><div class="gp-label">Branch</div><pre id="gp-branch">—</pre></div>
+        <div class="gp-section"><div class="gp-label">Status</div><pre id="gp-status">—</pre></div>
+        <div id="gp-diff-area"><div class="gp-label">Diff</div><div id="gp-diff"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PR View -->
+  <div id="view-prs">
+    <div class="pr-header">
+      <h1>🔀 Pull Requests</h1>
+      <select class="pr-task-sel" id="pr-task-sel" onchange="loadPRDiff()">
+        <option value="">Select a task to view diff…</option>
+      </select>
+    </div>
+    <div class="pr-content">
+      <div class="pr-files" id="pr-files"></div>
+      <div class="pr-diff" id="pr-diff"><div class="pr-empty">Select a task and file to view diff</div></div>
+    </div>
+  </div>
+
+  <!-- Scheduler -->
+  <div id="view-scheduler" class="sub-view">
+    <h2>⏱ Automations</h2>
+    <p style="color:var(--tx2);font-size:13px;margin-bottom:16px">Schedule recurring tasks, cron jobs, and delayed executions.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <input id="job-name" placeholder="Job name" class="cfg-input" style="flex:1;min-width:120px" />
+      <input id="job-prompt" placeholder="Prompt to execute" class="cfg-input" style="flex:2;min-width:200px" />
+      <select id="job-interval" class="cfg-input" style="width:140px;cursor:pointer">
+        <option value="0">One-time</option>
+        <option value="60">Every minute</option>
+        <option value="3600">Every hour</option>
+        <option value="86400">Every day</option>
+      </select>
+      <button class="btn-primary" onclick="createJob()">+ Add</button>
+    </div>
+    <div id="jobs-list"></div>
+  </div>
+
+  <!-- Monitor -->
+  <div id="view-monitor" class="sub-view">
+    <h2>♡ System Monitor</h2>
+    <div class="metric-grid" id="metrics-grid"></div>
+    <h3 style="font-size:15px;margin-bottom:12px;color:var(--tx1)">Provider Status</h3>
+    <div class="prov-grid" id="prov-grid"></div>
+  </div>
+
+  <!-- Settings -->
+  <div id="view-settings" class="sub-view">
+    <h2>⚙ Settings</h2>
+
+    <div class="settings-section">
+      <div class="settings-label">Agents & Providers</div>
+      <div class="agent-grid" id="agent-grid"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Theme</div>
+      <div id="theme-grid"></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">vLLM / Local Model Config</div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:400px">
+        <input id="cfg-vllm-ip" placeholder="IP (e.g. 192.168.170.76)" class="cfg-input" />
+        <input id="cfg-vllm-port" placeholder="Port (default: 8000)" class="cfg-input" />
+        <input id="cfg-vllm-model" placeholder="Model name / path" class="cfg-input" />
+        <input id="cfg-vllm-key" placeholder="API key (default: dummy)" class="cfg-input" />
+        <button class="btn-primary" onclick="saveVllmCfg()" style="align-self:flex-start">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = `http://${window.location.hostname}:8001`;
+let tasks = [], activeId = null, currentView = 'chat', providers = [];
+let taskFilter = 'all';
+let prDiffData = {}; // {filename: diffLines}
+let prFiles = [];
+
+// ── API ─────────────────────────────────────────────────────────
+async function api(m, p, b) {
+  const o = { method: m, headers: { 'Content-Type': 'application/json' } };
+  if (b) o.body = JSON.stringify(b);
+  const r = await fetch(API + p, o);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Utility ─────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function timeAgo(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+function fmtCost(c) { return c < 0.01 ? c.toFixed(4) : c < 1 ? c.toFixed(3) : c.toFixed(2); }
+function fmtTokens(u) {
+  if (!u) return '';
+  const i = (u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0);
+  const o = u.output_tokens||0;
+  if (!i && !o) return '';
+  const f = n => n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':n;
+  return f(i)+'↓ '+f(o)+'↑';
+}
+function renderMd(text) {
+  if (!text) return '';
+  let s = esc(text);
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c) => `<pre><code>${c}</code></pre>`);
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\n/g, '<br>');
+  return s;
+}
+
+// ── Providers ───────────────────────────────────────────────────
+const AGENT_ICONS = {
+  claude:'🟣', opencode:'🔵', gemini:'🔴', copilot:'⚫', vllm:'🟢',
+  kivi:'🟡', 'openai-agent':'🟠', inhouse:'⬡', claudeagents:'🌐',
+};
+const AGENT_DOT_COLORS = {
+  claude:'#8b5cf6', opencode:'#3b82f6', gemini:'#ef4444', copilot:'#6b7280',
+  vllm:'#22c55e', kivi:'#eab308', 'openai-agent':'#f97316', inhouse:'#06b6d4',
+  claudeagents:'#a855f7',
+};
+const AGENT_COLORS = {
+  claude:'linear-gradient(135deg,#8b5cf6,#6d28d9)', opencode:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+  gemini:'linear-gradient(135deg,#ef4444,#dc2626)', copilot:'linear-gradient(135deg,#6b7280,#374151)',
+  vllm:'linear-gradient(135deg,#22c55e,#16a34a)', kivi:'linear-gradient(135deg,#eab308,#ca8a04)',
+  'openai-agent':'linear-gradient(135deg,#f97316,#ea580c)', inhouse:'linear-gradient(135deg,#06b6d4,#0891b2)',
+  claudeagents:'linear-gradient(135deg,#a855f7,#7c3aed)',
+};
+
+// State for custom pickers
+let selectedModel = 'claude';
+let selectedModelVariant = '';
+let selectedAdvisor = '';
+let selectedAdvisorVariant = '';
+
+async function loadProviders() {
+  try { providers = await api('GET', '/providers'); } catch(e) {
+    providers = [{name:'claude',display_name:'Claude Code',models:[]},{name:'vllm',display_name:'vLLM',models:['auto']},{name:'kivi',display_name:'Kivi',models:['auto']},{name:'opencode',display_name:'OpenCode',models:[]},{name:'gemini',display_name:'Gemini',models:[]}];
+  }
+  // Populate detail-view model selector (still a plain select)
+  const html = providers.map(p => `<option value="${p.name}">${p.display_name||p.name}</option>`).join('');
+  document.getElementById('d-model').innerHTML = html;
+  // Build custom picker lists
+  buildPickerList('model');
+  buildPickerList('advisor');
+  updatePickerPill('model');
+  updatePickerPill('advisor');
+  renderAgentGrid();
+}
+
+function buildPickerList(type) {
+  const listEl = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  let items = '';
+  if (type === 'advisor') {
+    items += `<div class="picker-item${selectedAdvisor===''?' selected':''}" data-provider="" onclick="selectProvider('advisor','')">
+      <span class="pi-dot" style="background:var(--tx2)"></span>
+      <div class="pi-info"><div class="pi-name">No Advisor</div><div class="pi-desc">Run without advisor review</div></div>
+      <span class="pi-check">✓</span>
+    </div>`;
+  }
+  providers.forEach(p => {
+    const sel = type === 'model' ? (selectedModel === p.name) : (selectedAdvisor === p.name);
+    const dotColor = AGENT_DOT_COLORS[p.name] || 'var(--tx2)';
+    const models = (p.models || []).filter(m => m !== 'auto');
+    const curVariant = type === 'model' ? selectedModelVariant : selectedAdvisorVariant;
+    let modelHtml = '';
+    if (models.length > 0) {
+      modelHtml = `<div class="picker-models"${sel?'':' style="display:none"'}>` +
+        models.map(m => `<div class="picker-mitem${sel && curVariant===m?' selected':''}" data-model="${m}" onclick="event.stopPropagation();selectModelVariant('${type}','${p.name}','${m}')">
+          <span class="pm-check">✓</span> ${esc(m)}
+        </div>`).join('') + '</div>';
+    }
+    items += `<div class="picker-item${sel?' selected':''}" data-provider="${p.name}" onclick="selectProvider('${type}','${p.name}')">
+      <span class="pi-dot" style="background:${dotColor}"></span>
+      <div class="pi-info"><div class="pi-name">${esc(p.display_name||p.name)}</div><div class="pi-desc">${esc((p.description||'').substring(0,60))}…</div></div>
+      <span class="pi-check">✓</span>
+    </div>${modelHtml}`;
+  });
+  listEl.innerHTML = items;
+}
+
+function selectProvider(type, name) {
+  if (type === 'model') {
+    selectedModel = name;
+    selectedModelVariant = '';
+    // Auto-select first model if available
+    const p = providers.find(x => x.name === name);
+    if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedModelVariant = p.models[0];
+  } else {
+    selectedAdvisor = name;
+    selectedAdvisorVariant = '';
+    if (name) {
+      const p = providers.find(x => x.name === name);
+      if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedAdvisorVariant = p.models[0];
+    }
+  }
+  buildPickerList(type);
+  updatePickerPill(type);
+}
+
+function selectModelVariant(type, provName, modelName) {
+  if (type === 'model') {
+    selectedModel = provName;
+    selectedModelVariant = modelName;
+  } else {
+    selectedAdvisor = provName;
+    selectedAdvisorVariant = modelName;
+  }
+  buildPickerList(type);
+  updatePickerPill(type);
+}
+
+function updatePickerPill(type) {
+  if (type === 'model') {
+    const p = providers.find(x => x.name === selectedModel);
+    const dot = document.getElementById('mp-dot');
+    const label = document.getElementById('mp-label');
+    const model = document.getElementById('mp-model');
+    dot.style.background = AGENT_DOT_COLORS[selectedModel] || 'var(--tx2)';
+    label.textContent = p ? (p.display_name || p.name) : selectedModel;
+    model.textContent = selectedModelVariant || '';
+  } else {
+    const pill = document.getElementById('advisor-picker');
+    const dot = document.getElementById('ap-dot');
+    const label = document.getElementById('ap-label');
+    const model = document.getElementById('ap-model');
+    if (selectedAdvisor) {
+      const p = providers.find(x => x.name === selectedAdvisor);
+      dot.style.background = AGENT_DOT_COLORS[selectedAdvisor] || '#af52de';
+      label.textContent = '🧠 ' + (p ? (p.display_name || p.name) : selectedAdvisor);
+      model.textContent = selectedAdvisorVariant || '';
+      pill.classList.add('active');
+    } else {
+      dot.style.background = 'var(--tx2)';
+      label.textContent = 'No Advisor';
+      model.textContent = '';
+      pill.classList.remove('active');
+    }
+  }
+}
+
+function togglePicker(pill) {
+  const wasOpen = pill.classList.contains('open');
+  // Close all pickers first
+  document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open'));
+  if (!wasOpen) pill.classList.add('open');
+}
+
+function filterPicker(type, query) {
+  const list = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  const q = query.toLowerCase();
+  list.querySelectorAll('.picker-item').forEach(item => {
+    const name = (item.querySelector('.pi-name')?.textContent || '').toLowerCase();
+    const match = !q || name.includes(q);
+    item.style.display = match ? '' : 'none';
+    const models = item.nextElementSibling;
+    if (models && models.classList.contains('picker-models')) models.style.display = match ? '' : 'none';
+  });
+}
+
+// Close pickers on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.picker-pill')) {
+    document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open'));
+  }
+});
+
+function renderAgentGrid() {
+  const grid = document.getElementById('agent-grid');
+  if (!grid || !providers.length) return;
+  grid.innerHTML = providers.map(p => {
+    const icon = AGENT_ICONS[p.name] || '🤖';
+    const bg = AGENT_COLORS[p.name] || 'var(--bg2)';
+    const badges = [];
+    if (p.streaming) badges.push('<span class="agent-badge streaming">Streaming</span>');
+    if (p.tools) badges.push('<span class="agent-badge tools">Tool Use</span>');
+    if (p.sessions) badges.push('<span class="agent-badge sessions">Sessions</span>');
+    if (p.agents) badges.push('<span class="agent-badge agents">Multi-Agent</span>');
+    if (['vllm','kivi','inhouse'].includes(p.name)) badges.push('<span class="agent-badge local">Local</span>');
+    const desc = esc(p.description || 'No description available.');
+    const aliases = (p.aliases||[]).length ? `<span style="color:var(--tx2);font-size:10px;margin-left:6px">${p.aliases.map(a=>'<code style="font-size:10px">'+a+'</code>').join(' ')}</span>` : '';
+    const models = (p.models||[]).filter(m => m !== 'auto');
+    const modelBadges = models.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">${models.map(m => `<span style="font-size:9px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;padding:1px 5px;color:var(--tx2)">${esc(m)}</span>`).join('')}</div>` : '';
+    return `<div class="agent-card">
+      <div class="agent-card-hdr">
+        <div class="agent-icon" style="background:${bg}">${icon}</div>
+        <div>
+          <div class="agent-card-title">${esc(p.display_name||p.name)}${aliases}</div>
+          <div class="agent-card-name">${esc(p.name)}</div>
+        </div>
+      </div>
+      <div class="agent-card-desc">${desc}</div>
+      <div class="agent-badges">${badges.join('')}</div>
+      ${modelBadges}
+    </div>`;
+  }).join('');
+}
+
+// ── Views ───────────────────────────────────────────────────────
+const VIEWS = ['chat','tasks','detail','prs','scheduler','monitor','settings'];
+function showView(v) {
+  VIEWS.forEach(n => { const el = document.getElementById('view-'+n); if(el) el.style.display = n===v ? 'flex' : 'none'; });
+  currentView = v;
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+  if (v === 'tasks') renderTasks();
+  if (v === 'monitor') refreshMonitor();
+  if (v === 'scheduler') refreshJobs();
+  if (v === 'prs') populatePRSelect();
+  if (v === 'settings') { buildThemeGrid(); loadVllmCfg(); }
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+  el.addEventListener('click', () => showView(el.dataset.view));
+});
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleGitPanel() { document.getElementById('git-panel').classList.toggle('open'); }
+
+// ── Chat page (send new task) ───────────────────────────────────
+let attachments = [];
+
+function sendNewTask() {
+  const el = document.getElementById('new-prompt');
+  let prompt = el.value.trim();
+  if (!prompt && !attachments.length) return;
+  if (attachments.length) {
+    prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
+  }
+  const model = selectedModel;
+  const mode = document.getElementById('new-mode').value;
+  const cwd = document.getElementById('new-cwd').value.trim();
+  const branch = document.getElementById('branch-name').textContent;
+  el.value = ''; el.style.height = 'auto';
+  attachments = [];
+  renderAttachments();
+
+  const body = { prompt, model, mode, cwd, branch: branch==='default'?'':branch, extra: {},
+    advisor: selectedAdvisor || '',
+    advisor_model: selectedAdvisorVariant || '',
+  };
+  // Pass model variant override
+  if (selectedModelVariant) {
+    body.extra.model_override = selectedModelVariant;
+  }
+  if (['vllm','kivi','inhouse'].includes(model)) {
+    const ip = localStorage.getItem('vllm_ip') || '127.0.0.1';
+    const port = localStorage.getItem('vllm_port') || '9999';
+    body.extra.vllm_url = `http://${ip}:${port}`;
+    body.extra.kivi_url = `http://${ip}:${port}`;
+    body.extra.base_url = `http://${ip}:${port}/v1`;
+    body.extra.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
+    body.extra.vllm_model = localStorage.getItem('vllm_model') || 'mock-model-v1';
+    body.extra.kivi_model = localStorage.getItem('vllm_model') || 'mock-model-v1';
+    body.extra.use_tools = mode !== 'plan';
+  }
+
+  api('POST', '/tasks', body).then(() => {
+    refreshTasks();
+    showView('tasks');
+  });
+}
+function qa(prompt) { document.getElementById('new-prompt').value = prompt; sendNewTask(); }
+
+// File attachments
+document.getElementById('file-picker').addEventListener('change', function() {
+  for (const f of this.files) attachments.push(f.name);
+  renderAttachments(); this.value = '';
+});
+const dropzone = document.getElementById('chat-dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('dragover');
+  for (const f of e.dataTransfer.files) attachments.push(f.name);
+  renderAttachments();
+});
+function renderAttachments() {
+  const el = document.getElementById('new-attachments');
+  el.innerHTML = attachments.map((a,i) =>
+    `<span class="attach-chip">📄 ${esc(a)} <span class="chip-rm" onclick="rmAttach(${i})">✕</span></span>`
+  ).join('');
+}
+function rmAttach(i) { attachments.splice(i,1); renderAttachments(); }
+
+// Branch picker
+function pickBranch() {
+  const cwd = document.getElementById('new-cwd').value.trim();
+  const q = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
+  api('GET', '/git/branches' + q).then(branches => {
+    const names = branches.map(b => b.name).filter(n => !n.startsWith('origin/'));
+    const choice = prompt('Branch name:\n\nExisting: ' + names.join(', ') + '\n\nLeave empty for default:');
+    if (choice !== null) document.getElementById('branch-name').textContent = choice || 'default';
+  }).catch(() => {
+    const choice = prompt('Enter branch name (leave empty for default):');
+    if (choice !== null) document.getElementById('branch-name').textContent = choice || 'default';
+  });
+}
+
+// ── Tasks page ──────────────────────────────────────────────────
+function renderTasks() {
+  const counts = { all: tasks.length, running: 0, done: 0, other: 0 };
+  tasks.forEach(t => {
+    if (t.status === 'running') counts.running++;
+    else if (t.status === 'done') counts.done++;
+    else counts.other++;
+  });
+  document.getElementById('total-count').textContent = `${counts.all} total`;
+
+  // Running badge in sidebar
+  const badge = document.getElementById('running-count');
+  if (counts.running > 0) { badge.textContent = counts.running; badge.style.display = ''; }
+  else badge.style.display = 'none';
+
+  // Filter tabs
+  document.getElementById('filter-bar').innerHTML = ['all','running','done','other'].map(f => {
+    const c = counts[f];
+    const label = f === 'all' ? 'All' : f === 'running' ? '● Running' : f === 'done' ? '✓ Done' : '■ Other';
+    return `<div class="filter-tab${taskFilter===f?' active':''}" onclick="setFilter('${f}')">${label} <span style="opacity:.6">${c}</span></div>`;
+  }).join('');
+
+  // Filter tasks
+  let filtered = tasks;
+  if (taskFilter === 'running') filtered = tasks.filter(t => t.status === 'running');
+  else if (taskFilter === 'done') filtered = tasks.filter(t => t.status === 'done');
+  else if (taskFilter === 'other') filtered = tasks.filter(t => t.status !== 'running' && t.status !== 'done');
+
+  const list = document.getElementById('task-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="task-empty">No ${taskFilter==='all'?'':taskFilter} tasks</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const st = t.status === 'error' ? 'error' : t.status;
+    const cost = t.total_cost ? '$'+fmtCost(t.total_cost) : '';
+    const tokens = fmtTokens(t.usage);
+    let actions = '';
+    if (st === 'running') {
+      actions = `<button class="card-btn stop" onclick="event.stopPropagation();stopTaskById('${t.id}')">⏹ Stop</button>`;
+    } else if (st === 'stopped' || st === 'error') {
+      actions = `<button class="card-btn resume" onclick="event.stopPropagation();resumeTask('${t.id}')">▶ Resume</button>
+        <button class="card-btn del" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete">✕</button>`;
+    } else {
+      actions = `<button class="card-btn del" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete">✕</button>`;
+    }
+    const notification = st === 'running' ? `<span class="tc-notification">⟳ working…</span>` : '';
+    return `<div class="task-card st-${st}" onclick="openTaskDetail('${t.id}')">
+      ${notification}
+      <div class="tc-row">
+        <span class="tc-dot ${st}"></span>
+        <span class="tc-title">${esc(t.label)}</span>
+        ${t.model?`<span class="tc-model">${esc(t.model)}</span>`:''}
+        ${t.advisor?`<span class="tc-model" style="background:rgba(175,82,222,.15);color:#af52de" title="Advisor: ${esc(t.advisor)}">🧠 ${esc(t.advisor)}</span>`:''}
+        <span class="tc-time">${timeAgo(t.created_at)}</span>
+      </div>
+      ${t.preview?`<div class="tc-preview">${esc(t.preview)}</div>`:''}
+      <div class="tc-footer">
+        ${cost?`<span class="tc-cost">${cost}</span>`:''}
+        ${tokens?`<span class="tc-tokens">${tokens}</span>`:''}
+        <div class="tc-actions">${actions}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setFilter(f) { taskFilter = f; renderTasks(); }
+
+async function stopTaskById(id) {
+  try { await api('POST', `/tasks/${id}/stop`); } catch(e) {}
+  refreshAll();
+}
+async function resumeTask(id) {
+  try { await api('POST', `/tasks/${id}/resume`); } catch(e) {}
+  refreshAll();
+}
+async function deleteTask(id) {
+  try { await api('DELETE', `/tasks/${id}`); } catch(e) {}
+  refreshAll();
+}
+
+// ── Task detail ─────────────────────────────────────────────────
+async function openTaskDetail(id) {
+  activeId = id;
+  showView('detail');
+  const t = tasks.find(x => x.id === id);
+  if (t) {
+    document.getElementById('d-title').textContent = t.label + (t.status==='running'?' ⟳':'');
+    if (t.model) document.getElementById('d-model').value = t.model;
+    if (t.mode) document.getElementById('d-mode').value = t.mode;
+    updateDetailCost(t);
+  }
+  const full = await api('GET', `/tasks/${id}`);
+  renderMessages(full.history);
+  updateDetailCost(full);
+  refreshGitPanel();
+}
+
+function updateDetailCost(t) {
+  document.getElementById('d-cost').textContent = t.total_cost ? '$'+fmtCost(t.total_cost) : '';
+  document.getElementById('d-tokens').textContent = fmtTokens(t.usage) || '';
+}
+
+function renderMessages(history) {
+  const el = document.getElementById('detail-messages');
+  if (!history || !history.length) {
+    el.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:14px">Start a conversation</div>';
+    return;
+  }
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  const openTools = new Set();
+  el.querySelectorAll('.tool-body.open').forEach((e,i) => openTools.add([...el.querySelectorAll('.tool-body')].indexOf(e)));
+  const openAgs = new Set();
+  el.querySelectorAll('.ag-body.open').forEach((e,i) => openAgs.add([...el.querySelectorAll('.ag-body')].indexOf(e)));
+
+  el.innerHTML = history.map(msg => {
+    const role = msg.role, meta = msg.metadata;
+    if (role === 'agent-group') {
+      const st = msg.status || 'running';
+      const badge = `<span class="ag-badge ${st}">${st}</span>`;
+      const children = (msg.children||[]).map(c => {
+        if (c.metadata) {
+          const cp = c.metadata.status === 'pending';
+          const cb = c.content ? `<div class="tool-body">${renderMd(c.content)}</div>` : '';
+          return `<div class="msg tool${cp?' pending':''}"><div class="tool-header" onclick="toggleTool(this)"><span class="chev">▶</span>${esc(c.metadata.title)}</div>${cb}</div>`;
+        }
+        if (c.role==='assistant') return `<div class="msg assistant">${renderMd(c.content)}</div>`;
+        if (c.role==='user') return `<div class="msg user">${esc(c.content)}</div>`;
+        return '';
+      }).join('');
+      return `<div class="agent-group ag-${st}"><div class="ag-header" onclick="toggleAg(this)"><span class="chev${st==='running'?' open':''}">▶</span>${esc(msg.agent_label||'Agent')} ${badge}</div><div class="ag-body${st==='running'?' open':''}">${children}</div></div>`;
+    }
+    if (meta) {
+      const pending = meta.status === 'pending';
+      const body = msg.content ? `<div class="tool-body">${renderMd(msg.content)}</div>` : '';
+      return `<div class="msg tool${pending?' pending':''}"><div class="tool-header" onclick="toggleTool(this)"><span class="chev">▶</span>${esc(meta.title)}</div>${body}</div>`;
+    }
+    if (role === 'user') return `<div class="msg user">${esc(msg.content)}</div>`;
+    return `<div class="msg assistant">${renderMd(msg.content)}</div>`;
+  }).join('');
+
+  el.querySelectorAll('.tool-body').forEach((e,i) => { if(openTools.has(i)) e.classList.add('open'); });
+  el.querySelectorAll('.ag-body').forEach((e,i) => { if(openAgs.has(i)) e.classList.add('open'); });
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+function toggleTool(hdr) {
+  const body = hdr.nextElementSibling;
+  const chev = hdr.querySelector('.chev');
+  if (body) { body.classList.toggle('open'); chev?.classList.toggle('open'); }
+}
+function toggleAg(hdr) {
+  const body = hdr.nextElementSibling;
+  const chev = hdr.querySelector('.chev');
+  if (body) { body.classList.toggle('open'); chev?.classList.toggle('open'); }
+}
+
+async function sendFollowUp() {
+  const el = document.getElementById('detail-prompt');
+  const prompt = el.value.trim();
+  if (!prompt || !activeId) return;
+  el.value = ''; el.style.height = 'auto';
+  await api('POST', `/tasks/${activeId}/message`, { prompt });
+  refreshAll();
+}
+
+async function stopTask() {
+  if (!activeId) return;
+  await api('POST', `/tasks/${activeId}/stop`);
+  refreshAll();
+}
+
+// ── Git panel ───────────────────────────────────────────────────
+function renderDiffSimple(d) {
+  if (!d) return '';
+  const lines = d.split('\n');
+  let html='', inFile=false;
+  for (const l of lines) {
+    if (l.startsWith('diff --git')) { if(inFile)html+='</div>'; const f=l.replace('diff --git ','').split(' b/').pop(); html+=`<div><div class="diff-file-hdr">📄 ${esc(f)}</div>`; inFile=true; }
+    else if (l.startsWith('@@')) html+=`<span class="diff-hunk">${esc(l)}</span>`;
+    else if (l.startsWith('+')&&!l.startsWith('+++')) html+=`<span class="diff-add">${esc(l)}</span>`;
+    else if (l.startsWith('-')&&!l.startsWith('---')) html+=`<span class="diff-del">${esc(l)}</span>`;
+    else if (!l.startsWith('index ')&&!l.startsWith('--- ')&&!l.startsWith('+++ ')&&l.trim()) html+=`<span class="diff-ctx">${esc(l)}</span>`;
+  }
+  if(inFile) html+='</div>';
+  return html || '<div style="color:var(--tx2);font-size:12px">No changes</div>';
+}
+
+async function refreshGitPanel() {
+  if (!activeId) return;
+  try {
+    const d = await api('GET', `/tasks/${activeId}/gitdiff`);
+    document.getElementById('gp-badge').style.display = d.is_git ? 'inline' : 'none';
+    document.getElementById('gp-status').textContent = d.status?.trim() || 'clean';
+    document.getElementById('gp-diff').innerHTML = renderDiffSimple(d.diff);
+    const t = tasks.find(x => x.id === activeId);
+    if (t?.cwd) {
+      try {
+        const gs = await api('GET', `/git/status?cwd=${encodeURIComponent(t.cwd)}`);
+        document.getElementById('gp-branch').textContent = gs.branch || '—';
+      } catch(e) {}
+    }
+  } catch(e) {}
+}
+
+// ── PR View ─────────────────────────────────────────────────────
+function populatePRSelect() {
+  const sel = document.getElementById('pr-task-sel');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Select a task to view diff…</option>' +
+    tasks.map(t => `<option value="${t.id}">${esc(t.label)} (${t.status})</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+async function loadPRDiff() {
+  const id = document.getElementById('pr-task-sel').value;
+  const filesEl = document.getElementById('pr-files');
+  const diffEl = document.getElementById('pr-diff');
+  if (!id) { filesEl.innerHTML = ''; diffEl.innerHTML = '<div class="pr-empty">Select a task to view diff</div>'; return; }
+
+  try {
+    const d = await api('GET', `/tasks/${id}/gitdiff`);
+    if (!d.diff) { filesEl.innerHTML = ''; diffEl.innerHTML = '<div class="pr-empty">No changes found</div>'; return; }
+    parseDiffIntoFiles(d.diff);
+    renderPRFiles();
+    if (prFiles.length) showPRFile(prFiles[0].name);
+    else diffEl.innerHTML = '<div class="pr-empty">No file changes</div>';
+  } catch(e) {
+    diffEl.innerHTML = `<div class="pr-empty">Error loading diff: ${esc(e.message)}</div>`;
+  }
+}
+
+function parseDiffIntoFiles(diffText) {
+  prDiffData = {};
+  prFiles = [];
+  const chunks = diffText.split(/(?=^diff --git )/m);
+  for (const chunk of chunks) {
+    if (!chunk.startsWith('diff --git')) continue;
+    const m = chunk.match(/diff --git a\/.+ b\/(.+)/);
+    const fname = m ? m[1] : 'unknown';
+    const lines = chunk.split('\n');
+    let adds = 0, dels = 0, type = 'M';
+    lines.forEach(l => {
+      if (l.startsWith('+') && !l.startsWith('+++')) adds++;
+      if (l.startsWith('-') && !l.startsWith('---')) dels++;
+      if (l.startsWith('new file')) type = 'A';
+      if (l.startsWith('deleted file')) type = 'D';
+    });
+    prDiffData[fname] = lines;
+    prFiles.push({ name: fname, adds, dels, type });
+  }
+}
+
+function renderPRFiles() {
+  document.getElementById('pr-files').innerHTML = prFiles.map(f => {
+    const stats = `<span style="color:var(--green)">+${f.adds}</span> <span style="color:var(--red)">-${f.dels}</span>`;
+    return `<div class="pr-file" onclick="showPRFile('${esc(f.name)}')" data-file="${esc(f.name)}">
+      <span class="pr-file-icon ${f.type}">${f.type==='A'?'+':f.type==='D'?'−':'●'}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(f.name.split('/').pop())}</span>
+      <span style="font-size:10px;white-space:nowrap">${stats}</span>
+    </div>`;
+  }).join('');
+}
+
+function showPRFile(fname) {
+  document.querySelectorAll('.pr-file').forEach(el => el.classList.toggle('active', el.dataset.file === fname));
+  const lines = prDiffData[fname];
+  if (!lines) { document.getElementById('pr-diff').innerHTML = '<div class="pr-empty">No diff data</div>'; return; }
+
+  let html = `<div class="pr-file-header">📄 ${esc(fname)}</div><div class="pr-diff-content">`;
+  let lineNum = 0;
+  for (const l of lines) {
+    if (l.startsWith('diff --git') || l.startsWith('index ') || l.startsWith('--- ') || l.startsWith('+++ ') || l.startsWith('new file') || l.startsWith('deleted file')) continue;
+    if (l.startsWith('@@')) {
+      const m = l.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
+      if (m) lineNum = parseInt(m[1]) - 1;
+      html += `<div class="dl hunk"><span class="dl-num"></span><span class="dl-code">${esc(l)}</span></div>`;
+      continue;
+    }
+    if (l.startsWith('+')) {
+      lineNum++;
+      html += `<div class="dl add"><span class="dl-num">${lineNum}</span><span class="dl-code">${esc(l.slice(1))}</span></div>`;
+    } else if (l.startsWith('-')) {
+      html += `<div class="dl del"><span class="dl-num"></span><span class="dl-code">${esc(l.slice(1))}</span></div>`;
+    } else if (l.trim()) {
+      lineNum++;
+      html += `<div class="dl"><span class="dl-num">${lineNum}</span><span class="dl-code">${esc(l.startsWith(' ')?l.slice(1):l)}</span></div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('pr-diff').innerHTML = html;
+}
+
+// ── Thread list ─────────────────────────────────────────────────
+function renderThreads() {
+  const el = document.getElementById('thread-list');
+  const recent = tasks.slice(0, 8);
+  el.innerHTML = recent.map(t => {
+    const icon = t.status==='running'?'⟳':t.status==='done'?'✓':'•';
+    return `<div class="nav-item" onclick="openTaskDetail('${t.id}')" title="${esc(t.label)}">
+      <span class="nav-icon">${icon}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.label)}</span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('sidebar-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const el = document.getElementById('thread-list');
+  const filtered = tasks.filter(t => t.label.toLowerCase().includes(q) || (t.preview||'').toLowerCase().includes(q));
+  el.innerHTML = filtered.slice(0,10).map(t => {
+    const icon = t.status==='running'?'⟳':t.status==='done'?'✓':'•';
+    return `<div class="nav-item" onclick="openTaskDetail('${t.id}')">
+      <span class="nav-icon">${icon}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.label)}</span>
+    </div>`;
+  }).join('');
+});
+
+// ── Scheduler ───────────────────────────────────────────────────
+async function refreshJobs() {
+  try {
+    const jobs = await api('GET', '/scheduler/jobs');
+    document.getElementById('jobs-list').innerHTML = jobs.map(j => `
+      <div class="job-card">
+        <button class="job-toggle ${j.enabled?'on':''}" onclick="toggleJob('${j.id}')"></button>
+        <div style="flex:1">
+          <div class="job-name">${esc(j.name)}</div>
+          <div class="job-schedule">${esc(j.prompt.slice(0,60))} • ${j.interval_seconds?'Every '+j.interval_seconds+'s':j.one_shot?'One-time':j.schedule||'Manual'}</div>
+          ${j.last_run?`<div style="font-size:10px;color:var(--tx2);margin-top:2px">Last: ${timeAgo(j.last_run)} — ${j.last_status}</div>`:''}
+        </div>
+        <button class="job-del" onclick="deleteJob('${j.id}')">✕</button>
+      </div>
+    `).join('') || '<div style="color:var(--tx2);font-size:13px">No scheduled jobs yet</div>';
+  } catch(e) {}
+}
+async function createJob() {
+  const name = document.getElementById('job-name').value.trim();
+  const prompt = document.getElementById('job-prompt').value.trim();
+  const interval = parseInt(document.getElementById('job-interval').value);
+  if (!name || !prompt) return;
+  await api('POST', '/scheduler/jobs', { name, prompt, interval_seconds: interval, one_shot: interval === 0 });
+  document.getElementById('job-name').value = '';
+  document.getElementById('job-prompt').value = '';
+  refreshJobs();
+}
+async function toggleJob(id) { await api('POST', `/scheduler/jobs/${id}/toggle`); refreshJobs(); }
+async function deleteJob(id) { await api('DELETE', `/scheduler/jobs/${id}`); refreshJobs(); }
+
+// ── Monitor ─────────────────────────────────────────────────────
+async function refreshMonitor() {
+  try {
+    const d = await api('GET', '/monitor');
+    document.getElementById('metrics-grid').innerHTML = `
+      <div class="metric-card"><div class="metric-label">Uptime</div><div class="metric-val">${Math.floor(d.uptime_seconds/60)}m</div></div>
+      <div class="metric-card"><div class="metric-label">Running</div><div class="metric-val ${d.tasks.running>0?'warn':''}">${d.tasks.running}</div></div>
+      <div class="metric-card"><div class="metric-label">Done</div><div class="metric-val good">${d.tasks.done}</div></div>
+      <div class="metric-card"><div class="metric-label">Errors</div><div class="metric-val ${d.tasks.error>0?'bad':''}">${d.tasks.error}</div></div>
+      <div class="metric-card"><div class="metric-label">Total</div><div class="metric-val">${d.tasks.total}</div></div>
+      ${d.system?.memory_percent?`<div class="metric-card"><div class="metric-label">Memory</div><div class="metric-val ${d.system.memory_percent>80?'warn':''}">${d.system.memory_percent}%</div></div>`:''}
+    `;
+    const health = await api('GET', '/providers/health');
+    document.getElementById('prov-grid').innerHTML = Object.entries(health).map(([name, info]) => {
+      const st = info.status || 'unknown';
+      const dot = st === 'ok' ? 'ok' : st === 'error' ? 'err' : 'unk';
+      return `<div class="prov-card"><span class="prov-dot ${dot}"></span><span class="prov-name">${name}</span><span style="font-size:10px;color:var(--tx2)">${st}</span></div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// ── Settings / Themes ───────────────────────────────────────────
+const THEMES = {
+  'macOS Dark':  {bg0:'#1c1c1e',bg1:'#2c2c2e',bg2:'#3a3a3c',bd:'#48484a',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a','usr-bg':'#0a3055','diff-add':'#0d2b14','diff-del':'#2d1010'},
+  'macOS Light': {bg0:'#f2f2f7',bg1:'#ffffff',bg2:'#e5e5ea',bd:'#c7c7cc',tx0:'#1c1c1e',tx1:'#6c6c70',tx2:'#aeaeb2',blue:'#007aff',green:'#34c759',orange:'#ff9500',red:'#ff3b30','usr-bg':'#d6eaff','diff-add':'#d4f5dc','diff-del':'#ffd5d3'},
+  'GitHub Dark':  {bg0:'#0d1117',bg1:'#161b22',bg2:'#21262d',bd:'#30363d',tx0:'#e6edf3',tx1:'#8b949e',tx2:'#6e7681',blue:'#388bfd',green:'#3fb950',orange:'#f0883e',red:'#f85149','usr-bg':'#1f3a5c','diff-add':'#0d1f10','diff-del':'#1f0d0d'},
+  'Claude Dark':  {bg0:'#1a1915',bg1:'#23211c',bg2:'#2e2b25',bd:'#3d3a32',tx0:'#e8e4db',tx1:'#b5b0a5',tx2:'#7a766c',blue:'#d4a27a',green:'#8fad7f',orange:'#d4915a',red:'#c75f5f','usr-bg':'#2a2218','diff-add':'#1a2510','diff-del':'#2d1510'},
+  'Nord':         {bg0:'#2e3440',bg1:'#3b4252',bg2:'#434c5e',bd:'#4c566a',tx0:'#eceff4',tx1:'#d8dee9',tx2:'#a0a8b8',blue:'#81a1c1',green:'#a3be8c',orange:'#d08770',red:'#bf616a','usr-bg':'#3b4f6b','diff-add':'#293d29','diff-del':'#3d2929'},
+  'Catppuccin':   {bg0:'#1e1e2e',bg1:'#181825',bg2:'#313244',bd:'#45475a',tx0:'#cdd6f4',tx1:'#bac2de',tx2:'#a6adc8',blue:'#89b4fa',green:'#a6e3a1',orange:'#fab387',red:'#f38ba8','usr-bg':'#1e2a4a','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
+  'Monokai':      {bg0:'#272822',bg1:'#1e1f1c',bg2:'#383830',bd:'#49483e',tx0:'#f8f8f2',tx1:'#75715e',tx2:'#5c5c52',blue:'#66d9e8',green:'#a6e22e',orange:'#fd971f',red:'#f92672','usr-bg':'#1e2920','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Solarized':    {bg0:'#002b36',bg1:'#073642',bg2:'#094555',bd:'#147564',tx0:'#839496',tx1:'#657b83',tx2:'#586e75',blue:'#268bd2',green:'#859900',orange:'#cb4b16',red:'#dc322f','usr-bg':'#003847','diff-add':'#003820','diff-del':'#3a0c00'},
+  'Tokyo Night':  {bg0:'#1a1b26',bg1:'#16161e',bg2:'#292e42',bd:'#3b4261',tx0:'#c0caf5',tx1:'#a9b1d6',tx2:'#565f89',blue:'#7aa2f7',green:'#9ece6a',orange:'#ff9e64',red:'#f7768e','usr-bg':'#1f2335','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
+  'Rosé Pine':    {bg0:'#191724',bg1:'#1f1d2e',bg2:'#26233a',bd:'#403d52',tx0:'#e0def4',tx1:'#908caa',tx2:'#6e6a86',blue:'#9ccfd8',green:'#31748f',orange:'#f6c177',red:'#eb6f92','usr-bg':'#2a273f','diff-add':'#1a2e24','diff-del':'#2e1a24'},
+  'Poimandres':   {bg0:'#1b1e28',bg1:'#171922',bg2:'#252b37',bd:'#303340',tx0:'#e4f0fb',tx1:'#a6accd',tx2:'#767c9d',blue:'#add7ff',green:'#5de4c7',orange:'#fffac2',red:'#d0679d','usr-bg':'#1e2430','diff-add':'#152e24','diff-del':'#2e1528'},
+  'Ayu Dark':     {bg0:'#0b0e14',bg1:'#0d1017',bg2:'#131721',bd:'#1c2433',tx0:'#bfbdb6',tx1:'#73767a',tx2:'#565b66',blue:'#39bae6',green:'#7fd962',orange:'#e6b450',red:'#d95757','usr-bg':'#0d1520','diff-add':'#0d2b14','diff-del':'#2d1010'},
+  'Vesper':       {bg0:'#101010',bg1:'#1a1a1a',bg2:'#232323',bd:'#333333',tx0:'#d4d4d4',tx1:'#999999',tx2:'#666666',blue:'#99c1f1',green:'#8ab977',orange:'#ffa657',red:'#ff6b6b','usr-bg':'#1a2030','diff-add':'#142014','diff-del':'#201414'},
+  'Dracula':      {bg0:'#282a36',bg1:'#21222c',bg2:'#343746',bd:'#44475a',tx0:'#f8f8f2',tx1:'#bfbfbf',tx2:'#6272a4',blue:'#8be9fd',green:'#50fa7b',orange:'#ffb86c',red:'#ff5555','usr-bg':'#2a2040','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Gruvbox':      {bg0:'#1d2021',bg1:'#282828',bg2:'#3c3836',bd:'#504945',tx0:'#ebdbb2',tx1:'#bdae93',tx2:'#928374',blue:'#83a598',green:'#b8bb26',orange:'#fe8019',red:'#fb4934','usr-bg':'#2a2520','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Midnight':     {bg0:'#0f0f23',bg1:'#151528',bg2:'#1a1a35',bd:'#2a2a50',tx0:'#ccccff',tx1:'#8888bb',tx2:'#555588',blue:'#6666ff',green:'#00cc7a',orange:'#ffcc00',red:'#ff3366','usr-bg':'#1a1a40','diff-add':'#0d2b14','diff-del':'#2d1010'},
+};
+function applyTheme(name) {
+  const t = THEMES[name]; if (!t) return;
+  for (const [k,v] of Object.entries(t)) document.documentElement.style.setProperty('--'+k, v);
+  // Derive accent from the theme's blue
+  const b = t.blue || '#d4a27a';
+  document.documentElement.style.setProperty('--accent', b);
+  // Parse hex to rgba for dim/border
+  const r = parseInt(b.slice(1,3),16), g = parseInt(b.slice(3,5),16), bl = parseInt(b.slice(5,7),16);
+  document.documentElement.style.setProperty('--accent-dim', `rgba(${r},${g},${bl},.12)`);
+  document.documentElement.style.setProperty('--accent-border', `rgba(${r},${g},${bl},.25)`);
+  localStorage.setItem('theme', name);
+}
+function buildThemeGrid() {
+  const current = localStorage.getItem('theme') || 'Claude Dark';
+  document.getElementById('theme-grid').innerHTML = Object.entries(THEMES).map(([name, t]) => `
+    <div class="theme-sw${name===current?' sel':''}" onclick="selectTheme(this,'${name}')">
+      <div class="sw-preview" style="background:${t.bg1}"><span style="background:${t.blue}"></span><span style="background:${t.green}"></span><span style="background:${t.orange}"></span><span style="background:${t.red}"></span></div>
+      <div class="sw-name">${name}</div>
+    </div>
+  `).join('');
+}
+function selectTheme(el, name) {
+  document.querySelectorAll('.theme-sw').forEach(s => s.classList.remove('sel'));
+  el.classList.add('sel');
+  applyTheme(name);
+}
+
+// vLLM config
+function loadVllmCfg() {
+  document.getElementById('cfg-vllm-ip').value = localStorage.getItem('vllm_ip') || '127.0.0.1';
+  document.getElementById('cfg-vllm-port').value = localStorage.getItem('vllm_port') || '9999';
+  document.getElementById('cfg-vllm-model').value = localStorage.getItem('vllm_model') || 'mock-model-v1';
+  document.getElementById('cfg-vllm-key').value = localStorage.getItem('vllm_key') || 'dummy';
+}
+function saveVllmCfg() {
+  localStorage.setItem('vllm_ip', document.getElementById('cfg-vllm-ip').value.trim() || '127.0.0.1');
+  localStorage.setItem('vllm_port', document.getElementById('cfg-vllm-port').value.trim() || '9999');
+  localStorage.setItem('vllm_model', document.getElementById('cfg-vllm-model').value.trim() || '');
+  localStorage.setItem('vllm_key', document.getElementById('cfg-vllm-key').value.trim() || 'dummy');
+}
+
+// ── CWD autocomplete ────────────────────────────────────────────
+function setupCwd(inputId, dropId) {
+  const inp = document.getElementById(inputId), drop = document.getElementById(dropId);
+  let selIdx=-1, opts=[], timer;
+  function show(items) {
+    opts=items; selIdx=-1;
+    drop.innerHTML = items.map((p,i)=>`<div class="cwd-opt" data-i="${i}">${p}</div>`).join('');
+    drop.style.display = items.length ? 'block' : 'none';
+    drop.querySelectorAll('.cwd-opt').forEach(el => el.addEventListener('mousedown', e => {
+      e.preventDefault(); inp.value=opts[+el.dataset.i]+'/'; drop.style.display='none'; inp.focus(); inp.dispatchEvent(new Event('input'));
+    }));
+  }
+  inp.addEventListener('input', () => { clearTimeout(timer); timer=setTimeout(async()=>{ try{const r=await fetch(`${API}/suggest?path=${encodeURIComponent(inp.value)}`); show(await r.json());}catch(e){}},100); });
+  inp.addEventListener('keydown', e => {
+    if(drop.style.display==='none') return;
+    if(e.key==='ArrowDown'){e.preventDefault();selIdx=Math.min(selIdx+1,opts.length-1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();selIdx=Math.max(selIdx-1,0);}
+    else if((e.key==='Enter'||e.key==='Tab')&&selIdx>=0){e.preventDefault();inp.value=opts[selIdx]+'/';drop.style.display='none';inp.dispatchEvent(new Event('input'));}
+    else if(e.key==='Escape') drop.style.display='none';
+    drop.querySelectorAll('.cwd-opt').forEach((el,i) => el.classList.toggle('sel',i===selIdx));
+  });
+  document.addEventListener('click', e => { if(!e.target.closest(`#${inputId}`)&&!e.target.closest(`#${dropId}`)) drop.style.display='none'; });
+}
+
+// ── Auto-resize textareas ───────────────────────────────────────
+function autoResize(el, submitFn) {
+  el.addEventListener('input', function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,280)+'px'; });
+  el.addEventListener('keydown', function(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitFn();} });
+}
+
+// ── Polling & refresh ───────────────────────────────────────────
+async function refreshAll() {
+  try { tasks = await api('GET', '/tasks'); } catch(e) { return; }
+  renderThreads();
+  if (currentView === 'tasks') renderTasks();
+  if (currentView === 'detail' && activeId) {
+    const full = await api('GET', `/tasks/${activeId}`);
+    renderMessages(full.history);
+    updateDetailCost(full);
+    const t = tasks.find(x => x.id === activeId);
+    if (t) document.getElementById('d-title').textContent = t.label + (t.status==='running'?' ⟳':'');
+    refreshGitPanel();
+  }
+}
+
+// ── Init ────────────────────────────────────────────────────────
+applyTheme(localStorage.getItem('theme') || 'Claude Dark');
+setupCwd('new-cwd', 'new-cwd-drop');
+autoResize(document.getElementById('new-prompt'), sendNewTask);
+autoResize(document.getElementById('detail-prompt'), sendFollowUp);
+loadProviders();
+refreshAll();
+setInterval(refreshAll, 2000);
+buildThemeGrid();
+
+// ── Keyboard shortcuts ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const isMod = e.ctrlKey || e.metaKey;
+  // Ctrl+K — focus chat
+  if (isMod && e.key === 'k') { e.preventDefault(); showView('chat'); document.getElementById('new-prompt').focus(); }
+  // Ctrl+J — show tasks
+  if (isMod && e.key === 'j') { e.preventDefault(); showView('tasks'); }
+  // Escape — close pickers
+  if (e.key === 'Escape') { document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open')); }
+  // Ctrl+U — attach file
+  if (isMod && e.key === 'u') { e.preventDefault(); document.getElementById('file-picker').click(); }
+  // Ctrl+B — toggle sidebar
+  if (isMod && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
+});
+</script>
+</body>
+</html>

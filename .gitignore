@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.env
+*.log
+node_modules/
+*.png
+.playwright-mcp/
