@@ -64,9 +64,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 /* Custom picker pill */
 .picker-pill{position:relative;display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:4px 8px 4px 7px;font-size:11px;color:var(--tx0);cursor:pointer;user-select:none;transition:border-color .15s,box-shadow .15s}
 .picker-pill:hover,.picker-pill.open{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
-.picker-pill.advisor-pill{border-color:rgba(175,82,222,.3)}
-.picker-pill.advisor-pill:hover,.picker-pill.advisor-pill.open{border-color:#af52de;box-shadow:0 0 0 2px rgba(175,82,222,.12)}
-.picker-pill.advisor-pill.active{background:rgba(175,82,222,.1);border-color:#af52de;color:#d4a0f5}
+
 .picker-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .picker-label{font-weight:500;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis}
 .picker-model{font-size:9px;color:var(--tx2);font-weight:400;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis}
@@ -374,20 +372,13 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
               <div class="picker-list" id="mp-list"></div>
             </div>
           </div>
-          <select id="new-mode">
-            <option value="bypassPermissions">Autonomous</option>
-            <option value="acceptEdits">Accept Edits</option>
-            <option value="plan">Plan</option>
-            <option value="default">Interactive</option>
-          </select>
-          <div class="picker-pill advisor-pill" id="advisor-picker" onclick="togglePicker(this)">
-            <span class="picker-dot" id="ap-dot" style="background:var(--tx2)"></span>
-            <span class="picker-label" id="ap-label">No Advisor</span>
-            <span class="picker-model" id="ap-model"></span>
+          <div class="picker-pill" id="agent-picker" onclick="togglePicker(this)">
+            <span class="picker-dot" id="agp-dot" style="background:var(--accent)"></span>
+            <span class="picker-label" id="agp-label">Claude Code</span>
             <span class="picker-chevron">▾</span>
-            <div class="picker-panel" id="ap-panel" onclick="event.stopPropagation()">
-              <input class="picker-search" placeholder="Find advisor…" oninput="filterPicker('advisor',this.value)" />
-              <div class="picker-list" id="ap-list"></div>
+            <div class="picker-panel" id="agp-panel" onclick="event.stopPropagation()">
+              <input class="picker-search" placeholder="Find agent…" oninput="filterPicker('agent',this.value)" />
+              <div class="picker-list" id="agp-list"></div>
             </div>
           </div>
           <div style="flex:1"></div>
@@ -585,47 +576,43 @@ const AGENT_COLORS = {
 // State for custom pickers
 let selectedModel = 'claude';
 let selectedModelVariant = '';
-let selectedAdvisor = '';
-let selectedAdvisorVariant = '';
+let selectedAgent = 'claude-code';
+let agents = [];
 
 async function loadProviders() {
   try { providers = await api('GET', '/providers'); } catch(e) {
     providers = [{name:'claude',display_name:'Claude Code',models:[]},{name:'vllm',display_name:'vLLM',models:['auto']},{name:'kivi',display_name:'Kivi',models:['auto']},{name:'opencode',display_name:'OpenCode',models:[]},{name:'gemini',display_name:'Gemini',models:[]}];
+  }
+  try { agents = await api('GET', '/agents'); } catch(e) {
+    agents = [{id:'claude-code',name:'Claude Code',icon:'⚡'},{id:'chat',name:'Chat',icon:'💬'}];
   }
   // Populate detail-view model selector (still a plain select)
   const html = providers.map(p => `<option value="${p.name}">${p.display_name||p.name}</option>`).join('');
   document.getElementById('d-model').innerHTML = html;
   // Build custom picker lists
   buildPickerList('model');
-  buildPickerList('advisor');
+  buildAgentPickerList();
   updatePickerPill('model');
-  updatePickerPill('advisor');
+  updateAgentPill();
   renderAgentGrid();
 }
 
 function buildPickerList(type) {
-  const listEl = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  const listEl = document.getElementById('mp-list');
   let items = '';
-  if (type === 'advisor') {
-    items += `<div class="picker-item${selectedAdvisor===''?' selected':''}" data-provider="" onclick="selectProvider('advisor','')">
-      <span class="pi-dot" style="background:var(--tx2)"></span>
-      <div class="pi-info"><div class="pi-name">No Advisor</div><div class="pi-desc">Run without advisor review</div></div>
-      <span class="pi-check">✓</span>
-    </div>`;
-  }
   providers.forEach(p => {
-    const sel = type === 'model' ? (selectedModel === p.name) : (selectedAdvisor === p.name);
+    const sel = selectedModel === p.name;
     const dotColor = AGENT_DOT_COLORS[p.name] || 'var(--tx2)';
     const models = (p.models || []).filter(m => m !== 'auto');
-    const curVariant = type === 'model' ? selectedModelVariant : selectedAdvisorVariant;
+    const curVariant = selectedModelVariant;
     let modelHtml = '';
     if (models.length > 0) {
       modelHtml = `<div class="picker-models"${sel?'':' style="display:none"'}>` +
-        models.map(m => `<div class="picker-mitem${sel && curVariant===m?' selected':''}" data-model="${m}" onclick="event.stopPropagation();selectModelVariant('${type}','${p.name}','${m}')">
+        models.map(m => `<div class="picker-mitem${sel && curVariant===m?' selected':''}" data-model="${m}" onclick="event.stopPropagation();selectModelVariant('model','${p.name}','${m}')">
           <span class="pm-check">✓</span> ${esc(m)}
         </div>`).join('') + '</div>';
     }
-    items += `<div class="picker-item${sel?' selected':''}" data-provider="${p.name}" onclick="selectProvider('${type}','${p.name}')">
+    items += `<div class="picker-item${sel?' selected':''}" data-provider="${p.name}" onclick="selectProvider('model','${p.name}')">
       <span class="pi-dot" style="background:${dotColor}"></span>
       <div class="pi-info"><div class="pi-name">${esc(p.display_name||p.name)}</div><div class="pi-desc">${esc((p.description||'').substring(0,60))}…</div></div>
       <span class="pi-check">✓</span>
@@ -634,64 +621,58 @@ function buildPickerList(type) {
   listEl.innerHTML = items;
 }
 
+function buildAgentPickerList() {
+  const listEl = document.getElementById('agp-list');
+  let items = '';
+  agents.forEach(a => {
+    const sel = selectedAgent === a.id;
+    items += `<div class="picker-item${sel?' selected':''}" data-agent="${a.id}" onclick="selectAgent('${a.id}')">
+      <span class="pi-dot" style="background:${AGENT_DOT_COLORS[a.id] || 'var(--accent)'}"></span>
+      <div class="pi-info"><div class="pi-name">${a.icon||'🤖'} ${esc(a.name)}</div><div class="pi-desc">${esc((a.description||'').substring(0,60))}</div></div>
+      <span class="pi-check">✓</span>
+    </div>`;
+  });
+  listEl.innerHTML = items;
+}
+
+function selectAgent(agentId) {
+  selectedAgent = agentId;
+  buildAgentPickerList();
+  updateAgentPill();
+}
+
 function selectProvider(type, name) {
-  if (type === 'model') {
-    selectedModel = name;
-    selectedModelVariant = '';
-    // Auto-select first model if available
-    const p = providers.find(x => x.name === name);
-    if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedModelVariant = p.models[0];
-  } else {
-    selectedAdvisor = name;
-    selectedAdvisorVariant = '';
-    if (name) {
-      const p = providers.find(x => x.name === name);
-      if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedAdvisorVariant = p.models[0];
-    }
-  }
+  selectedModel = name;
+  selectedModelVariant = '';
+  const p = providers.find(x => x.name === name);
+  if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedModelVariant = p.models[0];
   buildPickerList(type);
   updatePickerPill(type);
 }
 
 function selectModelVariant(type, provName, modelName) {
-  if (type === 'model') {
-    selectedModel = provName;
-    selectedModelVariant = modelName;
-  } else {
-    selectedAdvisor = provName;
-    selectedAdvisorVariant = modelName;
-  }
+  selectedModel = provName;
+  selectedModelVariant = modelName;
   buildPickerList(type);
   updatePickerPill(type);
 }
 
 function updatePickerPill(type) {
-  if (type === 'model') {
-    const p = providers.find(x => x.name === selectedModel);
-    const dot = document.getElementById('mp-dot');
-    const label = document.getElementById('mp-label');
-    const model = document.getElementById('mp-model');
-    dot.style.background = AGENT_DOT_COLORS[selectedModel] || 'var(--tx2)';
-    label.textContent = p ? (p.display_name || p.name) : selectedModel;
-    model.textContent = selectedModelVariant || '';
-  } else {
-    const pill = document.getElementById('advisor-picker');
-    const dot = document.getElementById('ap-dot');
-    const label = document.getElementById('ap-label');
-    const model = document.getElementById('ap-model');
-    if (selectedAdvisor) {
-      const p = providers.find(x => x.name === selectedAdvisor);
-      dot.style.background = AGENT_DOT_COLORS[selectedAdvisor] || '#af52de';
-      label.textContent = '🧠 ' + (p ? (p.display_name || p.name) : selectedAdvisor);
-      model.textContent = selectedAdvisorVariant || '';
-      pill.classList.add('active');
-    } else {
-      dot.style.background = 'var(--tx2)';
-      label.textContent = 'No Advisor';
-      model.textContent = '';
-      pill.classList.remove('active');
-    }
-  }
+  const p = providers.find(x => x.name === selectedModel);
+  const dot = document.getElementById('mp-dot');
+  const label = document.getElementById('mp-label');
+  const model = document.getElementById('mp-model');
+  dot.style.background = AGENT_DOT_COLORS[selectedModel] || 'var(--tx2)';
+  label.textContent = p ? (p.display_name || p.name) : selectedModel;
+  model.textContent = selectedModelVariant || '';
+}
+
+function updateAgentPill() {
+  const a = agents.find(x => x.id === selectedAgent);
+  const dot = document.getElementById('agp-dot');
+  const label = document.getElementById('agp-label');
+  dot.style.background = AGENT_DOT_COLORS[selectedAgent] || 'var(--accent)';
+  label.textContent = a ? `${a.icon||'🤖'} ${a.name}` : selectedAgent;
 }
 
 function togglePicker(pill) {
@@ -702,7 +683,8 @@ function togglePicker(pill) {
 }
 
 function filterPicker(type, query) {
-  const list = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  const listId = type === 'model' ? 'mp-list' : type === 'agent' ? 'agp-list' : 'mp-list';
+  const list = document.getElementById(listId);
   const q = query.toLowerCase();
   list.querySelectorAll('.picker-item').forEach(item => {
     const name = (item.querySelector('.pi-name')?.textContent || '').toLowerCase();
@@ -780,17 +762,13 @@ function sendNewTask() {
     prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
   }
   const model = selectedModel;
-  const mode = document.getElementById('new-mode').value;
   const cwd = document.getElementById('new-cwd').value.trim();
   const branch = document.getElementById('branch-name').textContent;
   el.value = ''; el.style.height = 'auto';
   attachments = [];
   renderAttachments();
 
-  const body = { prompt, model, mode, cwd, branch: branch==='default'?'':branch, extra: {},
-    advisor: selectedAdvisor || '',
-    advisor_model: selectedAdvisorVariant || '',
-  };
+  const body = { prompt, model, agent_id: selectedAgent, cwd, branch: branch==='default'?'':branch, extra: {} };
   // Pass model variant override
   if (selectedModelVariant) {
     body.extra.model_override = selectedModelVariant;
@@ -804,7 +782,6 @@ function sendNewTask() {
     body.extra.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
     body.extra.vllm_model = localStorage.getItem('vllm_model') || 'mock-model-v1';
     body.extra.kivi_model = localStorage.getItem('vllm_model') || 'mock-model-v1';
-    body.extra.use_tools = mode !== 'plan';
   }
 
   api('POST', '/tasks', body).then(() => {
@@ -903,7 +880,6 @@ function renderTasks() {
         <span class="tc-dot ${st}"></span>
         <span class="tc-title">${esc(t.label)}</span>
         ${t.model?`<span class="tc-model">${esc(t.model)}</span>`:''}
-        ${t.advisor?`<span class="tc-model" style="background:rgba(175,82,222,.15);color:#af52de" title="Advisor: ${esc(t.advisor)}">🧠 ${esc(t.advisor)}</span>`:''}
         <span class="tc-time">${timeAgo(t.created_at)}</span>
       </div>
       ${t.preview?`<div class="tc-preview">${esc(t.preview)}</div>`:''}
