@@ -1,0 +1,140 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ⚡
+      - text: CC-UI
+    - generic [ref=e5]:
+      - text: ⌕
+      - textbox "Search threads…" [ref=e6]
+    - generic [ref=e7]: Main
+    - generic [ref=e8] [cursor=pointer]:
+      - generic [ref=e9]: 💬
+      - text: Chat
+    - generic [ref=e10] [cursor=pointer]:
+      - generic [ref=e11]: 📋
+      - text: Tasks
+    - generic [ref=e12] [cursor=pointer]:
+      - generic [ref=e13]: 🔀
+      - text: PRs
+    - generic [ref=e14] [cursor=pointer]:
+      - generic [ref=e15]: ⏱
+      - text: Automations
+    - generic [ref=e16] [cursor=pointer]:
+      - generic [ref=e17]: ♡
+      - text: Monitor
+    - generic [ref=e18] [cursor=pointer]:
+      - generic [ref=e19]: ⚙
+      - text: Settings
+    - generic [ref=e20]: Recent Threads
+    - generic [ref=e21]:
+      - generic "Say hello world in Python" [ref=e354] [cursor=pointer]:
+        - generic [ref=e355]: ✓
+        - generic [ref=e356]: Say hello world in Python
+      - generic "findout where is ai.py file" [ref=e357] [cursor=pointer]:
+        - generic [ref=e358]: ✓
+        - generic [ref=e359]: findout where is ai.py file
+      - generic "explian where are we, use ls directoyr." [ref=e360] [cursor=pointer]:
+        - generic [ref=e361]: ✓
+        - generic [ref=e362]: explian where are we, use ls directoyr.
+      - generic "respond with just the word hello, nothin…" [ref=e363] [cursor=pointer]:
+        - generic [ref=e364]: ✓
+        - generic [ref=e365]: respond with just the word hello, nothin…
+      - generic "respond with just the word hello" [ref=e366] [cursor=pointer]:
+        - generic [ref=e367]: ✓
+        - generic [ref=e368]: respond with just the word hello
+      - generic "respond with just the word hello" [ref=e369] [cursor=pointer]:
+        - generic [ref=e370]: ✓
+        - generic [ref=e371]: respond with just the word hello
+      - generic "respond with just hello" [ref=e372] [cursor=pointer]:
+        - generic [ref=e373]: ✓
+        - generic [ref=e374]: respond with just hello
+      - generic "respond with just the word hello" [ref=e375] [cursor=pointer]:
+        - generic [ref=e376]: ✓
+        - generic [ref=e377]: respond with just the word hello
+    - generic [ref=e47] [cursor=pointer]:
+      - generic [ref=e48]: S
+      - generic [ref=e49]: Santhosh
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - heading "What would you like me to do?" [level=1] [ref=e53]
+      - paragraph [ref=e54]: Your personal AI assistant — ship features while you sleep
+    - generic [ref=e56]:
+      - textbox "Describe a task, paste a file path, or drop files here…" [ref=e57]
+      - generic [ref=e58]:
+        - button "📎" [ref=e59] [cursor=pointer]
+        - generic [ref=e60] [cursor=pointer]:
+          - generic [ref=e62]: GitHub Copilot
+          - generic [ref=e240]: gpt-5.4
+          - generic [ref=e63]: ▾
+        - combobox [ref=e64] [cursor=pointer]:
+          - option "Autonomous" [selected]
+          - option "Accept Edits"
+          - option "Plan"
+          - option "Interactive"
+        - generic [ref=e65] [cursor=pointer]:
+          - generic [ref=e67]: No Advisor
+          - generic [ref=e68]: ▾
+          - generic [ref=e378]:
+            - textbox "Find advisor…" [ref=e379]
+            - generic [ref=e380]:
+              - generic [ref=e381]:
+                - generic [ref=e383]:
+                  - generic [ref=e384]: No Advisor
+                  - generic [ref=e385]: Run without advisor review
+                - generic [ref=e386]: ✓
+              - generic [ref=e387]:
+                - generic [ref=e389]:
+                  - generic [ref=e390]: Claude Code
+                  - generic [ref=e391]: Anthropic's agentic coding assistant. Reads/writes files, ru…
+                - generic [ref=e392]: ✓
+              - generic [ref=e393]:
+                - generic [ref=e395]:
+                  - generic [ref=e396]: OpenCode
+                  - generic [ref=e397]: Open-source agentic coding CLI. File editing, shell access, …
+                - generic [ref=e398]: ✓
+              - generic [ref=e399]:
+                - generic [ref=e401]:
+                  - generic [ref=e402]: vLLM (Local)
+                  - generic [ref=e403]: Self-hosted models via vLLM's OpenAI-compatible API. Run any…
+                - generic [ref=e404]: ✓
+              - generic [ref=e405]:
+                - generic [ref=e407]:
+                  - generic [ref=e408]: Google Gemini
+                  - generic [ref=e409]: Google's multimodal AI. Fast streaming text generation via t…
+                - generic [ref=e410]: ✓
+              - generic [ref=e411]:
+                - generic [ref=e413]:
+                  - generic [ref=e414]: GitHub Copilot
+                  - generic [ref=e415]: GitHub Copilot SDK with full agentic capabilities. Streaming…
+                - generic [ref=e416]: ✓
+              - generic [ref=e417]:
+                - generic [ref=e419]:
+                  - generic [ref=e420]: Kivi (Local)
+                  - generic [ref=e421]: Lightweight local inference via OpenAI-compatible API. Simil…
+                - generic [ref=e422]: ✓
+              - generic [ref=e423]:
+                - generic [ref=e425]:
+                  - generic [ref=e426]: OpenAI Agent
+                  - generic [ref=e427]: OpenAI's agent SDK with built-in tool use, handoffs, and gua…
+                - generic [ref=e428]: ✓
+              - generic [ref=e429]:
+                - generic [ref=e431]:
+                  - generic [ref=e432]: AI Framework (In-house)
+                  - generic [ref=e433]: Custom AI framework from lab/src/ai. Unified interface for m…
+                - generic [ref=e434]: ✓
+              - generic [ref=e435]:
+                - generic [ref=e437]:
+                  - generic [ref=e438]: Multi-Agent Orchestrator
+                  - generic [ref=e439]: Supervisor-worker pattern for parallel execution. Breaks com…
+                - generic [ref=e440]: ✓
+        - generic [ref=e69] [cursor=pointer]:
+          - text: ⎇
+          - generic [ref=e70]: default
+        - textbox "/path/to/project" [ref=e72] [cursor=pointer]
+        - button "↑" [ref=e73] [cursor=pointer]
+    - generic [ref=e74]:
+      - button "📋 Summarize changes" [ref=e75] [cursor=pointer]
+      - button "🔍 Review code" [ref=e76] [cursor=pointer]
+      - button "💡 Improvements" [ref=e77] [cursor=pointer]
+      - button "🐛 Fix bugs" [ref=e78] [cursor=pointer]
+      - button "🧪 Write tests" [ref=e79] [cursor=pointer]

@@ -17,6 +17,7 @@ class InhouseProvider(BaseProvider):
     supports_streaming = True
     supports_tools = True
     supports_sessions = False
+    available_models = ["auto"]
 
     def __init__(self):
         self._stop = False

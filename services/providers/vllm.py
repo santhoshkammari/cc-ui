@@ -18,6 +18,7 @@ class VLLMProvider(BaseProvider):
     supports_streaming = True
     supports_tools = False
     supports_sessions = False
+    available_models = ["auto"]
 
     def __init__(self):
         self._stop = False

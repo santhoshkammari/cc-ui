@@ -45,7 +45,7 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 .chat-hero h1{font-size:26px;font-weight:600;margin-bottom:6px}
 .chat-hero p{color:var(--tx2);font-size:14px}
 .chat-input-wrap{max-width:720px;width:100%}
-.chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius);transition:border-color .2s,box-shadow .2s;overflow:hidden}
+.chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--radius);transition:border-color .2s,box-shadow .2s}
 .chat-input-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(10,132,255,.12)}
 .chat-input-box.dragover{border-color:var(--blue);border-style:dashed;background:rgba(10,132,255,.04)}
 .chat-textarea{width:100%;min-height:100px;max-height:280px;background:transparent;border:none;color:var(--tx0);font-size:15px;line-height:1.6;padding:16px 20px 8px;resize:none;outline:none;font-family:inherit}
@@ -55,10 +55,43 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
 @keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 .attach-chip .chip-rm{cursor:pointer;color:var(--tx2);font-size:13px;line-height:1}
 .attach-chip .chip-rm:hover{color:var(--red)}
-.chat-controls{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid rgba(72,72,74,.3)}
+.chat-controls{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid rgba(72,72,74,.3);flex-wrap:wrap}
 .chat-controls select,.chat-controls .ctrl-input{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:11px;padding:6px 10px;cursor:pointer;outline:none}
 .chat-controls select:focus,.chat-controls .ctrl-input:focus{border-color:var(--blue)}
-#new-advisor{border-color:rgba(175,82,222,.3)}
+/* Custom picker pill */
+.picker-pill{position:relative;display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:5px 10px 5px 8px;font-size:11px;color:var(--tx0);cursor:pointer;user-select:none;transition:border-color .15s,box-shadow .15s}
+.picker-pill:hover,.picker-pill.open{border-color:var(--blue);box-shadow:0 0 0 2px rgba(10,132,255,.12)}
+.picker-pill.advisor-pill{border-color:rgba(175,82,222,.3)}
+.picker-pill.advisor-pill:hover,.picker-pill.advisor-pill.open{border-color:#af52de;box-shadow:0 0 0 2px rgba(175,82,222,.12)}
+.picker-pill.advisor-pill.active{background:rgba(175,82,222,.1);border-color:#af52de;color:#d4a0f5}
+.picker-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.picker-label{font-weight:500;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.picker-model{font-size:9px;color:var(--tx2);font-weight:400;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.picker-chevron{font-size:8px;color:var(--tx2);margin-left:2px;transition:transform .15s}
+.picker-pill.open .picker-chevron{transform:rotate(180deg)}
+/* Picker dropdown panel */
+.picker-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:280px;max-height:380px;background:var(--bg1);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden;z-index:999;display:none;animation:panelIn .12s ease}
+.picker-pill.open .picker-panel{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.picker-search{width:100%;background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx0);font-size:12px;padding:10px 12px;outline:none}
+.picker-search::placeholder{color:var(--tx2)}
+.picker-list{max-height:300px;overflow-y:auto;padding:4px 0}
+.picker-list::-webkit-scrollbar{width:4px}.picker-list::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.picker-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:background .1s}
+.picker-item:hover{background:var(--bg2)}
+.picker-item.selected{background:rgba(10,132,255,.12)}
+.picker-item .pi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.picker-item .pi-info{flex:1;min-width:0}
+.picker-item .pi-name{font-size:12px;color:var(--tx0);font-weight:500}
+.picker-item .pi-desc{font-size:10px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-item .pi-check{color:var(--blue);font-size:14px;flex-shrink:0;opacity:0}
+.picker-item.selected .pi-check{opacity:1}
+/* Model sub-list */
+.picker-models{padding:2px 0 4px 28px}
+.picker-mitem{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;color:var(--tx1);transition:background .1s}
+.picker-mitem:hover{background:var(--bg2);color:var(--tx0)}
+.picker-mitem.selected{color:var(--blue);font-weight:500}
+.picker-mitem .pm-check{font-size:12px;opacity:0}.picker-mitem.selected .pm-check{opacity:1}
 .ctrl-input{font-family:'SF Mono','Fira Code',monospace;width:200px}
 .attach-btn{background:none;border:none;color:var(--tx2);font-size:16px;cursor:pointer;padding:2px 4px;transition:color .15s}
 .attach-btn:hover{color:var(--blue)}
@@ -325,16 +358,32 @@ body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSy
         <div class="chat-controls">
           <button class="attach-btn" onclick="document.getElementById('file-picker').click()" title="Attach files">📎</button>
           <input type="file" id="file-picker" multiple style="display:none" />
-          <select id="new-model"></select>
+          <div class="picker-pill" id="model-picker" onclick="togglePicker(this)">
+            <span class="picker-dot" id="mp-dot" style="background:#30d158"></span>
+            <span class="picker-label" id="mp-label">Claude Code</span>
+            <span class="picker-model" id="mp-model"></span>
+            <span class="picker-chevron">▾</span>
+            <div class="picker-panel" id="mp-panel" onclick="event.stopPropagation()">
+              <input class="picker-search" placeholder="Find providers…" oninput="filterPicker('model',this.value)" />
+              <div class="picker-list" id="mp-list"></div>
+            </div>
+          </div>
           <select id="new-mode">
             <option value="bypassPermissions">Autonomous</option>
             <option value="acceptEdits">Accept Edits</option>
             <option value="plan">Plan</option>
             <option value="default">Interactive</option>
           </select>
-          <select id="new-advisor" title="Advisor (optional — reviews worker output)">
-            <option value="">No Advisor</option>
-          </select>
+          <div class="picker-pill advisor-pill" id="advisor-picker" onclick="togglePicker(this)">
+            <span class="picker-dot" id="ap-dot" style="background:var(--tx2)"></span>
+            <span class="picker-label" id="ap-label">No Advisor</span>
+            <span class="picker-model" id="ap-model"></span>
+            <span class="picker-chevron">▾</span>
+            <div class="picker-panel" id="ap-panel" onclick="event.stopPropagation()">
+              <input class="picker-search" placeholder="Find advisor…" oninput="filterPicker('advisor',this.value)" />
+              <div class="picker-list" id="ap-list"></div>
+            </div>
+          </div>
           <div class="branch-pill" id="branch-pill" onclick="pickBranch()">⎇ <span id="branch-name">default</span></div>
           <div class="cwd-wrap">
             <input class="ctrl-input" id="new-cwd" placeholder="/path/to/project" autocomplete="off" />
@@ -519,6 +568,11 @@ const AGENT_ICONS = {
   claude:'🟣', opencode:'🔵', gemini:'🔴', copilot:'⚫', vllm:'🟢',
   kivi:'🟡', 'openai-agent':'🟠', inhouse:'⬡', claudeagents:'🌐',
 };
+const AGENT_DOT_COLORS = {
+  claude:'#8b5cf6', opencode:'#3b82f6', gemini:'#ef4444', copilot:'#6b7280',
+  vllm:'#22c55e', kivi:'#eab308', 'openai-agent':'#f97316', inhouse:'#06b6d4',
+  claudeagents:'#a855f7',
+};
 const AGENT_COLORS = {
   claude:'linear-gradient(135deg,#8b5cf6,#6d28d9)', opencode:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
   gemini:'linear-gradient(135deg,#ef4444,#dc2626)', copilot:'linear-gradient(135deg,#6b7280,#374151)',
@@ -527,18 +581,143 @@ const AGENT_COLORS = {
   claudeagents:'linear-gradient(135deg,#a855f7,#7c3aed)',
 };
 
+// State for custom pickers
+let selectedModel = 'claude';
+let selectedModelVariant = '';
+let selectedAdvisor = '';
+let selectedAdvisorVariant = '';
+
 async function loadProviders() {
   try { providers = await api('GET', '/providers'); } catch(e) {
-    providers = [{name:'claude',display_name:'Claude Code'},{name:'vllm',display_name:'vLLM'},{name:'kivi',display_name:'Kivi'},{name:'opencode',display_name:'OpenCode'},{name:'gemini',display_name:'Gemini'}];
+    providers = [{name:'claude',display_name:'Claude Code',models:[]},{name:'vllm',display_name:'vLLM',models:['auto']},{name:'kivi',display_name:'Kivi',models:['auto']},{name:'opencode',display_name:'OpenCode',models:[]},{name:'gemini',display_name:'Gemini',models:[]}];
   }
+  // Populate detail-view model selector (still a plain select)
   const html = providers.map(p => `<option value="${p.name}">${p.display_name||p.name}</option>`).join('');
-  document.getElementById('new-model').innerHTML = html;
   document.getElementById('d-model').innerHTML = html;
-  // Advisor dropdown: "No Advisor" + all providers
-  const advisorHtml = '<option value="">🧠 No Advisor</option>' + providers.map(p => `<option value="${p.name}">🧠 ${p.display_name||p.name}</option>`).join('');
-  document.getElementById('new-advisor').innerHTML = advisorHtml;
+  // Build custom picker lists
+  buildPickerList('model');
+  buildPickerList('advisor');
+  updatePickerPill('model');
+  updatePickerPill('advisor');
   renderAgentGrid();
 }
+
+function buildPickerList(type) {
+  const listEl = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  let items = '';
+  if (type === 'advisor') {
+    items += `<div class="picker-item${selectedAdvisor===''?' selected':''}" data-provider="" onclick="selectProvider('advisor','')">
+      <span class="pi-dot" style="background:var(--tx2)"></span>
+      <div class="pi-info"><div class="pi-name">No Advisor</div><div class="pi-desc">Run without advisor review</div></div>
+      <span class="pi-check">✓</span>
+    </div>`;
+  }
+  providers.forEach(p => {
+    const sel = type === 'model' ? (selectedModel === p.name) : (selectedAdvisor === p.name);
+    const dotColor = AGENT_DOT_COLORS[p.name] || 'var(--tx2)';
+    const models = (p.models || []).filter(m => m !== 'auto');
+    const curVariant = type === 'model' ? selectedModelVariant : selectedAdvisorVariant;
+    let modelHtml = '';
+    if (models.length > 0) {
+      modelHtml = `<div class="picker-models"${sel?'':' style="display:none"'}>` +
+        models.map(m => `<div class="picker-mitem${sel && curVariant===m?' selected':''}" data-model="${m}" onclick="event.stopPropagation();selectModelVariant('${type}','${p.name}','${m}')">
+          <span class="pm-check">✓</span> ${esc(m)}
+        </div>`).join('') + '</div>';
+    }
+    items += `<div class="picker-item${sel?' selected':''}" data-provider="${p.name}" onclick="selectProvider('${type}','${p.name}')">
+      <span class="pi-dot" style="background:${dotColor}"></span>
+      <div class="pi-info"><div class="pi-name">${esc(p.display_name||p.name)}</div><div class="pi-desc">${esc((p.description||'').substring(0,60))}…</div></div>
+      <span class="pi-check">✓</span>
+    </div>${modelHtml}`;
+  });
+  listEl.innerHTML = items;
+}
+
+function selectProvider(type, name) {
+  if (type === 'model') {
+    selectedModel = name;
+    selectedModelVariant = '';
+    // Auto-select first model if available
+    const p = providers.find(x => x.name === name);
+    if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedModelVariant = p.models[0];
+  } else {
+    selectedAdvisor = name;
+    selectedAdvisorVariant = '';
+    if (name) {
+      const p = providers.find(x => x.name === name);
+      if (p && p.models && p.models.length && p.models[0] !== 'auto') selectedAdvisorVariant = p.models[0];
+    }
+  }
+  buildPickerList(type);
+  updatePickerPill(type);
+}
+
+function selectModelVariant(type, provName, modelName) {
+  if (type === 'model') {
+    selectedModel = provName;
+    selectedModelVariant = modelName;
+  } else {
+    selectedAdvisor = provName;
+    selectedAdvisorVariant = modelName;
+  }
+  buildPickerList(type);
+  updatePickerPill(type);
+}
+
+function updatePickerPill(type) {
+  if (type === 'model') {
+    const p = providers.find(x => x.name === selectedModel);
+    const dot = document.getElementById('mp-dot');
+    const label = document.getElementById('mp-label');
+    const model = document.getElementById('mp-model');
+    dot.style.background = AGENT_DOT_COLORS[selectedModel] || 'var(--tx2)';
+    label.textContent = p ? (p.display_name || p.name) : selectedModel;
+    model.textContent = selectedModelVariant || '';
+  } else {
+    const pill = document.getElementById('advisor-picker');
+    const dot = document.getElementById('ap-dot');
+    const label = document.getElementById('ap-label');
+    const model = document.getElementById('ap-model');
+    if (selectedAdvisor) {
+      const p = providers.find(x => x.name === selectedAdvisor);
+      dot.style.background = AGENT_DOT_COLORS[selectedAdvisor] || '#af52de';
+      label.textContent = '🧠 ' + (p ? (p.display_name || p.name) : selectedAdvisor);
+      model.textContent = selectedAdvisorVariant || '';
+      pill.classList.add('active');
+    } else {
+      dot.style.background = 'var(--tx2)';
+      label.textContent = 'No Advisor';
+      model.textContent = '';
+      pill.classList.remove('active');
+    }
+  }
+}
+
+function togglePicker(pill) {
+  const wasOpen = pill.classList.contains('open');
+  // Close all pickers first
+  document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open'));
+  if (!wasOpen) pill.classList.add('open');
+}
+
+function filterPicker(type, query) {
+  const list = document.getElementById(type === 'model' ? 'mp-list' : 'ap-list');
+  const q = query.toLowerCase();
+  list.querySelectorAll('.picker-item').forEach(item => {
+    const name = (item.querySelector('.pi-name')?.textContent || '').toLowerCase();
+    const match = !q || name.includes(q);
+    item.style.display = match ? '' : 'none';
+    const models = item.nextElementSibling;
+    if (models && models.classList.contains('picker-models')) models.style.display = match ? '' : 'none';
+  });
+}
+
+// Close pickers on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.picker-pill')) {
+    document.querySelectorAll('.picker-pill').forEach(p => p.classList.remove('open'));
+  }
+});
 
 function renderAgentGrid() {
   const grid = document.getElementById('agent-grid');
@@ -554,6 +733,8 @@ function renderAgentGrid() {
     if (['vllm','kivi','inhouse'].includes(p.name)) badges.push('<span class="agent-badge local">Local</span>');
     const desc = esc(p.description || 'No description available.');
     const aliases = (p.aliases||[]).length ? `<span style="color:var(--tx2);font-size:10px;margin-left:6px">${p.aliases.map(a=>'<code style="font-size:10px">'+a+'</code>').join(' ')}</span>` : '';
+    const models = (p.models||[]).filter(m => m !== 'auto');
+    const modelBadges = models.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">${models.map(m => `<span style="font-size:9px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;padding:1px 5px;color:var(--tx2)">${esc(m)}</span>`).join('')}</div>` : '';
     return `<div class="agent-card">
       <div class="agent-card-hdr">
         <div class="agent-icon" style="background:${bg}">${icon}</div>
@@ -564,6 +745,7 @@ function renderAgentGrid() {
       </div>
       <div class="agent-card-desc">${desc}</div>
       <div class="agent-badges">${badges.join('')}</div>
+      ${modelBadges}
     </div>`;
   }).join('');
 }
@@ -596,7 +778,7 @@ function sendNewTask() {
   if (attachments.length) {
     prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
   }
-  const model = document.getElementById('new-model').value;
+  const model = selectedModel;
   const mode = document.getElementById('new-mode').value;
   const cwd = document.getElementById('new-cwd').value.trim();
   const branch = document.getElementById('branch-name').textContent;
@@ -605,9 +787,13 @@ function sendNewTask() {
   renderAttachments();
 
   const body = { prompt, model, mode, cwd, branch: branch==='default'?'':branch, extra: {},
-    advisor: document.getElementById('new-advisor').value || '',
-    advisor_model: '',
+    advisor: selectedAdvisor || '',
+    advisor_model: selectedAdvisorVariant || '',
   };
+  // Pass model variant override
+  if (selectedModelVariant) {
+    body.extra.model_override = selectedModelVariant;
+  }
   if (['vllm','kivi','inhouse'].includes(model)) {
     const ip = localStorage.getItem('vllm_ip') || '127.0.0.1';
     const port = localStorage.getItem('vllm_port') || '9999';
@@ -647,13 +833,6 @@ function renderAttachments() {
   ).join('');
 }
 function rmAttach(i) { attachments.splice(i,1); renderAttachments(); }
-
-// Advisor select highlight
-document.getElementById('new-advisor').addEventListener('change', function() {
-  this.style.background = this.value ? 'rgba(175,82,222,.08)' : '';
-  this.style.borderColor = this.value ? 'rgba(175,82,222,.4)' : '';
-  this.style.color = this.value ? '#af52de' : '';
-});
 
 // Branch picker
 function pickBranch() {

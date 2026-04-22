@@ -17,6 +17,7 @@ class ClaudeProvider(BaseProvider):
     supports_tools = True
     supports_sessions = True
     supports_agents = True
+    available_models = ["claude-sonnet-4.6", "claude-opus-4.6", "claude-haiku-4.5"]
 
     def __init__(self):
         self._stop = False

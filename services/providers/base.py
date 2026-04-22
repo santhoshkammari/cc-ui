@@ -97,6 +97,7 @@ class BaseProvider(ABC):
     supports_tools: bool = False
     supports_sessions: bool = False
     supports_agents: bool = False
+    available_models: list[str] = []
 
     @abstractmethod
     async def run(
@@ -126,4 +127,5 @@ class BaseProvider(ABC):
             "tools": self.supports_tools,
             "sessions": self.supports_sessions,
             "agents": self.supports_agents,
+            "models": self.available_models,
         }

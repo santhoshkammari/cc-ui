@@ -22,6 +22,7 @@ class OpenCodeProvider(BaseProvider):
     supports_streaming = True
     supports_tools = True
     supports_sessions = True
+    available_models = ["anthropic/claude-sonnet-4-20250514", "openai/gpt-4.1"]
 
     def __init__(self):
         self._stop = False

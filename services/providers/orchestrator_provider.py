@@ -17,6 +17,7 @@ class OrchestratorProvider(BaseProvider):
     supports_tools = True
     supports_sessions = False
     supports_agents = True
+    available_models = ["claude-sonnet-4.6"]
 
     def __init__(self):
         self._stop = False

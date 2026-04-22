@@ -1,0 +1,238 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ⚡
+      - text: CC-UI
+    - generic [ref=e5]:
+      - text: ⌕
+      - textbox "Search threads…" [ref=e6]
+    - generic [ref=e7]: Main
+    - generic [ref=e8] [cursor=pointer]:
+      - generic [ref=e9]: 💬
+      - text: Chat
+    - generic [ref=e10] [cursor=pointer]:
+      - generic [ref=e11]: 📋
+      - text: Tasks
+    - generic [ref=e12] [cursor=pointer]:
+      - generic [ref=e13]: 🔀
+      - text: PRs
+    - generic [ref=e14] [cursor=pointer]:
+      - generic [ref=e15]: ⏱
+      - text: Automations
+    - generic [ref=e16] [cursor=pointer]:
+      - generic [ref=e17]: ♡
+      - text: Monitor
+    - generic [ref=e18] [cursor=pointer]:
+      - generic [ref=e19]: ⚙
+      - text: Settings
+    - generic [ref=e20]: Recent Threads
+    - generic [ref=e21]:
+      - generic "Say hello world in Python" [ref=e629] [cursor=pointer]:
+        - generic [ref=e630]: ✓
+        - generic [ref=e631]: Say hello world in Python
+      - generic "findout where is ai.py file" [ref=e632] [cursor=pointer]:
+        - generic [ref=e633]: ✓
+        - generic [ref=e634]: findout where is ai.py file
+      - generic "explian where are we, use ls directoyr." [ref=e635] [cursor=pointer]:
+        - generic [ref=e636]: ✓
+        - generic [ref=e637]: explian where are we, use ls directoyr.
+      - generic "respond with just the word hello, nothin…" [ref=e638] [cursor=pointer]:
+        - generic [ref=e639]: ✓
+        - generic [ref=e640]: respond with just the word hello, nothin…
+      - generic "respond with just the word hello" [ref=e641] [cursor=pointer]:
+        - generic [ref=e642]: ✓
+        - generic [ref=e643]: respond with just the word hello
+      - generic "respond with just the word hello" [ref=e644] [cursor=pointer]:
+        - generic [ref=e645]: ✓
+        - generic [ref=e646]: respond with just the word hello
+      - generic "respond with just hello" [ref=e647] [cursor=pointer]:
+        - generic [ref=e648]: ✓
+        - generic [ref=e649]: respond with just hello
+      - generic "respond with just the word hello" [ref=e650] [cursor=pointer]:
+        - generic [ref=e651]: ✓
+        - generic [ref=e652]: respond with just the word hello
+    - generic [ref=e47] [cursor=pointer]:
+      - generic [ref=e48]: S
+      - generic [ref=e49]: Santhosh
+  - generic [ref=e653]:
+    - heading "⚙ Settings" [level=2] [ref=e654]
+    - generic [ref=e655]:
+      - generic [ref=e656]: Agents & Providers
+      - generic [ref=e657]:
+        - generic [ref=e658]:
+          - generic [ref=e659]:
+            - generic [ref=e660]: 🟣
+            - generic [ref=e661]:
+              - generic [ref=e662]:
+                - text: Claude Code
+                - generic [ref=e663]:
+                  - code [ref=e664]: claude-code
+                  - code [ref=e665]: cc
+              - generic [ref=e666]: claude
+          - generic [ref=e667]: Anthropic's agentic coding assistant. Reads/writes files, runs shell commands, manages git, and reasons through complex multi-step tasks. Supports session resumption and sub-agent orchestration.
+          - generic [ref=e668]:
+            - generic [ref=e669]: Streaming
+            - generic [ref=e670]: Tool Use
+            - generic [ref=e671]: Sessions
+            - generic [ref=e672]: Multi-Agent
+          - generic [ref=e673]:
+            - generic [ref=e674]: claude-sonnet-4.6
+            - generic [ref=e675]: claude-opus-4.6
+            - generic [ref=e676]: claude-haiku-4.5
+        - generic [ref=e677]:
+          - generic [ref=e678]:
+            - generic [ref=e679]: 🔵
+            - generic [ref=e680]:
+              - generic [ref=e681]:
+                - text: OpenCode
+                - code [ref=e683]: oc
+              - generic [ref=e684]: opencode
+          - generic [ref=e685]: Open-source agentic coding CLI. File editing, shell access, and step-by-step reasoning with tool use. Supports persistent sessions and multiple LLM backends.
+          - generic [ref=e686]:
+            - generic [ref=e687]: Streaming
+            - generic [ref=e688]: Tool Use
+            - generic [ref=e689]: Sessions
+          - generic [ref=e690]:
+            - generic [ref=e691]: anthropic/claude-sonnet-4-20250514
+            - generic [ref=e692]: openai/gpt-4.1
+        - generic [ref=e693]:
+          - generic [ref=e694]:
+            - generic [ref=e695]: 🟢
+            - generic [ref=e696]:
+              - generic [ref=e697]:
+                - text: vLLM (Local)
+                - code [ref=e699]: vllm-local
+              - generic [ref=e700]: vllm
+          - generic [ref=e701]: Self-hosted models via vLLM's OpenAI-compatible API. Run any HuggingFace model locally with GPU acceleration. Configure IP, port, and model in Settings.
+          - generic [ref=e702]:
+            - generic [ref=e703]: Streaming
+            - generic [ref=e704]: Local
+        - generic [ref=e705]:
+          - generic [ref=e706]:
+            - generic [ref=e707]: 🔴
+            - generic [ref=e708]:
+              - generic [ref=e709]:
+                - text: Google Gemini
+                - generic [ref=e710]:
+                  - code [ref=e711]: google
+                  - code [ref=e712]: gemini-pro
+              - generic [ref=e713]: gemini
+          - generic [ref=e714]: Google's multimodal AI. Fast streaming text generation via the Gemini API. Best for quick questions, summaries, and brainstorming. Requires GEMINI_API_KEY.
+          - generic [ref=e716]: Streaming
+          - generic [ref=e717]:
+            - generic [ref=e718]: gemini-2.5-flash
+            - generic [ref=e719]: gemini-2.5-pro
+            - generic [ref=e720]: gemini-2.0-flash
+        - generic [ref=e721]:
+          - generic [ref=e722]:
+            - generic [ref=e723]: ⚫
+            - generic [ref=e724]:
+              - generic [ref=e725]:
+                - text: GitHub Copilot
+                - code [ref=e727]: gh-copilot
+              - generic [ref=e728]: copilot
+          - generic [ref=e729]: GitHub Copilot SDK with full agentic capabilities. Streaming, tool use, sessions, and multi-model support (GPT-5.4, GPT-5 mini, Claude Sonnet/Haiku/Opus). Runs the bundled Copilot CLI under the hood.
+          - generic [ref=e730]:
+            - generic [ref=e731]: Streaming
+            - generic [ref=e732]: Tool Use
+            - generic [ref=e733]: Sessions
+            - generic [ref=e734]: Multi-Agent
+          - generic [ref=e735]:
+            - generic [ref=e736]: gpt-5.4
+            - generic [ref=e737]: gpt-5-mini
+            - generic [ref=e738]: claude-sonnet-4.6
+            - generic [ref=e739]: claude-haiku-4.5
+            - generic [ref=e740]: claude-opus-4.6
+        - generic [ref=e741]:
+          - generic [ref=e742]:
+            - generic [ref=e743]: 🟡
+            - generic [ref=e744]:
+              - generic [ref=e745]:
+                - text: Kivi (Local)
+                - code [ref=e747]: kivi-local
+              - generic [ref=e748]: kivi
+          - generic [ref=e749]: Lightweight local inference via OpenAI-compatible API. Similar to vLLM but for smaller models. Supports streaming and tool-use formatted responses.
+          - generic [ref=e750]:
+            - generic [ref=e751]: Streaming
+            - generic [ref=e752]: Tool Use
+            - generic [ref=e753]: Local
+        - generic [ref=e754]:
+          - generic [ref=e755]:
+            - generic [ref=e756]: 🟠
+            - generic [ref=e757]:
+              - generic [ref=e758]:
+                - text: OpenAI Agent
+                - generic [ref=e759]:
+                  - code [ref=e760]: oai-agent
+                  - code [ref=e761]: openai
+              - generic [ref=e762]: openai-agent
+          - generic [ref=e763]: OpenAI's agent SDK with built-in tool use, handoffs, and guardrails. Runs multi-step workflows with GPT models. Supports streaming and sub-agent delegation. Requires OPENAI_API_KEY.
+          - generic [ref=e764]:
+            - generic [ref=e765]: Streaming
+            - generic [ref=e766]: Tool Use
+            - generic [ref=e767]: Multi-Agent
+          - generic [ref=e768]:
+            - generic [ref=e769]: gpt-5.4
+            - generic [ref=e770]: gpt-5-mini
+            - generic [ref=e771]: gpt-4.1
+            - generic [ref=e772]: gpt-4.1-mini
+            - generic [ref=e773]: o3
+            - generic [ref=e774]: o4-mini
+        - generic [ref=e775]:
+          - generic [ref=e776]:
+            - generic [ref=e777]: ⬡
+            - generic [ref=e778]:
+              - generic [ref=e779]:
+                - text: AI Framework (In-house)
+                - generic [ref=e780]:
+                  - code [ref=e781]: ai-framework
+                  - code [ref=e782]: lab
+              - generic [ref=e783]: inhouse
+          - generic [ref=e784]: Custom AI framework from lab/src/ai. Unified interface for multiple backends (OpenAI, Anthropic, local). Supports tool calling, structured output, and batch processing.
+          - generic [ref=e785]:
+            - generic [ref=e786]: Streaming
+            - generic [ref=e787]: Tool Use
+            - generic [ref=e788]: Local
+        - generic [ref=e789]:
+          - generic [ref=e790]:
+            - generic [ref=e791]: 🌐
+            - generic [ref=e792]:
+              - generic [ref=e793]:
+                - text: Multi-Agent Orchestrator
+                - generic [ref=e794]:
+                  - code [ref=e795]: multi-agent
+                  - code [ref=e796]: orchestrator
+              - generic [ref=e797]: claudeagents
+          - generic [ref=e798]: Supervisor-worker pattern for parallel execution. Breaks complex tasks into subtasks, runs them across multiple Claude agents simultaneously, then synthesizes results. Best for large refactors, multi-file changes, and research tasks.
+          - generic [ref=e799]:
+            - generic [ref=e800]: Streaming
+            - generic [ref=e801]: Tool Use
+            - generic [ref=e802]: Multi-Agent
+          - generic [ref=e804]: claude-sonnet-4.6
+    - generic [ref=e805]:
+      - generic [ref=e806]: Theme
+      - generic [ref=e807]:
+        - generic [ref=e814] [cursor=pointer]: macOS Dark
+        - generic [ref=e821] [cursor=pointer]: macOS Light
+        - generic [ref=e828] [cursor=pointer]: GitHub Dark
+        - generic [ref=e835] [cursor=pointer]: Claude Dark
+        - generic [ref=e842] [cursor=pointer]: Nord
+        - generic [ref=e849] [cursor=pointer]: Catppuccin
+        - generic [ref=e856] [cursor=pointer]: Monokai
+        - generic [ref=e863] [cursor=pointer]: Solarized
+        - generic [ref=e870] [cursor=pointer]: Tokyo Night
+        - generic [ref=e877] [cursor=pointer]: Rosé Pine
+        - generic [ref=e884] [cursor=pointer]: Poimandres
+        - generic [ref=e891] [cursor=pointer]: Ayu Dark
+        - generic [ref=e898] [cursor=pointer]: Vesper
+        - generic [ref=e905] [cursor=pointer]: Dracula
+        - generic [ref=e912] [cursor=pointer]: Gruvbox
+        - generic [ref=e919] [cursor=pointer]: Midnight
+    - generic [ref=e920]:
+      - generic [ref=e921]: vLLM / Local Model Config
+      - generic [ref=e922]:
+        - textbox "IP (e.g. 192.168.170.76)" [ref=e923]: 127.0.0.1
+        - 'textbox "Port (default: 8000)" [ref=e924]': "9999"
+        - textbox "Model name / path" [ref=e925]: mock-model-v1
+        - 'textbox "API key (default: dummy)" [ref=e926]': dummy
+        - button "Save" [ref=e927] [cursor=pointer]

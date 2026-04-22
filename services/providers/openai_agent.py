@@ -17,6 +17,7 @@ class OpenAIAgentProvider(BaseProvider):
     supports_tools = True
     supports_sessions = False
     supports_agents = True
+    available_models = ["gpt-5.4", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "o3", "o4-mini"]
 
     def __init__(self):
         self._stop = False
