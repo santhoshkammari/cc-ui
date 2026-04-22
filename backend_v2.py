@@ -32,6 +32,15 @@ from services.scheduler import Scheduler
 from services.monitor import Monitor
 from services.git_service import GitService
 
+# ── Agent Harness ────────────────────────────────────────────────────
+from lib.agents import agent_service, AgentService
+from lib.agents.events import (
+    DeltaEvent, ToolStartEvent, ToolCompleteEvent,
+    UsageEvent, ErrorEvent, ReasoningEvent,
+    SubagentStartEvent, SubagentEndEvent, IdleEvent,
+    event_to_dict,
+)
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("cc-ui")
 
@@ -390,14 +399,15 @@ Keep your review concise and actionable."""
 # ── API Models ───────────────────────────────────────────────────────
 class CreateTaskRequest(BaseModel):
     prompt: str
-    mode: str = "bypassPermissions"
     model: str = "claude"
+    agent_id: str = ""             # new: which agent to use (e.g. "claude-code", "chat")
+    mode: str = "bypassPermissions"  # kept for backward compat
     cwd: str = ""
     session_id: str | None = None
     branch: str = ""
     extra: dict = {}
-    advisor: str = ""          # advisor provider name (e.g. "claude", "opencode")
-    advisor_model: str = ""    # advisor model override (e.g. specific model variant)
+    advisor: str = ""              # deprecated — kept for backward compat
+    advisor_model: str = ""        # deprecated — kept for backward compat
 
 class SendMessageRequest(BaseModel):
     prompt: str
@@ -697,17 +707,60 @@ async def suggest_path(path: str = ""):
         return []
 
 
+# ── Agent Registration & Routes ──────────────────────────────────────
+def _register_agents():
+    """Register built-in agents with the agent service."""
+    try:
+        from lib.agents_builtin.coding import CodingAgent
+        agent_service.register(CodingAgent(
+            agent_id="claude-code", agent_name="Claude Code",
+            provider_name="claude",
+        ))
+    except Exception as e:
+        log.debug("Claude coding agent not available: %s", e)
+
+    try:
+        from lib.agents_builtin.coding import CodingAgent
+        agent_service.register(CodingAgent(
+            agent_id="opencode", agent_name="OpenCode",
+            provider_name="opencode",
+        ))
+    except Exception as e:
+        log.debug("OpenCode agent not available: %s", e)
+
+    try:
+        from lib.agents_builtin.chat import ChatAgent
+        agent_service.register(ChatAgent(agent_id="chat", agent_name="Chat"))
+    except Exception as e:
+        log.debug("Chat agent not available: %s", e)
+
+    try:
+        from lib.agents_builtin.inhouse import InHouseAgent
+        agent_service.register(InHouseAgent(agent_id="inhouse", agent_name="In-House AI"))
+    except Exception as e:
+        log.debug("InHouse agent not available: %s", e)
+
+_register_agents()
+
+
+@app.get("/agents")
+async def list_agents():
+    """List all registered agents."""
+    return agent_service.list_agents()
+
+
 # ── Startup / Shutdown ───────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
     await scheduler.start()
-    log.info("CC-UI v2 started — %d providers, %d tasks loaded, %d scheduled jobs",
-             len(list_providers()), len(_tasks), len(scheduler.list_jobs()))
+    log.info("CC-UI v2 started — %d providers, %d agents, %d tasks loaded, %d scheduled jobs",
+             len(list_providers()), len(agent_service._agents), len(_tasks), len(scheduler.list_jobs()))
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await scheduler.stop()
+    await agent_service.shutdown()
 
 
 # ── Main ─────────────────────────────────────────────────────────────
