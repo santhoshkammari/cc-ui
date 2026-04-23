@@ -1,15 +1,13 @@
 """
 CC-UI v2 Backend — Unified FastAPI gateway.
 
-Integrates all services:
-- Provider registry (10+ AI backends, swappable)
+Integrates services:
+- Provider registry (Claude Code, OpenCode, Copilot, Local/vLLM)
 - Task management with unified provider interface
 - Scheduler (cron/delayed/recurring jobs)
 - Monitor (health, metrics, system info)
 - Git service (branches, commits, diffs)
 - Directory autocomplete
-
-Original backend preserved as backend_legacy.py for reference.
 """
 import asyncio
 import json
@@ -31,15 +29,6 @@ from services.providers.registry import get_provider, list_providers, health_che
 from services.scheduler import Scheduler
 from services.monitor import Monitor
 from services.git_service import GitService
-
-# ── Agent Harness ────────────────────────────────────────────────────
-from lib.agents import agent_service, AgentService
-from lib.agents.events import (
-    DeltaEvent, ToolStartEvent, ToolCompleteEvent,
-    UsageEvent, ErrorEvent, ReasoningEvent,
-    SubagentStartEvent, SubagentEndEvent, IdleEvent,
-    event_to_dict,
-)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("cc-ui")
@@ -157,9 +146,39 @@ def _merge_usage(task: dict, usage: dict | None):
 async def _run_task(task: dict):
     """Run a task using the unified provider interface."""
     model_name = task["model"]
-    log.info("_run_task starting: model=%s prompt=%s", model_name, task["prompt"][:60])
+
+    # Map agent IDs to provider names for routing
+    _AGENT_TO_PROVIDER = {
+        "claude-code": "claude",
+        "opencode":    "opencode",
+        "copilot":     "copilot",
+        "local":       "vllm",
+    }
+
+    # Map short model names to specific Claude model IDs
+    _MODEL_ALIASES = {
+        "sonnet": "claude-sonnet-4-20250514",
+        "opus":   "claude-opus-4-20250514",
+        "haiku":  "claude-haiku-4-5-20251001",
+    }
+
+    # Resolve agent ID to provider name
+    provider_name = _AGENT_TO_PROVIDER.get(model_name, model_name)
+
+    if model_name in _MODEL_ALIASES:
+        task.setdefault("extra", {})["model_override"] = _MODEL_ALIASES[model_name]
+
+    # For "local" agent, inject vLLM defaults if not in extra
+    if model_name == "local":
+        extra = task.setdefault("extra", {})
+        if not extra.get("vllm_url"):
+            extra["vllm_url"] = "http://localhost:8000"
+        if not extra.get("vllm_model"):
+            extra["vllm_model"] = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
+
+    log.info("_run_task starting: agent=%s provider=%s prompt=%s", model_name, provider_name, task["prompt"][:60])
     try:
-        provider = get_provider(model_name)
+        provider = get_provider(provider_name)
     except ValueError as e:
         log.error("_run_task: provider not found: %s", e)
         task["history"].append({"role": "assistant", "content": f"❌ {e}"})
@@ -399,8 +418,8 @@ Keep your review concise and actionable."""
 # ── API Models ───────────────────────────────────────────────────────
 class CreateTaskRequest(BaseModel):
     prompt: str
-    model: str = "claude"
-    agent_id: str = ""             # new: which agent to use (e.g. "claude-code", "chat")
+    model: str = "claude-code"
+    agent_id: str = ""             # which agent to use (e.g. "claude-code", "chat")
     mode: str = "bypassPermissions"  # kept for backward compat
     cwd: str = ""
     session_id: str | None = None
@@ -415,7 +434,7 @@ class SendMessageRequest(BaseModel):
 class CreateJobRequest(BaseModel):
     name: str
     prompt: str
-    model: str = "claude"
+    model: str = "claude-code"
     mode: str = "bypassPermissions"
     cwd: str = ""
     schedule: str = ""
@@ -707,46 +726,19 @@ async def suggest_path(path: str = ""):
         return []
 
 
-# ── Agent Registration & Routes ──────────────────────────────────────
-def _register_agents():
-    """Register built-in agents with the agent service."""
-    try:
-        from lib.agents_builtin.coding import CodingAgent
-        agent_service.register(CodingAgent(
-            agent_id="claude-code", agent_name="Claude Code",
-            provider_name="claude",
-        ))
-    except Exception as e:
-        log.debug("Claude coding agent not available: %s", e)
-
-    try:
-        from lib.agents_builtin.coding import CodingAgent
-        agent_service.register(CodingAgent(
-            agent_id="opencode", agent_name="OpenCode",
-            provider_name="opencode",
-        ))
-    except Exception as e:
-        log.debug("OpenCode agent not available: %s", e)
-
-    try:
-        from lib.agents_builtin.chat import ChatAgent
-        agent_service.register(ChatAgent(agent_id="chat", agent_name="Chat"))
-    except Exception as e:
-        log.debug("Chat agent not available: %s", e)
-
-    try:
-        from lib.agents_builtin.inhouse import InHouseAgent
-        agent_service.register(InHouseAgent(agent_id="inhouse", agent_name="In-House AI"))
-    except Exception as e:
-        log.debug("InHouse agent not available: %s", e)
-
-_register_agents()
+# ── Agent definitions (static list for the UI) ──────────────────────
+_AGENTS = [
+    {"id": "claude-code", "name": "Claude Code", "provider": "claude", "description": "Anthropic's agentic coding assistant"},
+    {"id": "opencode",    "name": "OpenCode",    "provider": "opencode", "description": "Open-source agentic coding CLI"},
+    {"id": "copilot",     "name": "Copilot",     "provider": "copilot", "description": "GitHub Copilot SDK agent"},
+    {"id": "local",       "name": "Local",        "provider": "vllm", "description": "Local vLLM model (Qwen 3.5-9B)"},
+]
 
 
 @app.get("/agents")
 async def list_agents():
     """List all registered agents."""
-    return agent_service.list_agents()
+    return _AGENTS
 
 
 # ── Startup / Shutdown ───────────────────────────────────────────────
@@ -754,13 +746,12 @@ async def list_agents():
 async def startup():
     await scheduler.start()
     log.info("CC-UI v2 started — %d providers, %d agents, %d tasks loaded, %d scheduled jobs",
-             len(list_providers()), len(agent_service._agents), len(_tasks), len(scheduler.list_jobs()))
+             len(list_providers()), len(_AGENTS), len(_tasks), len(scheduler.list_jobs()))
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await scheduler.stop()
-    await agent_service.shutdown()
 
 
 # ── Main ─────────────────────────────────────────────────────────────

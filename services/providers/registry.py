@@ -63,7 +63,7 @@ def _auto_register():
     """Auto-register all built-in providers."""
     try:
         from .claude import ClaudeProvider
-        register("claude", ClaudeProvider, aliases=["claude-code", "cc"])
+        register("claude", ClaudeProvider, aliases=["claude-code", "cc", "sonnet", "opus", "haiku"])
     except ImportError as e:
         log.debug("Claude provider not available: %s", e)
 
@@ -74,46 +74,16 @@ def _auto_register():
         log.debug("OpenCode provider not available: %s", e)
 
     try:
-        from .vllm import VLLMProvider
-        register("vllm", VLLMProvider, aliases=["vllm-local"])
-    except ImportError as e:
-        log.debug("vLLM provider not available: %s", e)
-
-    try:
-        from .gemini import GeminiProvider
-        register("gemini", GeminiProvider, aliases=["google", "gemini-pro"])
-    except ImportError as e:
-        log.debug("Gemini provider not available: %s", e)
-
-    try:
         from .copilot import CopilotProvider
         register("copilot", CopilotProvider, aliases=["gh-copilot"])
     except ImportError as e:
         log.debug("Copilot provider not available: %s", e)
 
     try:
-        from .kivi import KiviProvider
-        register("kivi", KiviProvider, aliases=["kivi-local"])
+        from .vllm import VLLMProvider
+        register("vllm", VLLMProvider, aliases=["local", "vllm-local"])
     except ImportError as e:
-        log.debug("Kivi provider not available: %s", e)
-
-    try:
-        from .openai_agent import OpenAIAgentProvider
-        register("openai-agent", OpenAIAgentProvider, aliases=["oai-agent", "openai"])
-    except ImportError as e:
-        log.debug("OpenAI Agent provider not available: %s", e)
-
-    try:
-        from .inhouse import InhouseProvider
-        register("inhouse", InhouseProvider, aliases=["ai-framework", "lab"])
-    except ImportError as e:
-        log.debug("Inhouse provider not available: %s", e)
-
-    try:
-        from .orchestrator_provider import OrchestratorProvider
-        register("claudeagents", OrchestratorProvider, aliases=["multi-agent", "orchestrator"])
-    except ImportError as e:
-        log.debug("Orchestrator provider not available: %s", e)
+        log.debug("vLLM provider not available: %s", e)
 
 
 _auto_register()

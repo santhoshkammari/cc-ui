@@ -64,7 +64,7 @@
   .cwd-opt:hover, .cwd-opt.sel { background: var(--usr-bg); }
 
   /* Chat */
-  #chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  #chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; justify-content: flex-end; }
   #empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--tx1); font-size: 14px; flex-direction: column; gap: 8px; }
   #empty-state .hint { font-size: 12px; color: var(--tx2); }
 
@@ -98,7 +98,7 @@
   /* Input */
   #input-area { border-top: 1px solid var(--bd); padding: 12px 16px; background: var(--bg1); }
   #input-row { display: flex; gap: 8px; align-items: flex-end; }
-  #prompt { flex: 1; background: var(--bg0); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx0); font-size: 14px; padding: 10px 14px; resize: none; font-family: inherit; min-height: 44px; max-height: 120px; overflow-y: auto; }
+  #prompt { flex: 1; background: var(--bg0); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx0); font-size: 14px; padding: 9px 13px; resize: none; font-family: inherit; min-height: 42px; max-height: 114px; overflow-y: auto; max-width: 95%; }
   #prompt:focus { outline: none; border-color: var(--blue); }
 
   #controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
@@ -183,7 +183,7 @@
   /* Dashboard bottom chat bar */
   #dash-input-area { border-top: 1px solid var(--bd); padding: 12px 16px; background: var(--bg1); }
   #dash-input-row { display: flex; gap: 8px; align-items: flex-end; }
-  #dash-prompt { flex: 1; background: var(--bg0); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx0); font-size: 14px; padding: 10px 14px; resize: none; font-family: inherit; min-height: 44px; max-height: 120px; overflow-y: auto; }
+  #dash-prompt { flex: 1; background: var(--bg0); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx0); font-size: 14px; padding: 9px 13px; resize: none; font-family: inherit; min-height: 42px; max-height: 114px; overflow-y: auto; max-width: 95%; }
   #dash-prompt:focus { outline: none; border-color: var(--green); }
   #dash-controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
   #dash-cwd:focus { outline: none; border-color: var(--blue); color: var(--tx0); }
@@ -240,21 +240,7 @@
   .glass-theme #nav-sidebar,
   .glass-theme #sidebar { position: relative; }
 
-  /* ── Mobile send button ─────────────────────────────────────────── */
-  .mobile-send {
-    display: none;
-    background: var(--blue);
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 5px 12px;
-    cursor: pointer;
-  }
-  @media (max-width: 768px) {
-    .mobile-send { display: inline-block; }
-  }
+  /* ── (mobile-send removed — Enter key is sufficient) ──────────── */
 
   /* ── Kanban scroll dots ──────────────────────────────────────────── */
   #kanban-dots {
@@ -422,11 +408,10 @@
     </div>
     <div id="dash-controls">
       <select id="dash-model">
-        <option value="claude">claude</option>
-        <option value="claudeagents">claudeagents</option>
-        <option value="qwen">qwen</option>
-        <option value="opencode">opencode</option>
-        <option value="vllm">vllm (local)</option>
+        <option value="claude-code" selected>Claude Code</option>
+        <option value="opencode">OpenCode</option>
+        <option value="copilot">Copilot</option>
+        <option value="local">Local</option>
       </select>
       <select id="dash-mode">
         <option value="bypassPermissions">bypassPermissions</option>
@@ -440,12 +425,11 @@
         <div id="dash-cwd-drop" style="position:absolute;bottom:100%;left:0;width:100%;background:var(--bg1);border:1px solid var(--blue);border-radius:5px;z-index:999;display:none;max-height:200px;overflow-y:auto;margin-bottom:4px;"></div>
       </div>
       <div style="position:relative;display:flex;align-items:center;gap:6px">
-        <button id="dash-send-btn" class="mobile-send" onclick="sendNewTask()">↑ Send</button>
-        <button id="dash-vllm-cfg-btn" title="vLLM settings" style="background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:13px;padding:4px 8px;cursor:pointer">⚙ vllm</button>
+        <button id="dash-vllm-cfg-btn" title="Local model settings" style="background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:13px;padding:4px 8px;cursor:pointer">⚙ Local</button>
         <div id="dash-vllm-popup" style="display:none;position:absolute;bottom:34px;right:0;background:var(--bg1);border:1px solid var(--bd);border-radius:8px;padding:14px;width:260px;z-index:100;box-shadow:0 4px 16px #0005">
-          <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">vLLM Config</div>
+          <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Local Model Config</div>
           <div style="display:flex;flex-direction:column;gap:6px">
-            <input id="dvp-ip"    placeholder="IP  (e.g. 192.168.170.76)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+            <input id="dvp-ip"    placeholder="IP  (e.g. localhost)"         style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
             <input id="dvp-port"  placeholder="Port  (default: 8000)"      style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
             <input id="dvp-model" placeholder="Model name / path"          style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
             <input id="dvp-key"   placeholder="API key  (default: dummy)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
@@ -488,11 +472,10 @@
       </div>
       <div id="controls">
         <select id="model-sel">
-          <option value="claude">claude</option>
-          <option value="claudeagents">claudeagents</option>
-          <option value="qwen">qwen</option>
-          <option value="opencode">opencode</option>
-          <option value="vllm">vllm (local)</option>
+          <option value="claude-code" selected>Claude Code</option>
+          <option value="opencode">OpenCode</option>
+          <option value="copilot">Copilot</option>
+          <option value="local">Local</option>
         </select>
         <select id="mode-sel">
           <option value="bypassPermissions">bypassPermissions</option>
@@ -503,12 +486,11 @@
         </select>
         <button id="stop-btn" onclick="stopActive()">⏹ stop active</button>
         <div style="position:relative;margin-left:auto;display:flex;align-items:center;gap:6px">
-          <button id="send-btn" class="mobile-send" onclick="sendPrompt()">↑ Send</button>
-          <button id="vllm-cfg-btn" title="vLLM settings" style="background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:13px;padding:4px 8px;cursor:pointer">⚙ vllm</button>
+          <button id="vllm-cfg-btn" title="Local model settings" style="background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:13px;padding:4px 8px;cursor:pointer">⚙ Local</button>
           <div id="vllm-popup" style="display:none;position:absolute;bottom:34px;right:0;background:var(--bg1);border:1px solid var(--bd);border-radius:8px;padding:14px;width:260px;z-index:100;box-shadow:0 4px 16px #0005">
-            <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">vLLM Config</div>
+            <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Local Model Config</div>
             <div style="display:flex;flex-direction:column;gap:6px">
-              <input id="vp-ip"    placeholder="IP  (e.g. 192.168.170.76)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
+              <input id="vp-ip"    placeholder="IP  (e.g. localhost)"         style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
               <input id="vp-port"  placeholder="Port  (default: 8000)"      style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
               <input id="vp-model" placeholder="Model name / path"          style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
               <input id="vp-key"   placeholder="API key  (default: dummy)"  style="background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 7px;font-family:monospace;width:100%">
@@ -663,7 +645,7 @@ function renderKanban() {
         <div class="card-label">${esc(t.label)}</div>
         <div class="card-meta">
           <span class="card-badge badge-${badge}">${badge}</span>
-          ${t.model && t.model !== 'claude' ? `<span style="font-size:10px;color:var(--blue);font-weight:600">${esc(t.model)}</span>` : ''}
+          ${t.model && t.model !== 'sonnet' ? `<span style="font-size:10px;color:var(--blue);font-weight:600">${esc(t.model)}</span>` : ''}
           ${cost ? `<span style="font-size:10px;color:var(--green);font-weight:600">$${cost}</span>` : ''}
           ${tokens ? `<span style="font-size:10px;color:var(--tx2)">${tokens}</span>` : ''}
           ${dur ? `<span class="card-dur">⏱ ${dur}</span>` : ''}
@@ -880,11 +862,12 @@ async function sendNewTask() {
   promptEl.value = '';
   promptEl.style.height = 'auto';
   const body = { prompt, model, mode, cwd };
-  if (model === 'vllm') {
-    body.vllm_url = vllmUrl();
-    body.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
-    const m = localStorage.getItem('vllm_model');
-    if (m) body.vllm_model = m;
+  if (model === 'local') {
+    body.extra = {
+      vllm_url: vllmUrl(),
+      vllm_key: localStorage.getItem('vllm_key') || 'dummy',
+      vllm_model: localStorage.getItem('vllm_model') || '/home/ng6309/datascience/santhosh/models/qwen3.5-9b',
+    };
   }
   await api('POST', '/tasks', body);
   await refreshTasks();
@@ -1198,19 +1181,19 @@ document.getElementById('settings-overlay').addEventListener('click', e => {
 
 // ── vLLM popup ───────────────────────────────────────────────────────
 function vllmUrl() {
-  const ip   = localStorage.getItem('vllm_ip')   || '192.168.170.76';
+  const ip   = localStorage.getItem('vllm_ip')   || 'localhost';
   const port = localStorage.getItem('vllm_port') || '8000';
   return `http://${ip}:${port}`;
 }
 function loadVllmPopup() { loadVllmPopupTo('vp-ip','vp-port','vp-model','vp-key'); }
 function loadVllmPopupTo(ip, port, model, key) {
-  document.getElementById(ip).value    = localStorage.getItem('vllm_ip')    || '192.168.170.76';
+  document.getElementById(ip).value    = localStorage.getItem('vllm_ip')    || 'localhost';
   document.getElementById(port).value  = localStorage.getItem('vllm_port')  || '8000';
   document.getElementById(model).value = localStorage.getItem('vllm_model') || '/home/ng6309/datascience/santhosh/models/qwen3.5-9b';
   document.getElementById(key).value   = localStorage.getItem('vllm_key')   || 'dummy';
 }
 function saveVllmFrom(ip, port, model, key) {
-  localStorage.setItem('vllm_ip',    document.getElementById(ip).value.trim()    || '192.168.170.76');
+  localStorage.setItem('vllm_ip',    document.getElementById(ip).value.trim()    || 'localhost');
   localStorage.setItem('vllm_port',  document.getElementById(port).value.trim()  || '8000');
   localStorage.setItem('vllm_model', document.getElementById(model).value.trim() || '');
   localStorage.setItem('vllm_key',   document.getElementById(key).value.trim()   || 'dummy');

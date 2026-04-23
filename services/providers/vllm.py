@@ -7,8 +7,8 @@ from typing import AsyncIterator
 
 from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 
-DEFAULT_VLLM_URL = "http://192.168.170.76:8000"
-DEFAULT_VLLM_MODEL = "local-model"
+DEFAULT_VLLM_URL = "http://localhost:8000"
+DEFAULT_VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
 
 
 class VLLMProvider(BaseProvider):
