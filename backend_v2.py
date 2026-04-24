@@ -466,9 +466,6 @@ class GitCommitRequest(BaseModel):
 # ── Routes: Static ───────────────────────────────────────────────────
 @app.get("/")
 async def index():
-    static_index = os.path.join(HERE, "static", "index.html")
-    if os.path.exists(static_index):
-        return FileResponse(static_index)
     return FileResponse(os.path.join(HERE, "index.html"))
 
 
