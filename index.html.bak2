@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CC-OS · Ship Sleep Repeat</title>
+<style>
+  :root {
+    --bg0:#0d1117; --bg1:#161b22; --bg2:#21262d;
+    --bd:#30363d;
+    --tx0:#e6edf3; --tx1:#8b949e; --tx2:#6e7681;
+    --blue:#388bfd; --green:#3fb950; --orange:#f0883e; --red:#f85149; --purple:#a371f7;
+    --usr-bg:#1f3a5c; --code-bg:#0d1117;
+    --diff-add:#0d1f10; --diff-del:#1f0d0d;
+    --left-w:240px; --right-w:290px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg0);color:var(--tx0);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;overflow:hidden}
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+  #app{display:flex;height:100vh;width:100%}
+
+  /* ── Left Panel ──────────────────────────────────────────────── */
+  #left-panel{width:var(--left-w);min-width:var(--left-w);background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  #lp-header{padding:14px 16px 8px;border-bottom:1px solid var(--bd)}
+  #lp-logo{font-size:18px;font-weight:700;color:var(--tx0);display:flex;align-items:center;gap:6px}
+  #lp-tagline{font-size:12px;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+  #lp-nav{padding:8px 8px 4px;display:flex;flex-direction:column;gap:2px}
+  .lp-nav-item{padding:7px 10px;font-size:14px;color:var(--tx1);cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px;user-select:none}
+  .lp-nav-item:hover{background:var(--bg2);color:var(--tx0)}
+  .lp-nav-item.active{background:var(--usr-bg);color:var(--tx0)}
+  .nav-badge{margin-left:auto;background:var(--bg2);color:var(--tx2);font-size:12px;padding:1px 6px;border-radius:8px;font-weight:600}
+
+  #lp-workspaces{flex:1;overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column}
+  #ws-search{width:100%;background:var(--bg0);border:1px solid var(--bd);border-radius:6px;color:var(--tx0);font-size:13px;padding:6px 10px 6px 28px;outline:none;margin-bottom:6px;font-family:inherit}
+  #ws-search:focus{border-color:var(--blue)}
+  #ws-search::placeholder{color:var(--tx2)}
+  .ws-search-wrap{position:relative;padding:4px 0}
+  .ws-search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--tx2);pointer-events:none}
+  .ws-stats{font-size:11px;color:var(--tx2);padding:2px 4px 6px;display:flex;gap:8px}
+  .ws-stat{display:flex;align-items:center;gap:3px}
+  .ws-section-label{font-size:12px;font-weight:600;color:var(--tx2);letter-spacing:.06em;text-transform:uppercase;padding:8px 4px 4px}
+  .ws-item{border-radius:6px;margin-bottom:2px;overflow:hidden}
+  .ws-header{padding:6px 8px;font-size:14px;color:var(--tx1);cursor:pointer;display:flex;align-items:center;gap:6px;border-radius:6px;user-select:none}
+  .ws-header:hover{background:var(--bg2);color:var(--tx0)}
+  .ws-header.selected{background:var(--usr-bg);color:var(--tx0)}
+  .ws-chevron{font-size:8px;transition:transform .15s;width:12px;text-align:center}
+  .ws-chevron.open{transform:rotate(90deg)}
+  .ws-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .ws-count{font-size:12px;color:var(--tx2);margin-left:auto}
+  .ws-agents{padding:0 0 0 20px;display:none}
+  .ws-agents.open{display:block}
+  .ws-agent{padding:5px 8px;font-size:13px;color:var(--tx1);cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ws-agent:hover{background:var(--bg2);color:var(--tx0)}
+  .ws-agent.active{background:var(--usr-bg);color:var(--tx0)}
+  .ws-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .dot-running{background:var(--orange);animation:pulse 1.5s infinite}
+  .dot-done{background:var(--green)}.dot-error{background:var(--red)}.dot-stopped{background:var(--tx2)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .ws-remove{opacity:0;margin-left:auto;color:var(--tx2);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;flex-shrink:0}
+  .ws-header:hover .ws-remove{opacity:1}
+  .ws-remove:hover{color:var(--red);background:var(--diff-del)}
+
+  #lp-footer{padding:8px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:4px}
+  #lp-footer button{padding:6px 10px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx0);font-size:13px;cursor:pointer;width:100%}
+  #lp-footer button:hover{background:var(--bd)}
+  .lp-settings{cursor:pointer;padding:6px 10px;font-size:14px;color:var(--tx1);display:flex;align-items:center;gap:8px;border-radius:6px}
+  .lp-settings:hover{background:var(--bg2);color:var(--tx0)}
+
+  /* ── Center Panel ────────────────────────────────────────────── */
+  #center{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+  #topbar{padding:8px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--bg1);flex-shrink:0}
+  #topbar-title{font-size:16px;font-weight:600;color:var(--tx0);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #topbar-stats{font-size:13px;color:var(--tx2);white-space:nowrap}
+  #back-btn{display:none;background:var(--bg2);border:1px solid var(--bd);border-radius:5px;color:var(--tx1);font-size:14px;padding:4px 10px;cursor:pointer;flex-shrink:0}
+  #back-btn:hover{color:var(--tx0);background:var(--bd)}
+
+  /* Agent grid — 3 cols for 3×4 = 12 cards */
+  #agent-grid{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
+  #agent-grid:empty::after{content:'No agents yet — launch one below';color:var(--tx2);font-size:15px;text-align:center;grid-column:1/-1;padding:60px 0}
+  @media(max-width:1200px){#agent-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:768px){#agent-grid{grid-template-columns:1fr}}
+
+  .agent-card{background:var(--bg1);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .agent-card:hover{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)22}
+  .agent-card.running{border-left:3px solid var(--orange)}
+  .agent-card.done{border-left:3px solid var(--green)}
+  .agent-card.error{border-left:3px solid var(--red)}
+  .agent-card.stopped{border-left:3px solid var(--tx2)}
+  .ac-top{display:flex;align-items:center;gap:6px}
+  .ac-agent-badge{font-size:11px;padding:2px 6px;border-radius:8px;font-weight:600;white-space:nowrap}
+  .badge-claude-code{background:rgba(217,119,87,.15);color:#d97757}
+  .badge-opencode{background:rgba(63,185,80,.15);color:var(--green)}
+  .badge-copilot{background:rgba(56,139,253,.15);color:var(--blue)}
+  .badge-local{background:rgba(163,113,247,.15);color:var(--purple)}
+  .ac-status{font-size:12px;font-weight:600;margin-left:auto}
+  .st-running{color:var(--orange)}.st-done{color:var(--green)}.st-error{color:var(--red)}.st-stopped{color:var(--tx2)}
+  .ac-label{font-size:14px;font-weight:500;color:var(--tx0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-activity{font-size:12px;color:var(--tx1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:14px}
+  .ac-footer{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2);flex-wrap:wrap}
+  .ac-cost{color:var(--green);font-weight:600}.ac-tokens{color:var(--tx2)}
+  .ac-time{margin-left:auto}
+  .ac-actions{display:flex;gap:4px;margin-top:2px}
+  .ac-actions button{background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx1);font-size:12px;padding:3px 8px;cursor:pointer}
+  .ac-actions button:hover{color:var(--tx0);background:var(--bd)}
+  .ac-actions .danger:hover{color:var(--red);background:var(--diff-del);border-color:var(--red)44}
+
+  /* Conversation view */
+  #conv-view{flex:1;overflow-y:auto;padding:16px 20px;display:none;flex-direction:column;gap:8px}
+  .msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:15px;line-height:1.6;word-break:break-word}
+  .msg.user{background:var(--usr-bg);align-self:flex-end;border-bottom-right-radius:3px}
+  .msg.assistant{background:var(--bg1);border:1px solid var(--bd);align-self:flex-start;border-bottom-left-radius:3px}
+  .msg.tool{background:var(--bg0);border:1px solid var(--bd);align-self:flex-start;border-radius:6px;font-size:12px;width:100%;max-width:100%}
+  .tool-header{color:var(--tx1);padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
+  .tool-header:hover{color:var(--tx0)}
+  .tool-body{padding:0 10px 8px;display:none}
+  .tool-body.open{display:block}
+  .tool-body pre{background:var(--bg0);padding:8px;border-radius:4px;overflow-x:auto;font-size:11px;color:var(--tx0);white-space:pre-wrap}
+  .pending{opacity:.6}
+  .agent-group{background:var(--bg0);border:1px solid var(--bd);border-left:3px solid var(--blue);border-radius:8px;align-self:flex-start;width:100%;max-width:100%;margin:4px 0;font-size:12px}
+  .agent-group.agent-done{border-left-color:var(--green)}.agent-group.agent-error{border-left-color:var(--red)}.agent-group.agent-stopped{border-left-color:var(--tx2)}
+  .agent-group-header{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;color:var(--tx1);font-weight:600}
+  .agent-group-header:hover{color:var(--tx0)}
+  .agent-group-body{display:none;padding:0 10px 8px}
+  .agent-group-body.open{display:block}
+
+  .msg code{background:var(--bg0);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-size:12px;font-family:monospace}
+  .msg pre{background:var(--bg0);border:1px solid var(--bd);border-radius:6px;padding:10px;overflow-x:auto;margin:6px 0}
+  .msg pre code{background:none;border:none;padding:0;font-size:12px}
+
+  /* Chat bar — floating style */
+  #chat-bar{padding:12px 20px 16px;flex-shrink:0;background:transparent;border:none}
+  .chat-input-box{background:var(--bg1);border:1px solid var(--bd);border-radius:20px;transition:border-color .25s,box-shadow .25s,transform .15s;box-shadow:0 4px 24px rgba(0,0,0,.25),0 0 40px rgba(0,0,0,.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .chat-input-box:focus-within{border-color:var(--blue);box-shadow:0 6px 36px rgba(0,0,0,.25),0 0 0 3px rgba(56,139,253,.12);transform:translateY(-1px)}
+  .chat-input-box.dragover{border-color:var(--blue);border-style:dashed;background:rgba(56,139,253,.06)}
+  #cb-prompt{width:100%;min-height:56px;max-height:200px;background:transparent;border:none;color:var(--tx0);font-size:16px;line-height:1.7;padding:14px 18px 6px;resize:none;outline:none;font-family:inherit}
+  #cb-prompt::placeholder{color:var(--tx2)}
+  .chat-attachments{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;min-height:0}
+  .attach-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:3px 8px 3px 10px;font-size:13px;color:var(--tx1);animation:chipIn .15s ease}
+  @keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+  .attach-chip .chip-rm{cursor:pointer;color:var(--tx2);font-size:13px;line-height:1}
+  .attach-chip .chip-rm:hover{color:var(--red)}
+  #cb-controls{display:flex;align-items:center;gap:6px;padding:6px 14px 8px;border-top:1px solid color-mix(in srgb, var(--bd) 50%, transparent)}
+  #cb-controls select{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:13px;padding:5px 8px;cursor:pointer;outline:none}
+  #cb-controls select:focus{outline:none;border-color:var(--blue)}
+  .attach-btn{background:none;border:none;color:var(--tx2);font-size:15px;cursor:pointer;padding:2px 4px;transition:color .15s}
+  .attach-btn:hover{color:var(--blue)}
+  .cwd-wrap{position:relative}
+  .cwd-input{font-family:'SF Mono','Fira Code',monospace;width:310px;font-size:12px;padding:5px 8px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);outline:none}
+  .cwd-input:focus{border-color:var(--blue)}
+  .cwd-input::placeholder{color:var(--tx2)}
+  .cwd-dropdown{position:absolute;bottom:calc(100% + 4px);left:0;min-width:320px;max-height:240px;background:var(--bg1);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow-y:auto;z-index:999;display:none;padding:4px 0;animation:panelIn .12s ease}
+  .cwd-dropdown.open{display:block}
+  @keyframes panelIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .cwd-item{padding:7px 12px;font-size:13px;font-family:'SF Mono','Fira Code',monospace;color:var(--tx1);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cwd-item:hover{background:var(--bg2);color:var(--tx0)}
+  .cwd-item .cwd-icon{color:var(--blue);font-size:12px;flex-shrink:0}
+  .cwd-item .cwd-path{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .cwd-item .cwd-short{margin-left:auto;color:var(--tx2);font-size:11px;flex-shrink:0}
+
+  /* ── Right Panel (Review) ──────────────────────────────────────── */
+  #right-panel{width:var(--right-w);min-width:var(--right-w);background:var(--bg1);border-left:1px solid var(--bd);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  #rp-header{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--tx1);flex-shrink:0}
+  #rp-branch{background:var(--diff-add);color:var(--green);font-size:12px;padding:2px 8px;border-radius:8px;font-weight:600}
+  #rp-empty{padding:24px 14px;color:var(--tx2);font-size:14px;text-align:center}
+  #rp-summary{padding:10px 14px;border-bottom:1px solid var(--bd);font-size:12px;color:var(--tx2);display:flex;gap:12px;flex-shrink:0}
+  .rp-stat{display:flex;align-items:center;gap:4px}
+  .rp-stat-num{font-weight:700;font-size:14px}
+  #commit-box{padding:10px 12px;border-bottom:1px solid var(--bd);flex-shrink:0}
+  #commit-msg{width:100%;background:var(--bg0);border:1px solid var(--bd);border-radius:8px;color:var(--tx0);font-size:13px;padding:8px 10px;resize:none;font-family:inherit;min-height:38px;max-height:72px}
+  #commit-msg:focus{outline:none;border-color:var(--green)}
+  #commit-msg::placeholder{color:var(--tx2)}
+  #commit-actions{display:flex;gap:6px;margin-top:8px}
+  #commit-actions button{flex:1;padding:7px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx0);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s}
+  #commit-actions button:hover{background:var(--bd)}
+  #commit-btn{background:var(--green)!important;border-color:var(--green)!important;color:#000!important}
+  #commit-btn:hover{opacity:.9!important}
+
+  #rp-files{flex:1;overflow-y:auto}
+  .rp-section{border-bottom:1px solid var(--bd)}
+  .rp-section-hdr{padding:8px 12px;font-size:12px;font-weight:600;color:var(--tx2);letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px;user-select:none}
+  .rp-section-hdr .rp-act{margin-left:auto;font-size:11px;color:var(--blue);cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500}
+  .rp-section-hdr .rp-act:hover{text-decoration:underline}
+  .rp-file{padding:6px 12px 6px 16px;font-size:13px;font-family:'SF Mono','Fira Code',monospace;color:var(--tx1);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .1s}
+  .rp-file:hover{background:var(--bg2);color:var(--tx0)}
+  .rp-file.selected{background:var(--usr-bg);color:var(--tx0)}
+  .rp-file-icon{font-size:12px;flex-shrink:0;width:16px;text-align:center;font-weight:700}
+  .rp-file-name{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .rp-file-lines{font-size:10px;color:var(--tx2);flex-shrink:0;font-family:inherit}
+  .rp-file-action{opacity:0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx1);cursor:pointer;flex-shrink:0;transition:opacity .1s}
+  .rp-file:hover .rp-file-action{opacity:1}
+  .rp-file-action:hover{color:var(--tx0);background:var(--bd)}
+  .file-M{color:var(--orange)}.file-A{color:var(--green)}.file-D{color:var(--red)}.file-U{color:var(--green)}.file-R{color:var(--blue)}
+
+  /* Review view in center panel */
+  #review-view{flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column}
+  .rv-toolbar{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--bg1);flex-shrink:0;position:sticky;top:0;z-index:5}
+  .rv-toolbar-title{font-size:14px;font-weight:600;color:var(--tx0);font-family:'SF Mono','Fira Code',monospace}
+  .rv-toolbar-badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+  .rv-toolbar-actions{margin-left:auto;display:flex;gap:6px}
+  .rv-toolbar-actions button{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx0);font-size:12px;cursor:pointer;font-weight:500}
+  .rv-toolbar-actions button:hover{background:var(--bd)}
+  .rv-toolbar-actions .btn-primary{background:var(--green);border-color:var(--green);color:#000}
+  .rv-diff-body{padding:0;font-family:'SF Mono','Fira Code',monospace;font-size:13px;line-height:1.65}
+  .rv-diff-line{display:flex;min-height:22px}
+  .rv-ln{width:50px;text-align:right;padding:0 8px 0 0;color:var(--tx2);font-size:11px;user-select:none;flex-shrink:0;opacity:.6}
+  .rv-code{flex:1;padding:0 12px;white-space:pre-wrap;word-break:break-all;tab-size:4}
+  .rv-add{background:var(--diff-add)}.rv-add .rv-code{color:var(--green)}
+  .rv-del{background:var(--diff-del)}.rv-del .rv-code{color:var(--red)}
+  .rv-ctx .rv-code{color:var(--tx2)}
+  .rv-hunk{background:var(--bg2);color:var(--tx1);padding:4px 12px;font-size:11px;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);margin:4px 0}
+  .rv-file-sep{padding:10px 16px;font-size:13px;font-weight:600;color:var(--blue);background:var(--bg1);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;position:sticky;top:45px;z-index:4}
+  .rv-file-sep .rv-ftype{font-size:11px;padding:1px 6px;border-radius:4px;font-weight:600}
+
+  /* ── Workspace File Manager ────────────────────────────────────── */
+  .fm-panel{display:none;flex-direction:column;flex:1;overflow:hidden}
+  .fm-panel.open{display:flex}
+  .fm-breadcrumb{padding:6px 10px;font-size:12px;color:var(--tx2);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:2px;flex-wrap:wrap;flex-shrink:0;overflow:hidden}
+  .fm-crumb{cursor:pointer;color:var(--blue);padding:1px 4px;border-radius:3px}
+  .fm-crumb:hover{background:var(--bg2);text-decoration:underline}
+  .fm-crumb-sep{color:var(--tx2);font-size:10px}
+  .fm-list{flex:1;overflow-y:auto;padding:2px 0}
+  .fm-entry{padding:5px 10px;font-size:13px;color:var(--tx1);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .1s}
+  .fm-entry:hover{background:var(--bg2);color:var(--tx0)}
+  .fm-entry.active{background:var(--usr-bg);color:var(--tx0)}
+  .fm-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+  .fm-name{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .fm-size{font-size:10px;color:var(--tx2);flex-shrink:0;font-family:monospace}
+  .fm-empty{padding:20px 10px;color:var(--tx2);font-size:12px;text-align:center}
+
+  /* Sidebar workspace mode toggle */
+  .ws-mode-tabs{display:flex;gap:0;padding:4px 8px;flex-shrink:0}
+  .ws-mode-tab{flex:1;text-align:center;padding:5px 8px;font-size:11px;color:var(--tx2);cursor:pointer;border-radius:6px;font-weight:500;transition:all .15s}
+  .ws-mode-tab:hover{color:var(--tx1)}
+  .ws-mode-tab.active{background:var(--bg2);color:var(--tx0)}
+
+  /* ── Resizable panel handles ─────────────────────────────────── */
+  .resize-handle{width:4px;cursor:col-resize;background:transparent;position:relative;flex-shrink:0;z-index:10;transition:background .15s}
+  .resize-handle:hover,.resize-handle.active{background:var(--blue)}
+  .resize-handle::after{content:'';position:absolute;inset:-0 -3px;z-index:1}
+
+  /* ── Settings Overlay ────────────────────────────────────────── */
+  #settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+  #settings-overlay.open{display:flex}
+  #settings-box{background:var(--bg1);border:1px solid var(--bd);border-radius:12px;padding:24px;width:620px;max-width:95vw;max-height:90vh;overflow-y:auto}
+  #settings-box h2{font-size:15px;font-weight:700;color:var(--tx0);margin-bottom:16px}
+  .settings-label{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+  #theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+  .theme-swatch{border:2px solid transparent;border-radius:8px;padding:8px 6px;cursor:pointer;text-align:center;font-size:11px;transition:border-color .15s}
+  .theme-swatch:hover{border-color:var(--blue)}.theme-swatch.selected{border-color:var(--blue)}
+  .swatch-preview{width:100%;height:28px;border-radius:5px;margin-bottom:5px;display:flex;gap:3px;padding:4px}
+  .swatch-preview span{flex:1;border-radius:3px}
+  .swatch-name{color:var(--tx1);font-size:10px}
+  .settings-section{margin-bottom:20px}
+  .settings-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .settings-row label{font-size:12px;color:var(--tx1);width:100px}
+  .settings-row input{flex:1;background:var(--bg0);border:1px solid var(--bd);border-radius:4px;color:var(--tx0);font-size:12px;padding:5px 8px;font-family:monospace}
+  .settings-row input:focus{outline:none;border-color:var(--blue)}
+  #settings-footer{display:flex;justify-content:flex-end;gap:8px}
+  #settings-cancel{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--tx1);font-size:13px;padding:6px 14px;cursor:pointer}
+  #settings-apply{background:var(--blue);border:none;border-radius:6px;color:#fff;font-size:13px;padding:6px 14px;cursor:pointer;font-weight:600}
+
+  /* ── Toasts ──────────────────────────────────────────────────── */
+  #toast-container{position:fixed;top:16px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  .toast{background:var(--bg1);border:1px solid var(--bd);border-radius:8px;padding:10px 16px;font-size:14px;color:var(--tx0);box-shadow:0 4px 16px #0005;pointer-events:auto;animation:slideIn .2s ease}
+  .toast-success{border-left:3px solid var(--green)}.toast-error{border-left:3px solid var(--red)}.toast-info{border-left:3px solid var(--blue)}
+  @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+  /* ── Add workspace dialog ────────────────────────────────────── */
+  #ws-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+  #ws-dialog.open{display:flex}
+  #ws-dialog-box{background:var(--bg1);border:1px solid var(--bd);border-radius:12px;padding:20px;width:400px;max-width:95vw}
+  #ws-dialog-box h3{font-size:14px;color:var(--tx0);margin-bottom:12px}
+  #ws-path-input{width:100%;background:var(--bg0);border:1px solid var(--bd);border-radius:6px;color:var(--tx0);font-size:13px;padding:8px 12px;font-family:monospace;margin-bottom:10px}
+  #ws-path-input:focus{outline:none;border-color:var(--blue)}
+  #ws-dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+  #ws-dialog-actions button{padding:6px 14px;border-radius:6px;border:none;font-size:12px;cursor:pointer;font-weight:600}
+  #ws-add-cancel{background:var(--bg2);color:var(--tx1);border:1px solid var(--bd)!important}
+  #ws-add-confirm{background:var(--blue);color:#fff}
+
+  /* ── Glass theme ─────────────────────────────────────────────── */
+  .glass-theme #left-panel,.glass-theme #right-panel,.glass-theme #topbar,.glass-theme #chat-bar,.glass-theme #settings-box,.glass-theme #commit-box{background:var(--bg1)!important;backdrop-filter:blur(24px) saturate(180%)!important;-webkit-backdrop-filter:blur(24px) saturate(180%)!important}
+  .glass-theme .agent-card,.glass-theme .msg.assistant,.glass-theme .msg.tool{background:var(--bg0)!important;backdrop-filter:blur(16px) saturate(160%)!important;-webkit-backdrop-filter:blur(16px) saturate(160%)!important}
+  .glass-theme #center,.glass-theme #agent-grid,.glass-theme #conv-view{background:transparent!important}
+
+  /* ── Responsive ──────────────────────────────────────────────── */
+  @media(max-width:1024px){#right-panel{display:none}}
+  @media(max-width:768px){#left-panel{display:none}#agent-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── Left Panel ──────────────────────────────────────────────── -->
+<aside id="left-panel">
+  <div id="lp-header">
+    <div id="lp-logo">⚡ CC-OS</div>
+    <div id="lp-tagline">Ship · Sleep · Repeat</div>
+  </div>
+  <div id="lp-nav">
+    <div class="lp-nav-item active" data-view="tasks" onclick="setView('tasks')">
+      <span>📋</span> Tasks <span class="nav-badge" id="task-count">0</span>
+    </div>
+    <div class="lp-nav-item" data-view="workspaces" onclick="setView('workspaces')">
+      <span>📁</span> Workspaces
+    </div>
+  </div>
+  <div class="ws-section-label">WORKSPACES</div>
+  <div class="ws-mode-tabs" id="ws-mode-tabs">
+    <div class="ws-mode-tab active" data-mode="agents" onclick="setWsMode('agents')">🤖 Agents</div>
+    <div class="ws-mode-tab" data-mode="files" onclick="setWsMode('files')">📂 Files</div>
+  </div>
+  <div id="lp-workspaces">
+    <div class="ws-search-wrap">
+      <span class="ws-search-icon">🔍</span>
+      <input id="ws-search" placeholder="Search workspaces, files…" oninput="filterWorkspaces(this.value)" />
+    </div>
+    <div id="ws-stats"></div>
+    <div id="ws-list"></div>
+  </div>
+  <div class="fm-panel" id="fm-panel">
+    <div class="fm-breadcrumb" id="fm-breadcrumb"></div>
+    <div class="fm-list" id="fm-list"></div>
+  </div>
+  <div id="lp-footer">
+    <button onclick="openWsDialog()">+ Add Workspace</button>
+    <div class="lp-settings" onclick="openSettings()"><span>⚙</span> Settings</div>
+  </div>
+</aside>
+<div class="resize-handle" id="left-resize"></div>
+
+<!-- ── Center Panel ────────────────────────────────────────────── -->
+<main id="center">
+  <div id="topbar">
+    <button id="back-btn" onclick="goBack()">← Back</button>
+    <span id="topbar-title">All Agents</span>
+    <span id="topbar-cost" style="font-size:13px;color:var(--green);font-weight:600;white-space:nowrap"></span>
+    <span id="topbar-tokens" style="font-size:13px;color:var(--tx2);white-space:nowrap"></span>
+    <span id="topbar-stats"></span>
+  </div>
+  <div id="agent-grid"></div>
+  <div id="conv-view"></div>
+  <div id="review-view"></div>
+  <div id="chat-bar">
+    <div class="chat-input-box" id="chat-dropzone">
+      <textarea id="cb-prompt" placeholder="Describe a task, paste a file path, or drop files here…" rows="3"></textarea>
+      <div class="chat-attachments" id="cb-attachments"></div>
+      <div id="cb-controls">
+        <button class="attach-btn" onclick="document.getElementById('cb-file-picker').click()" title="Attach files (Ctrl+U)">📎</button>
+        <input type="file" id="cb-file-picker" multiple style="display:none" />
+        <select id="cb-agent">
+          <option value="claude-code">Claude Code</option>
+          <option value="opencode">OpenCode</option>
+          <option value="copilot">Copilot</option>
+          <option value="local">Local</option>
+        </select>
+        <select id="cb-mode">
+          <option value="bypassPermissions">bypass</option>
+          <option value="acceptEdits">acceptEdits</option>
+          <option value="plan">plan</option>
+        </select>
+        <div style="flex:1"></div>
+        <div class="cwd-wrap">
+          <input class="cwd-input" id="cb-cwd" placeholder="~/project" autocomplete="off" title="Working directory" />
+          <div class="cwd-dropdown" id="cwd-dropdown"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── Right Panel (Review) ──────────────────────────────────────── -->
+<div class="resize-handle" id="right-resize"></div>
+<aside id="right-panel">
+  <div id="rp-header">
+    <span>⎇ Review</span>
+    <span id="rp-branch"></span>
+    <span style="flex:1"></span>
+    <span id="rp-refresh" style="cursor:pointer;font-size:14px;color:var(--tx2)" onclick="refreshGit()" title="Refresh">↻</span>
+  </div>
+  <div id="rp-summary" style="display:none">
+    <span class="rp-stat"><span class="rp-stat-num" id="rp-n-files" style="color:var(--blue)">0</span> files</span>
+    <span class="rp-stat" style="color:var(--green)"><span class="rp-stat-num" id="rp-n-add">0</span>+</span>
+    <span class="rp-stat" style="color:var(--red)"><span class="rp-stat-num" id="rp-n-del">0</span>−</span>
+  </div>
+  <div id="commit-box" style="display:none">
+    <textarea id="commit-msg" placeholder="Commit message…" rows="1"></textarea>
+    <div id="commit-actions">
+      <button id="commit-btn" onclick="doCommit()">✓ Commit</button>
+      <button onclick="doPush()">↑ Push</button>
+    </div>
+  </div>
+  <div id="rp-files"></div>
+  <div id="rp-empty">Select a workspace to see changes</div>
+</aside>
+
+</div>
+
+<!-- ── Add Workspace Dialog ────────────────────────────────────── -->
+<div id="ws-dialog">
+  <div id="ws-dialog-box">
+    <h3>Add Workspace</h3>
+    <input id="ws-path-input" placeholder="/path/to/project" autocomplete="off" />
+    <div id="ws-dialog-actions">
+      <button id="ws-add-cancel" onclick="closeWsDialog()">Cancel</button>
+      <button id="ws-add-confirm" onclick="confirmAddWs()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings Overlay ────────────────────────────────────────── -->
+<div id="settings-overlay">
+  <div id="settings-box">
+    <h2>⚙ Settings</h2>
+    <div class="settings-label">Theme</div>
+    <div id="theme-grid"></div>
+    <div class="settings-section">
+      <div class="settings-label">Local Model (vLLM)</div>
+      <div class="settings-row"><label>IP</label><input id="s-vllm-ip" placeholder="localhost"></div>
+      <div class="settings-row"><label>Port</label><input id="s-vllm-port" placeholder="8000"></div>
+      <div class="settings-row"><label>Model</label><input id="s-vllm-model" placeholder="model path"></div>
+    </div>
+    <div id="settings-footer">
+      <button id="settings-cancel">Cancel</button>
+      <button id="settings-apply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast Container ─────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CC-OS Frontend — Ship · Sleep · Repeat
+   ═══════════════════════════════════════════════════════════════════ */
+
+const API = `http://${window.location.hostname}:8001`;
+
+// ── State ─────────────────────────────────────────────────────────
+let tasks = [];
+let workspaces = [];
+let activeWsId = null;   // selected workspace
+let activeTaskId = null;  // selected agent (detail view)
+let view = 'dashboard';   // 'dashboard' | 'detail'
+let gitData = { files: [], branch: '' };
+let selectedDiffFile = null;
+
+// ── API Helper ────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Formatting ────────────────────────────────────────────────────
+function formatCost(c) { return !c ? '' : c < 0.01 ? c.toFixed(4) : c < 1 ? c.toFixed(3) : c.toFixed(2); }
+function formatTokens(u) {
+  if (!u) return '';
+  const inp = (u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0);
+  const out = u.output_tokens||0;
+  if (!inp&&!out) return '';
+  const f=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':n;
+  return f(inp)+'↓ '+f(out)+'↑';
+}
+function timeAgo(iso) {
+  const s=Math.floor((Date.now()-new Date(iso))/1000);
+  if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function renderMd(text) {
+  if (!text) return '';
+  let s = esc(text);
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c) => `<pre><code>${c}</code></pre>`);
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\n/g, '<br>');
+  return s;
+}
+
+// ── Agent badge helper ────────────────────────────────────────────
+function agentBadge(model) {
+  const m = (model || 'claude-code').toLowerCase();
+  const map = {
+    'claude-code': ['Claude Code', 'badge-claude-code'],
+    'claude': ['Claude Code', 'badge-claude-code'],
+    'sonnet': ['Claude Code', 'badge-claude-code'],
+    'opus': ['Claude Code', 'badge-claude-code'],
+    'haiku': ['Claude Code', 'badge-claude-code'],
+    'opencode': ['OpenCode', 'badge-opencode'],
+    'copilot': ['Copilot', 'badge-copilot'],
+    'local': ['Local', 'badge-local'],
+    'vllm': ['Local', 'badge-local'],
+  };
+  const [label, cls] = map[m] || ['Claude Code', 'badge-claude-code'];
+  return `<span class="ac-agent-badge ${cls}">${label}</span>`;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Views ─────────────────────────────────────────────────────────
+function setView(v) {
+  document.querySelectorAll('.lp-nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+}
+
+function showDashboard() {
+  view = 'dashboard';
+  activeTaskId = null;
+  document.getElementById('agent-grid').style.display = 'grid';
+  document.getElementById('conv-view').style.display = 'none';
+  document.getElementById('review-view').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('cb-prompt').placeholder = 'Describe a task, paste a file path, or drop files here…';
+  updateTopbar();
+  renderAgentCards();
+  renderSidebar();
+}
+
+function showDetail(taskId) {
+  view = 'detail';
+  activeTaskId = taskId;
+  document.getElementById('agent-grid').style.display = 'none';
+  document.getElementById('conv-view').style.display = 'flex';
+  document.getElementById('review-view').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'block';
+  document.getElementById('cb-prompt').placeholder = 'Follow-up message…';
+  const task = tasks.find(t => t.id === taskId);
+  if (task) {
+    updateTopbar(task);
+    if (task.model) document.getElementById('cb-agent').value = task.model;
+  }
+  loadConversation(taskId);
+  renderSidebar();
+}
+
+function goBack() { showDashboard(); }
+
+function updateTopbar(task) {
+  const title = document.getElementById('topbar-title');
+  const cost = document.getElementById('topbar-cost');
+  const tokens = document.getElementById('topbar-tokens');
+  const stats = document.getElementById('topbar-stats');
+  if (task) {
+    title.textContent = task.label + (task.status === 'running' ? ' ⟳' : '');
+    cost.textContent = task.total_cost ? '$' + formatCost(task.total_cost) : '';
+    tokens.textContent = formatTokens(task.usage) || '';
+    stats.textContent = '';
+  } else {
+    const ws = workspaces.find(w => w.id === activeWsId);
+    title.textContent = ws ? ws.name : 'All Agents';
+    cost.textContent = '';
+    tokens.textContent = '';
+    const filtered = getFilteredTasks();
+    const running = filtered.filter(t => t.status === 'running').length;
+    const done = filtered.filter(t => t.status === 'done').length;
+    const total = filtered.reduce((s, t) => s + (t.total_cost || 0), 0);
+    stats.textContent = `${running} running · ${done} done` + (total ? ` · $${formatCost(total)}` : '');
+  }
+}
+
+// ── Workspace Management ──────────────────────────────────────────
+async function refreshWorkspaces() {
+  workspaces = await api('GET', '/workspaces');
+  renderSidebar();
+}
+
+function openWsDialog() {
+  document.getElementById('ws-dialog').classList.add('open');
+  document.getElementById('ws-path-input').value = '';
+  document.getElementById('ws-path-input').focus();
+}
+function closeWsDialog() { document.getElementById('ws-dialog').classList.remove('open'); }
+
+async function confirmAddWs() {
+  const path = document.getElementById('ws-path-input').value.trim();
+  if (!path) return;
+  try {
+    await api('POST', '/workspaces', { path });
+    toast('Workspace added', 'success');
+    closeWsDialog();
+    await refreshWorkspaces();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function removeWorkspace(id, ev) {
+  ev.stopPropagation();
+  try {
+    await api('DELETE', `/workspaces/${id}`);
+    if (activeWsId === id) activeWsId = null;
+    toast('Workspace removed', 'info');
+    await refreshWorkspaces();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function selectWorkspace(id) {
+  activeWsId = activeWsId === id ? null : id;
+  showDashboard();
+  refreshGit();
+}
+
+// ── Task/Agent Management ─────────────────────────────────────────
+function getFilteredTasks() {
+  if (!activeWsId) return tasks;
+  const ws = workspaces.find(w => w.id === activeWsId);
+  if (!ws) return tasks;
+  return tasks.filter(t => t.cwd && t.cwd.startsWith(ws.path));
+}
+
+async function refreshTasks() {
+  tasks = await api('GET', '/tasks');
+  document.getElementById('task-count').textContent = tasks.length;
+  if (view === 'dashboard') { renderAgentCards(); updateTopbar(); }
+  renderSidebar();
+}
+
+async function handleSend() {
+  const promptEl = document.getElementById('cb-prompt');
+  let prompt = promptEl.value.trim();
+  if (!prompt && !attachments.length) return;
+
+  // Append attachments to prompt
+  if (attachments.length) {
+    prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
+  }
+
+  promptEl.value = ''; promptEl.style.height = 'auto';
+  attachments = [];
+  renderAttachments();
+
+  if (view === 'detail' && activeTaskId) {
+    await api('POST', `/tasks/${activeTaskId}/message`, { prompt });
+    await refreshTasks();
+    loadConversation(activeTaskId);
+  } else {
+    const model = document.getElementById('cb-agent').value;
+    const mode = document.getElementById('cb-mode').value;
+    const cwdInput = document.getElementById('cb-cwd').value.trim();
+    const ws = workspaces.find(w => w.id === activeWsId);
+    const cwd = cwdInput || (ws ? ws.path : '');
+    const body = { prompt, model, mode, cwd };
+    if (model === 'local') {
+      body.extra = {
+        vllm_url: `http://${localStorage.getItem('vllm_ip')||'localhost'}:${localStorage.getItem('vllm_port')||'8000'}`,
+        vllm_model: localStorage.getItem('vllm_model') || '/home/ng6309/datascience/santhosh/models/qwen3.5-9b',
+        vllm_key: localStorage.getItem('vllm_key') || 'dummy',
+      };
+    }
+    await api('POST', '/tasks', body);
+    toast('Agent launched', 'success');
+    await refreshTasks();
+  }
+}
+
+// ── File Attachments ──────────────────────────────────────────────
+let attachments = [];
+
+function renderAttachments() {
+  const el = document.getElementById('cb-attachments');
+  el.innerHTML = attachments.map((a, i) =>
+    `<span class="attach-chip">📄 ${esc(a.split('/').pop())}<span class="chip-rm" onclick="removeAttachment(${i})">✕</span></span>`
+  ).join('');
+}
+
+function removeAttachment(i) {
+  attachments.splice(i, 1);
+  renderAttachments();
+}
+
+// File picker
+document.getElementById('cb-file-picker').addEventListener('change', function() {
+  for (const f of this.files) attachments.push(f.name);
+  renderAttachments();
+  this.value = '';
+});
+
+// Drag and drop
+const dropzone = document.getElementById('chat-dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  for (const f of e.dataTransfer.files) attachments.push(f.name);
+  renderAttachments();
+});
+
+async function stopAgent(id, ev) {
+  ev && ev.stopPropagation();
+  await api('POST', `/tasks/${id}/stop`);
+  await refreshTasks();
+}
+
+async function deleteAgent(id, ev) {
+  ev && ev.stopPropagation();
+  await api('DELETE', `/tasks/${id}`);
+  if (activeTaskId === id) showDashboard();
+  await refreshTasks();
+  toast('Agent deleted', 'info');
+}
+
+async function resumeAgent(id, ev) {
+  ev && ev.stopPropagation();
+  await api('POST', `/tasks/${id}/resume`);
+  await refreshTasks();
+}
+
+async function loadConversation(id) {
+  const full = await api('GET', `/tasks/${id}`);
+  renderConversation(full.history);
+  const task = tasks.find(t => t.id === id);
+  if (task) updateTopbar(task);
+}
+
+// ── Git / Review Operations ────────────────────────────────────────
+function getGitCwd() {
+  if (view === 'detail' && activeTaskId) {
+    const t = tasks.find(x => x.id === activeTaskId);
+    return t ? t.cwd : '';
+  }
+  if (activeWsId) {
+    const ws = workspaces.find(w => w.id === activeWsId);
+    return ws ? ws.path : '';
+  }
+  return '';
+}
+
+async function refreshGit() {
+  const cwd = getGitCwd();
+  const empty = document.getElementById('rp-empty');
+  const files = document.getElementById('rp-files');
+  const commitBox = document.getElementById('commit-box');
+  const summary = document.getElementById('rp-summary');
+  if (!cwd) {
+    empty.style.display = 'block'; files.innerHTML = '';
+    commitBox.style.display = 'none';
+    summary.style.display = 'none';
+    document.getElementById('rp-branch').textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  commitBox.style.display = 'block';
+  summary.style.display = 'flex';
+  try {
+    gitData = await api('GET', `/git/changed-files?cwd=${encodeURIComponent(cwd)}`);
+    document.getElementById('rp-branch').textContent = gitData.branch || 'detached';
+    renderGitFiles();
+  } catch (e) {
+    files.innerHTML = `<div style="padding:12px;color:var(--tx2);font-size:12px">${esc(e.message)}</div>`;
+  }
+}
+
+function renderGitFiles() {
+  const el = document.getElementById('rp-files');
+  const staged = gitData.files.filter(f => f.staged);
+  const unstaged = gitData.files.filter(f => f.unstaged || f.untracked);
+  const totalFiles = staged.length + unstaged.length;
+
+  // Update summary stats
+  document.getElementById('rp-n-files').textContent = totalFiles;
+
+  let html = '';
+
+  // "Review All" button at top
+  if (totalFiles > 0) {
+    html += `<div style="padding:8px 12px;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;gap:6px">
+        <button onclick="openReviewAll()" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--blue);background:rgba(56,139,253,.1);color:var(--blue);font-size:12px;cursor:pointer;font-weight:600">📖 Review All (${totalFiles})</button>
+      </div>
+    </div>`;
+  }
+
+  if (staged.length) {
+    html += `<div class="rp-section"><div class="rp-section-hdr">Staged (${staged.length})<span class="rp-act" onclick="unstageAll()">Unstage All</span></div>`;
+    html += staged.map(f => `<div class="rp-file${selectedDiffFile===f.path?' selected':''}" onclick="openReviewFile('${esc(f.path)}',true)">
+      <span class="rp-file-icon file-${f.index}">${f.index}</span>
+      <span class="rp-file-name">${esc(f.path)}</span>
+      <span class="rp-file-action" onclick="event.stopPropagation();unstageFile('${esc(f.path)}')">−</span>
+    </div>`).join('');
+    html += '</div>';
+  }
+  if (unstaged.length) {
+    html += `<div class="rp-section"><div class="rp-section-hdr">Changes (${unstaged.length})<span class="rp-act" onclick="stageAll()">Stage All</span></div>`;
+    html += unstaged.map(f => `<div class="rp-file${selectedDiffFile===f.path?' selected':''}" onclick="openReviewFile('${esc(f.path)}',${f.staged||false})">
+      <span class="rp-file-icon file-${f.untracked?'U':f.working}">${f.untracked?'U':f.working}</span>
+      <span class="rp-file-name">${esc(f.path)}</span>
+      <span class="rp-file-action" onclick="event.stopPropagation();stageFile('${esc(f.path)}')">+</span>
+    </div>`).join('');
+    html += '</div>';
+  }
+  if (!staged.length && !unstaged.length) {
+    html = '<div style="padding:20px 12px;color:var(--tx2);font-size:13px;text-align:center">✓ Working tree clean</div>';
+  }
+  el.innerHTML = html;
+}
+
+async function stageFile(f) { const cwd=getGitCwd(); if(!cwd)return; await api('POST',`/git/stage?cwd=${encodeURIComponent(cwd)}`,{files:[f]}); await refreshGit(); }
+async function unstageFile(f) { const cwd=getGitCwd(); if(!cwd)return; await api('POST',`/git/unstage?cwd=${encodeURIComponent(cwd)}`,{files:[f]}); await refreshGit(); }
+async function stageAll() { const cwd=getGitCwd(); const files=gitData.files.filter(f=>f.unstaged||f.untracked).map(f=>f.path); if(!files.length)return; await api('POST',`/git/stage?cwd=${encodeURIComponent(cwd)}`,{files}); await refreshGit(); }
+async function unstageAll() { const cwd=getGitCwd(); const files=gitData.files.filter(f=>f.staged).map(f=>f.path); if(!files.length)return; await api('POST',`/git/unstage?cwd=${encodeURIComponent(cwd)}`,{files}); await refreshGit(); }
+
+// Open diff in CENTER panel (review mode)
+async function openReviewFile(file, staged) {
+  selectedDiffFile = file;
+  renderGitFiles();
+  const cwd = getGitCwd();
+  const rv = document.getElementById('review-view');
+  try {
+    const data = await api('GET', `/git/file-diff?file=${encodeURIComponent(file)}&cwd=${encodeURIComponent(cwd)}&staged=${staged}`);
+    showReviewView(file, data.diff, staged);
+  } catch (e) {
+    rv.innerHTML = `<div style="padding:20px;color:var(--red)">${esc(e.message)}</div>`;
+    rv.style.display = 'flex';
+    document.getElementById('agent-grid').style.display = 'none';
+    document.getElementById('conv-view').style.display = 'none';
+  }
+}
+
+async function openReviewAll() {
+  const cwd = getGitCwd();
+  if (!cwd) return;
+  const rv = document.getElementById('review-view');
+  document.getElementById('agent-grid').style.display = 'none';
+  document.getElementById('conv-view').style.display = 'none';
+  rv.style.display = 'flex';
+  view = 'review';
+  document.getElementById('back-btn').style.display = 'block';
+  document.getElementById('topbar-title').textContent = '📖 Review Changes';
+  document.getElementById('topbar-stats').textContent = `${gitData.files.length} files changed`;
+  document.getElementById('topbar-cost').textContent = '';
+  document.getElementById('topbar-tokens').textContent = '';
+  
+  let html = '<div class="rv-toolbar"><span class="rv-toolbar-title">All Changes</span>'
+    + `<span class="rv-toolbar-badge" style="background:rgba(56,139,253,.15);color:var(--blue)">${gitData.files.length} files</span>`
+    + '<div class="rv-toolbar-actions">'
+    + '<button onclick="stageAll().then(()=>refreshGit())">Stage All</button>'
+    + '<button class="btn-primary" onclick="goBack()">Done</button>'
+    + '</div></div><div class="rv-diff-body">';
+  
+  for (const f of gitData.files) {
+    const typeCode = f.staged ? f.index : (f.untracked ? 'U' : f.working);
+    const typeColor = {'M':'var(--orange)','A':'var(--green)','D':'var(--red)','U':'var(--green)','R':'var(--blue)'}[typeCode] || 'var(--tx1)';
+    html += `<div class="rv-file-sep"><span class="rv-ftype" style="background:${typeColor}22;color:${typeColor}">${typeCode}</span>${esc(f.path)}</div>`;
+    try {
+      const data = await api('GET', `/git/file-diff?file=${encodeURIComponent(f.path)}&cwd=${encodeURIComponent(cwd)}&staged=${f.staged||false}`);
+      html += renderReviewDiff(data.diff);
+    } catch(e) {
+      html += `<div style="padding:8px 16px;color:var(--red);font-size:12px">${esc(e.message)}</div>`;
+    }
+  }
+  html += '</div>';
+  rv.innerHTML = html;
+}
+
+function showReviewView(file, diffText, staged) {
+  const rv = document.getElementById('review-view');
+  document.getElementById('agent-grid').style.display = 'none';
+  document.getElementById('conv-view').style.display = 'none';
+  rv.style.display = 'flex';
+  view = 'review';
+  document.getElementById('back-btn').style.display = 'block';
+  document.getElementById('topbar-title').textContent = file;
+  document.getElementById('topbar-stats').textContent = '';
+  document.getElementById('topbar-cost').textContent = '';
+  document.getElementById('topbar-tokens').textContent = '';
+
+  const typeInfo = gitData.files.find(f => f.path === file);
+  const typeCode = typeInfo ? (typeInfo.staged ? typeInfo.index : (typeInfo.untracked ? 'U' : typeInfo.working)) : 'M';
+  const typeColor = {'M':'var(--orange)','A':'var(--green)','D':'var(--red)','U':'var(--green)'}[typeCode] || 'var(--tx1)';
+
+  let html = `<div class="rv-toolbar">
+    <span class="rv-toolbar-title">${esc(file)}</span>
+    <span class="rv-toolbar-badge" style="background:${typeColor}22;color:${typeColor}">${typeCode}</span>
+    <div class="rv-toolbar-actions">
+      <button onclick="${staged ? `unstageFile('${esc(file)}')` : `stageFile('${esc(file)}')`}">${staged ? '− Unstage' : '+ Stage'}</button>
+      <button class="btn-primary" onclick="goBack()">Done</button>
+    </div>
+  </div>`;
+  html += '<div class="rv-diff-body">' + renderReviewDiff(diffText) + '</div>';
+  rv.innerHTML = html;
+}
+
+function renderReviewDiff(diffText) {
+  if (!diffText) return '<div style="padding:16px;color:var(--tx2);font-size:13px">No diff available</div>';
+  const lines = diffText.split('\n');
+  let html = '';
+  let oldLn = 0, newLn = 0;
+  for (const line of lines) {
+    if (line.startsWith('diff --git') || line.startsWith('index ') || line.startsWith('--- ') || line.startsWith('+++ ')) continue;
+    if (line.startsWith('@@')) {
+      const m = line.match(/@@ -(\d+)/);
+      if (m) { oldLn = parseInt(m[1]); const m2 = line.match(/\+(\d+)/); newLn = m2 ? parseInt(m2[1]) : oldLn; }
+      html += `<div class="rv-hunk">${esc(line)}</div>`;
+      continue;
+    }
+    if (line.startsWith('+')) {
+      html += `<div class="rv-diff-line rv-add"><span class="rv-ln"></span><span class="rv-ln">${newLn}</span><span class="rv-code">${esc(line)}</span></div>`;
+      newLn++;
+    } else if (line.startsWith('-')) {
+      html += `<div class="rv-diff-line rv-del"><span class="rv-ln">${oldLn}</span><span class="rv-ln"></span><span class="rv-code">${esc(line)}</span></div>`;
+      oldLn++;
+    } else if (line.trim()) {
+      html += `<div class="rv-diff-line rv-ctx"><span class="rv-ln">${oldLn}</span><span class="rv-ln">${newLn}</span><span class="rv-code">${esc(line)}</span></div>`;
+      oldLn++; newLn++;
+    }
+  }
+  return html || '<div style="padding:16px;color:var(--tx2)">Empty diff</div>';
+}
+
+async function doCommit() {
+  const msg = document.getElementById('commit-msg').value.trim();
+  if (!msg) { toast('Enter a commit message', 'error'); return; }
+  const cwd = getGitCwd();
+  if (!cwd) return;
+  try {
+    await api('POST', `/git/commit?cwd=${encodeURIComponent(cwd)}`, { message: msg, add_all: false });
+    document.getElementById('commit-msg').value = '';
+    toast('Committed ✓', 'success');
+    await refreshGit();
+  } catch (e) { toast('Commit failed: ' + e.message, 'error'); }
+}
+
+async function doPush() {
+  const cwd = getGitCwd();
+  if (!cwd) return;
+  try {
+    await api('POST', `/git/push?cwd=${encodeURIComponent(cwd)}`);
+    toast('Pushed ✓', 'success');
+  } catch (e) { toast('Push failed: ' + e.message, 'error'); }
+}
+
+// ── Workspace File Manager ────────────────────────────────────────
+let wsMode = 'agents'; // 'agents' | 'files'
+let fmCurrentPath = '';
+
+function setWsMode(mode) {
+  wsMode = mode;
+  document.querySelectorAll('.ws-mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.getElementById('lp-workspaces').style.display = mode === 'agents' ? 'flex' : 'none';
+  document.getElementById('fm-panel').classList.toggle('open', mode === 'files');
+  if (mode === 'files') {
+    const ws = workspaces.find(w => w.id === activeWsId);
+    const startPath = ws ? ws.path : (workspaces.length ? workspaces[0].path : '~');
+    browseTo(startPath);
+  }
+}
+
+async function browseTo(dirPath) {
+  fmCurrentPath = dirPath;
+  try {
+    const data = await api('GET', `/browse?path=${encodeURIComponent(dirPath)}`);
+    renderBreadcrumb(data.path || dirPath);
+    renderFileList(data.entries || []);
+  } catch(e) {
+    document.getElementById('fm-list').innerHTML = `<div class="fm-empty">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderBreadcrumb(path) {
+  const el = document.getElementById('fm-breadcrumb');
+  const parts = path.split('/').filter(Boolean);
+  let html = `<span class="fm-crumb" onclick="browseTo('/')">🏠</span>`;
+  let built = '';
+  for (let i = 0; i < parts.length; i++) {
+    built += '/' + parts[i];
+    const p = built;
+    html += `<span class="fm-crumb-sep">/</span><span class="fm-crumb" onclick="browseTo('${esc(p)}')">${esc(parts[i])}</span>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderFileList(entries) {
+  const el = document.getElementById('fm-list');
+  if (!entries.length) {
+    el.innerHTML = '<div class="fm-empty">Empty directory</div>';
+    return;
+  }
+  el.innerHTML = entries.map(e => {
+    const icon = e.is_dir ? '📁' : getFileIcon(e.name);
+    const size = !e.is_dir && e.size !== null ? formatFileSize(e.size) : '';
+    const click = e.is_dir ? `browseTo('${esc(e.path)}')` : `previewFile('${esc(e.path)}')`;
+    return `<div class="fm-entry" onclick="${click}">
+      <span class="fm-icon">${icon}</span>
+      <span class="fm-name">${esc(e.name)}</span>
+      ${size ? `<span class="fm-size">${size}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {py:'🐍',js:'📜',ts:'📜',jsx:'⚛️',tsx:'⚛️',html:'🌐',css:'🎨',json:'📋',md:'📝',txt:'📄',yml:'⚙️',yaml:'⚙️',sh:'🔧',rs:'🦀',go:'🔷',java:'☕',rb:'💎',sql:'🗃️',svg:'🖼️',png:'🖼️',jpg:'🖼️',gif:'🖼️',toml:'⚙️',lock:'🔒',gitignore:'🚫'};
+  return map[ext] || '📄';
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function previewFile(filePath) {
+  toast('File: ' + filePath.split('/').pop(), 'info');
+}
+
+// ── Render: Sidebar ───────────────────────────────────────────────
+let wsSearchFilter = '';
+
+function filterWorkspaces(query) {
+  wsSearchFilter = query.toLowerCase().trim();
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const el = document.getElementById('ws-list');
+  const statsEl = document.getElementById('ws-stats');
+  let html = '';
+
+  // Group tasks by workspace
+  const wsMap = {};
+  for (const ws of workspaces) wsMap[ws.id] = { ...ws, tasks: [] };
+  const unassigned = [];
+
+  for (const t of tasks) {
+    let matched = false;
+    for (const ws of workspaces) {
+      if (t.cwd && t.cwd.startsWith(ws.path)) {
+        wsMap[ws.id].tasks.push(t);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) unassigned.push(t);
+  }
+
+  // Stats
+  const totalAgents = tasks.length;
+  const running = tasks.filter(t => t.status === 'running').length;
+  const totalCost = tasks.reduce((s, t) => s + (t.total_cost || 0), 0);
+  statsEl.innerHTML = `<span class="ws-stat">📁 ${workspaces.length}</span><span class="ws-stat">🤖 ${totalAgents}</span>${running?`<span class="ws-stat">⟳ ${running}</span>`:''}${totalCost?`<span class="ws-stat" style="color:var(--green)">$${formatCost(totalCost)}</span>`:''}`;
+
+  // Filter
+  const matchesFilter = (ws, wData) => {
+    if (!wsSearchFilter) return true;
+    if (ws.name.toLowerCase().includes(wsSearchFilter)) return true;
+    if (ws.path.toLowerCase().includes(wsSearchFilter)) return true;
+    if (wData.tasks.some(t => t.label.toLowerCase().includes(wsSearchFilter))) return true;
+    return false;
+  };
+
+  for (const ws of workspaces) {
+    const w = wsMap[ws.id];
+    if (!matchesFilter(ws, w)) continue;
+    const isOpen = activeWsId === ws.id;
+    const isSelected = activeWsId === ws.id;
+    const runCount = w.tasks.filter(t => t.status === 'running').length;
+    const runBadge = runCount ? `<span style="color:var(--orange);font-size:9px;font-weight:600">${runCount}⟳</span>` : '';
+    html += `<div class="ws-item">
+      <div class="ws-header${isSelected?' selected':''}" onclick="selectWorkspace('${ws.id}')">
+        <span class="ws-chevron${isOpen?' open':''}">▶</span>
+        <span class="ws-name" title="${esc(ws.path)}">${esc(ws.name)}</span>
+        ${runBadge}
+        <span class="ws-count">${w.tasks.length}</span>
+        <span class="ws-remove" onclick="removeWorkspace('${ws.id}',event)" title="Remove">✕</span>
+      </div>
+      <div class="ws-agents${isOpen?' open':''}">
+        ${w.tasks.map(t => {
+          const highlight = wsSearchFilter && t.label.toLowerCase().includes(wsSearchFilter);
+          return `<div class="ws-agent${activeTaskId===t.id?' active':''}" onclick="showDetail('${t.id}')">
+          <span class="ws-dot dot-${t.status}"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;${highlight?'color:var(--blue);font-weight:600':''}">${esc(t.label)}</span>
+        </div>`;
+        }).join('')}
+        ${w.tasks.length===0?'<div style="padding:4px 8px;font-size:10px;color:var(--tx2)">No agents</div>':''}
+      </div>
+    </div>`;
+  }
+
+  // Unassigned
+  const filteredUnassigned = wsSearchFilter
+    ? unassigned.filter(t => t.label.toLowerCase().includes(wsSearchFilter) || (t.cwd||'').toLowerCase().includes(wsSearchFilter))
+    : unassigned;
+  if (filteredUnassigned.length) {
+    html += `<div class="ws-item">
+      <div class="ws-header" onclick="activeWsId=null;showDashboard();refreshGit()">
+        <span class="ws-chevron${!activeWsId&&workspaces.length?' open':''}">▶</span>
+        <span class="ws-name">Unassigned</span>
+        <span class="ws-count">${filteredUnassigned.length}</span>
+      </div>
+      <div class="ws-agents${!activeWsId&&workspaces.length?' open':''}">
+        ${filteredUnassigned.map(t => `<div class="ws-agent${activeTaskId===t.id?' active':''}" onclick="showDetail('${t.id}')">
+          <span class="ws-dot dot-${t.status}"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(t.label)}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (!html && wsSearchFilter) {
+    html = '<div style="padding:12px 8px;color:var(--tx2);font-size:11px;text-align:center">No matches for "' + esc(wsSearchFilter) + '"</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ── Render: Agent Cards ───────────────────────────────────────────
+function renderAgentCards() {
+  const grid = document.getElementById('agent-grid');
+  const filtered = getFilteredTasks();
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(t => {
+    const preview = '';
+    let activity = '';
+    for (let i = t.history ? t.history.length - 1 : -1; i >= 0; i--) {
+      const m = t.history ? t.history[i] : null;
+      if (!m) break;
+      if (m.metadata && m.metadata.title) { activity = m.metadata.title; break; }
+      if (m.role === 'assistant' && !m.metadata) { activity = (m.content || '').substring(0, 60); break; }
+    }
+    // Fall back to preview from API
+    if (!activity && t.preview) activity = t.preview;
+    const cost = t.total_cost ? '$' + formatCost(t.total_cost) : '';
+    const tokens = formatTokens(t.usage);
+    const isRunning = t.status === 'running';
+    const cwdShort = t.cwd ? t.cwd.split('/').slice(-2).join('/') : '';
+
+    return `<div class="agent-card ${t.status}" onclick="showDetail('${t.id}')">
+      <div class="ac-top">
+        ${agentBadge(t.model)}
+        <span class="ac-status st-${t.status}">${isRunning?'⟳ running':t.status}</span>
+      </div>
+      <div class="ac-label" title="${esc(t.label)}">${esc(t.label)}</div>
+      <div class="ac-activity">${activity ? esc(activity) : '&nbsp;'}</div>
+      <div class="ac-footer">
+        ${cost?`<span class="ac-cost">${cost}</span>`:''}
+        ${tokens?`<span class="ac-tokens">${tokens}</span>`:''}
+        <span style="color:var(--tx2);font-size:10px">${esc(cwdShort)}</span>
+        <span class="ac-time">${timeAgo(t.created_at)}</span>
+      </div>
+      <div class="ac-actions" onclick="event.stopPropagation()">
+        ${isRunning?`<button onclick="stopAgent('${t.id}',event)">⏹ Stop</button>`:''}
+        ${!isRunning&&t.status!=='done'?`<button onclick="resumeAgent('${t.id}',event)">▶ Resume</button>`:''}
+        <button class="danger" onclick="deleteAgent('${t.id}',event)">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: Conversation ──────────────────────────────────────────
+function renderConversation(history) {
+  const el = document.getElementById('conv-view');
+  if (!history || !history.length) {
+    el.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:13px">Waiting for response…</div>';
+    return;
+  }
+
+  const msgs = history.map(msg => {
+    const role = msg.role;
+    const meta = msg.metadata;
+
+    if (role === 'agent-group') {
+      const st = msg.status || 'running';
+      const badge = `<span style="font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;background:rgba(${st==='running'?'240,136,62':st==='done'?'63,185,80':'248,81,73'},.15);color:var(--${st==='running'?'orange':st==='done'?'green':'red'})">${st}</span>`;
+      const children = (msg.children || []).map(child => {
+        const cm = child.metadata;
+        if (cm) {
+          const cp = cm.status === 'pending';
+          const cb = child.content ? `<div class="tool-body">${renderMd(child.content)}</div>` : '';
+          return `<div class="msg tool${cp?' pending':''}"><div class="tool-header" onclick="this.nextElementSibling&&this.nextElementSibling.classList.toggle('open')"><span>${cp?'⟳':'▶'}</span><span>${esc(cm.title)}</span></div>${cb}</div>`;
+        }
+        if (child.role==='assistant') return `<div class="msg assistant">${renderMd(child.content)}</div>`;
+        if (child.role==='user') return `<div class="msg user">${esc(child.content)}</div>`;
+        return '';
+      }).join('');
+      const isRunning = st === 'running';
+      return `<div class="agent-group agent-${st}">
+        <div class="agent-group-header" onclick="this.nextElementSibling&&this.nextElementSibling.classList.toggle('open')">
+          <span>${isRunning?'⟳':'▶'}</span><span>${esc(msg.agent_label||'Agent')}</span>${badge}
+        </div>
+        <div class="agent-group-body${isRunning?' open':''}">${children}</div>
+      </div>`;
+    }
+
+    if (meta) {
+      const pending = meta.status === 'pending';
+      const body = msg.content ? `<div class="tool-body">${renderMd(msg.content)}</div>` : '';
+      return `<div class="msg tool${pending?' pending':''}">
+        <div class="tool-header" onclick="this.nextElementSibling&&this.nextElementSibling.classList.toggle('open')">
+          <span>${pending?'⟳':'▶'}</span><span>${esc(meta.title)}</span>
+        </div>${body}</div>`;
+    }
+    if (role === 'user') return `<div class="msg user">${esc(msg.content)}</div>`;
+    return `<div class="msg assistant">${renderMd(msg.content)}</div>`;
+  }).join('');
+
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  el.innerHTML = msgs;
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+// ── Themes ────────────────────────────────────────────────────────
+const THEMES = {
+  'GitHub Dark':      {bg0:'#0d1117',bg1:'#161b22',bg2:'#21262d',bd:'#30363d',tx0:'#e6edf3',tx1:'#8b949e',tx2:'#6e7681',blue:'#388bfd',green:'#3fb950',orange:'#f0883e',red:'#f85149',purple:'#a371f7','usr-bg':'#1f3a5c','diff-add':'#0d1f10','diff-del':'#1f0d0d'},
+  'GitHub Light':     {bg0:'#ffffff',bg1:'#f6f8fa',bg2:'#eaeef2',bd:'#d0d7de',tx0:'#24292f',tx1:'#57606a',tx2:'#8b959e',blue:'#0969da',green:'#1a7f37',orange:'#bc4c00',red:'#cf222e',purple:'#8250df','usr-bg':'#ddf4ff','diff-add':'#dafbe1','diff-del':'#ffebe9'},
+  'One Dark':         {bg0:'#282c34',bg1:'#21252b',bg2:'#2c313a',bd:'#3e4451',tx0:'#abb2bf',tx1:'#828997',tx2:'#5c6370',blue:'#61afef',green:'#98c379',orange:'#e5c07b',red:'#e06c75',purple:'#c678dd','usr-bg':'#2c3e50','diff-add':'#1a2d1a','diff-del':'#2d1a1a'},
+  'Nord':             {bg0:'#2e3440',bg1:'#3b4252',bg2:'#434c5e',bd:'#4c566a',tx0:'#eceff4',tx1:'#d8dee9',tx2:'#a0a8b8',blue:'#81a1c1',green:'#a3be8c',orange:'#d08770',red:'#bf616a',purple:'#b48ead','usr-bg':'#3b4f6b','diff-add':'#293d29','diff-del':'#3d2929'},
+  'Catppuccin':       {bg0:'#1e1e2e',bg1:'#181825',bg2:'#313244',bd:'#45475a',tx0:'#cdd6f4',tx1:'#bac2de',tx2:'#a6adc8',blue:'#89b4fa',green:'#a6e3a1',orange:'#fab387',red:'#f38ba8',purple:'#cba6f7','usr-bg':'#1e2a4a','diff-add':'#1a2e1a','diff-del':'#2e1a22'},
+  'Gruvbox':          {bg0:'#282828',bg1:'#3c3836',bg2:'#504945',bd:'#665c54',tx0:'#ebdbb2',tx1:'#a89984',tx2:'#928374',blue:'#83a598',green:'#b8bb26',orange:'#fe8019',red:'#fb4934',purple:'#d3869b','usr-bg':'#1d2021','diff-add':'#1d2021','diff-del':'#3c1f1e'},
+  'Monokai':          {bg0:'#272822',bg1:'#1e1f1c',bg2:'#383830',bd:'#49483e',tx0:'#f8f8f2',tx1:'#75715e',tx2:'#5c5c52',blue:'#66d9e8',green:'#a6e22e',orange:'#fd971f',red:'#f92672',purple:'#ae81ff','usr-bg':'#1e2920','diff-add':'#1a2e1a','diff-del':'#2e1a1a'},
+  'Solarized':        {bg0:'#002b36',bg1:'#073642',bg2:'#094555',bd:'#147564',tx0:'#839496',tx1:'#657b83',tx2:'#586e75',blue:'#268bd2',green:'#859900',orange:'#cb4b16',red:'#dc322f',purple:'#6c71c4','usr-bg':'#003847','diff-add':'#003820','diff-del':'#3a0c00'},
+  'macOS Dark':       {bg0:'#1c1c1e',bg1:'#2c2c2e',bg2:'#3a3a3c',bd:'#48484a',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a',purple:'#bf5af2','usr-bg':'#0a3055','diff-add':'#0d2b14','diff-del':'#2d1010'},
+  'macOS Light':      {bg0:'#f2f2f7',bg1:'#ffffff',bg2:'#e5e5ea',bd:'#c7c7cc',tx0:'#1c1c1e',tx1:'#6c6c70',tx2:'#aeaeb2',blue:'#007aff',green:'#34c759',orange:'#ff9500',red:'#ff3b30',purple:'#af52de','usr-bg':'#d6eaff','diff-add':'#d4f5dc','diff-del':'#ffd5d3'},
+  'macOS Glass Dark': {bg0:'#12121480',bg1:'#1e1e2280',bg2:'#2c2c3080',bd:'#ffffff18',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a',purple:'#bf5af2','usr-bg':'#0a3055aa','diff-add':'#0d2b1466','diff-del':'#2d101066',glass:'1'},
+  'Claude Dark':      {bg0:'#141413',bg1:'#1c1b19',bg2:'#252420',bd:'#3a3830',tx0:'#faf9f5',tx1:'#b0aea5',tx2:'#6e6c64',blue:'#6a9bcc',green:'#788c5d',orange:'#d97757',red:'#e05a45',purple:'#9b8ec4','usr-bg':'#2a1f1a','diff-add':'#1a2210','diff-del':'#2a150f'},
+  'Claude Light':     {bg0:'#faf9f5',bg1:'#f0ede4',bg2:'#e8e4d9',bd:'#ccc9be',tx0:'#141413',tx1:'#5c5a54',tx2:'#9b998f',blue:'#6a9bcc',green:'#788c5d',orange:'#d97757',red:'#c0392b',purple:'#8b7db8','usr-bg':'#e8e4d9','diff-add':'#e8f0d8','diff-del':'#fce8e0'},
+  'Cursor Dark':      {bg0:'#1e1e1e',bg1:'#252526',bg2:'#2d2d30',bd:'#3e3e42',tx0:'#d4d4d4',tx1:'#858585',tx2:'#6a6a6a',blue:'#3794ff',green:'#4ec9b0',orange:'#dcdcaa',red:'#f14c4c',purple:'#c586c0','usr-bg':'#1e3a5f','diff-add':'#1e3a1e','diff-del':'#3e1e1e'},
+  // ── Anime Themes ──
+  'Naruto':           {bg0:'#1a0f0a',bg1:'#241810',bg2:'#2e2218',bd:'#4a3625',tx0:'#f5e6d0',tx1:'#c4a882',tx2:'#8a7058',blue:'#4a90d9',green:'#7ab648',orange:'#ff8c00',red:'#e03030',purple:'#9b6dcc','usr-bg':'#3a2410','diff-add':'#1a2e10','diff-del':'#2e1410'},
+  'Dragon Ball':      {bg0:'#0a0e1a',bg1:'#101828',bg2:'#182238',bd:'#2a3a5a',tx0:'#e8eef8',tx1:'#8899bb',tx2:'#5a6a88',blue:'#3a8aff',green:'#50c878',orange:'#ff9900',red:'#ff4444',purple:'#aa66ff','usr-bg':'#1a2a4a','diff-add':'#0a2a18','diff-del':'#2a0a0a'},
+  'One Piece':        {bg0:'#0f0a06',bg1:'#1a1208',bg2:'#261c10',bd:'#3e2e1a',tx0:'#f5e8d0',tx1:'#c4a470',tx2:'#8a7044',blue:'#2898e0',green:'#44bb44',orange:'#e87820',red:'#cc2222',purple:'#8866aa','usr-bg':'#2a1a0a','diff-add':'#142a0a','diff-del':'#2a1008'},
+  'Attack on Titan':  {bg0:'#0c0c0e',bg1:'#141418',bg2:'#1e1e24',bd:'#32323c',tx0:'#d8d8e0',tx1:'#8888a0',tx2:'#5c5c70',blue:'#5588cc',green:'#668844',orange:'#cc8833',red:'#bb3333',purple:'#7766aa','usr-bg':'#1a1a2a','diff-add':'#0e1e0e','diff-del':'#1e0e0e'},
+  'Demon Slayer':     {bg0:'#080810',bg1:'#0e1018',bg2:'#161a28',bd:'#2a3048',tx0:'#e0e8f8',tx1:'#8090b8',tx2:'#506088',blue:'#4488dd',green:'#44ccaa',orange:'#ee8844',red:'#e83850',purple:'#aa55cc','usr-bg':'#0a1830','diff-add':'#082818','diff-del':'#280818'},
+  'Jujutsu Kaisen':   {bg0:'#0a0812',bg1:'#12101c',bg2:'#1c1828',bd:'#302a44',tx0:'#e0daf0',tx1:'#9088aa',tx2:'#605878',blue:'#5577dd',green:'#55aa77',orange:'#dd8844',red:'#dd3355',purple:'#8855cc','usr-bg':'#1a1030','diff-add':'#0a2018','diff-del':'#200a18'},
+  'My Hero Academia': {bg0:'#0a1010',bg1:'#101a1a',bg2:'#182828',bd:'#284040',tx0:'#d8f0e8',tx1:'#80aaa0',tx2:'#508878',blue:'#33aadd',green:'#44dd88',orange:'#eeaa33',red:'#ee4444',purple:'#aa66dd','usr-bg':'#0a2a2a','diff-add':'#0a2a1a','diff-del':'#2a0a0a'},
+  'Death Note':       {bg0:'#08080a',bg1:'#101014',bg2:'#18181e',bd:'#282830',tx0:'#d0d0d8',tx1:'#787888',tx2:'#505060',blue:'#4070aa',green:'#558855',orange:'#aa7733',red:'#aa2222',purple:'#665588','usr-bg':'#141420','diff-add':'#0a180a','diff-del':'#180a0a'},
+  'Evangelion':       {bg0:'#0a0414',bg1:'#120820',bg2:'#1a1030',bd:'#2e1e4a',tx0:'#e0d0f8',tx1:'#9080b0',tx2:'#605080',blue:'#3388ee',green:'#44cc66',orange:'#ff8800',red:'#ee2244',purple:'#9944ee','usr-bg':'#1a0a30','diff-add':'#081808','diff-del':'#180808'},
+  'Bleach':           {bg0:'#06080e',bg1:'#0c1018',bg2:'#141c28',bd:'#223040',tx0:'#d0e0f0',tx1:'#7898b8',tx2:'#486888',blue:'#3399ee',green:'#44aa88',orange:'#dd8833',red:'#dd3333',purple:'#7766cc','usr-bg':'#0c1828','diff-add':'#082018','diff-del':'#200808'},
+  'Cowboy Bebop':     {bg0:'#120e0a',bg1:'#1c1610',bg2:'#28201a',bd:'#3e3428',tx0:'#e8dcc8',tx1:'#aa9878',tx2:'#787058',blue:'#5588aa',green:'#88aa44',orange:'#dd8833',red:'#cc4433',purple:'#9977aa','usr-bg':'#221a0c','diff-add':'#18220a','diff-del':'#220a0a'},
+  'Sailor Moon':      {bg0:'#0e0a14',bg1:'#16101e',bg2:'#201828',bd:'#342a40',tx0:'#e8daf0',tx1:'#a088b8',tx2:'#706080',blue:'#5588dd',green:'#66bb88',orange:'#eeaa55',red:'#ee5577',purple:'#aa66dd','usr-bg':'#1a0e28','diff-add':'#0a1a14','diff-del':'#1a0a10'},
+};
+
+let pendingTheme = null;
+
+function applyTheme(name) {
+  const t = THEMES[name]; if (!t) return;
+  const root = document.documentElement;
+  for (const [k, v] of Object.entries(t)) {
+    if (k !== 'glass') root.style.setProperty('--' + k, v);
+  }
+  document.body.classList.toggle('glass-theme', !!t.glass);
+  document.body.style.background = (name.startsWith('macOS') || name.startsWith('Claude')) && !t.glass
+    ? `radial-gradient(ellipse at 30% 0%, color-mix(in srgb, ${t.orange} 8%, ${t.bg0}) 0%, ${t.bg0} 60%)` : '';
+  localStorage.setItem('theme', name);
+}
+
+function buildThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  const current = localStorage.getItem('theme') || 'GitHub Dark';
+  grid.innerHTML = Object.entries(THEMES).map(([name, t]) => {
+    const bg = t.glass ? 'linear-gradient(135deg,#1a1a2e,#0a0a0f)' : t.bg1;
+    return `<div class="theme-swatch${name===current?' selected':''}" data-theme="${name}">
+      <div class="swatch-preview" style="background:${bg}">
+        <span style="background:${t.blue}"></span><span style="background:${t.green}"></span>
+        <span style="background:${t.orange}"></span><span style="background:${t.red}"></span>
+      </div><div class="swatch-name">${name}</div></div>`;
+  }).join('');
+  grid.querySelectorAll('.theme-swatch').forEach(el => {
+    el.addEventListener('click', () => {
+      grid.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      pendingTheme = el.dataset.theme;
+    });
+  });
+}
+
+function openSettings() {
+  pendingTheme = localStorage.getItem('theme') || 'GitHub Dark';
+  buildThemeGrid();
+  document.getElementById('s-vllm-ip').value = localStorage.getItem('vllm_ip') || 'localhost';
+  document.getElementById('s-vllm-port').value = localStorage.getItem('vllm_port') || '8000';
+  document.getElementById('s-vllm-model').value = localStorage.getItem('vllm_model') || '/home/ng6309/datascience/santhosh/models/qwen3.5-9b';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+document.getElementById('settings-cancel').addEventListener('click', () => {
+  document.getElementById('settings-overlay').classList.remove('open');
+});
+document.getElementById('settings-apply').addEventListener('click', () => {
+  if (pendingTheme) applyTheme(pendingTheme);
+  localStorage.setItem('vllm_ip', document.getElementById('s-vllm-ip').value.trim() || 'localhost');
+  localStorage.setItem('vllm_port', document.getElementById('s-vllm-port').value.trim() || '8000');
+  localStorage.setItem('vllm_model', document.getElementById('s-vllm-model').value.trim() || '');
+  document.getElementById('settings-overlay').classList.remove('open');
+  toast('Settings saved', 'success');
+});
+document.getElementById('settings-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-overlay'))
+    document.getElementById('settings-overlay').classList.remove('open');
+});
+
+// ── Event Handlers ────────────────────────────────────────────────
+const promptEl = document.getElementById('cb-prompt');
+promptEl.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+});
+promptEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+
+// Ctrl+U to attach files
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+    document.getElementById('cb-file-picker').click();
+  }
+});
+
+// CWD autocomplete with dropdown
+const cwdEl = document.getElementById('cb-cwd');
+const cwdDrop = document.getElementById('cwd-dropdown');
+let cwdTimeout, cwdSuggestions = [], cwdSelectedIdx = -1;
+
+async function cwdSearch(query) {
+  if (query.length < 1) { cwdHide(); return; }
+  try {
+    cwdSuggestions = await api('GET', `/suggest?path=${encodeURIComponent(query)}`);
+    if (cwdSuggestions.length) {
+      cwdSelectedIdx = -1;
+      cwdDrop.innerHTML = cwdSuggestions.map((p, i) => {
+        const parts = p.split('/');
+        const name = parts[parts.length - 1] || parts[parts.length - 2] || p;
+        const short = parts.slice(-3).join('/');
+        return `<div class="cwd-item" data-idx="${i}" onmousedown="cwdSelect(${i})">
+          <span class="cwd-icon">📁</span>
+          <span class="cwd-path">${esc(name)}</span>
+          <span class="cwd-short">${esc(short)}</span>
+        </div>`;
+      }).join('');
+      cwdDrop.classList.add('open');
+    } else {
+      cwdHide();
+    }
+  } catch(e) { cwdHide(); }
+}
+
+function cwdSelect(idx) {
+  const path = cwdSuggestions[idx];
+  if (path) {
+    cwdEl.value = path + '/';
+    cwdHide();
+    cwdEl.focus();
+    // Trigger search for subdirs
+    clearTimeout(cwdTimeout);
+    cwdTimeout = setTimeout(() => cwdSearch(path + '/'), 200);
+  }
+}
+
+function cwdHide() {
+  cwdDrop.classList.remove('open');
+  cwdSuggestions = [];
+  cwdSelectedIdx = -1;
+}
+
+function cwdHighlight(idx) {
+  cwdSelectedIdx = idx;
+  cwdDrop.querySelectorAll('.cwd-item').forEach((el, i) => {
+    el.style.background = i === idx ? 'var(--bg2)' : '';
+    el.style.color = i === idx ? 'var(--tx0)' : '';
+  });
+}
+
+cwdEl.addEventListener('input', function() {
+  clearTimeout(cwdTimeout);
+  cwdTimeout = setTimeout(() => cwdSearch(this.value.trim()), 250);
+});
+
+cwdEl.addEventListener('keydown', function(e) {
+  if (!cwdDrop.classList.contains('open')) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      cwdSearch(this.value.trim());
+    }
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    cwdHighlight(Math.min(cwdSelectedIdx + 1, cwdSuggestions.length - 1));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    cwdHighlight(Math.max(cwdSelectedIdx - 1, 0));
+  } else if (e.key === 'Enter' && cwdSelectedIdx >= 0) {
+    e.preventDefault();
+    cwdSelect(cwdSelectedIdx);
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    if (cwdSelectedIdx >= 0) cwdSelect(cwdSelectedIdx);
+    else if (cwdSuggestions.length === 1) cwdSelect(0);
+    else if (cwdSuggestions.length > 1) cwdHighlight(0);
+  } else if (e.key === 'Escape') {
+    cwdHide();
+  }
+});
+
+cwdEl.addEventListener('blur', () => setTimeout(cwdHide, 200));
+cwdEl.addEventListener('focus', function() {
+  if (this.value.trim().length >= 1) cwdSearch(this.value.trim());
+});
+
+document.getElementById('ws-path-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmAddWs();
+  if (e.key === 'Escape') closeWsDialog();
+});
+
+document.getElementById('ws-dialog').addEventListener('click', function(e) {
+  if (e.target === this) closeWsDialog();
+});
+
+// ── Polling ───────────────────────────────────────────────────────
+async function poll() {
+  await refreshTasks();
+  if (view === 'detail' && activeTaskId) {
+    await loadConversation(activeTaskId);
+  }
+  refreshGit();
+}
+
+// ── Resizable Panels ──────────────────────────────────────────────
+(function initResizablePanels() {
+  function setupResize(handleId, panelId, side) {
+    const handle = document.getElementById(handleId);
+    const panel = document.getElementById(panelId);
+    if (!handle || !panel) return;
+    let startX, startW;
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      startX = e.clientX;
+      startW = panel.offsetWidth;
+      handle.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      const onMove = ev => {
+        const dx = ev.clientX - startX;
+        const newW = Math.max(160, Math.min(500, side === 'left' ? startW + dx : startW - dx));
+        panel.style.width = newW + 'px';
+        panel.style.minWidth = newW + 'px';
+      };
+      const onUp = () => {
+        handle.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+  setupResize('left-resize', 'left-panel', 'left');
+  setupResize('right-resize', 'right-panel', 'right');
+})();
+
+// ── Init ──────────────────────────────────────────────────────────
+applyTheme(localStorage.getItem('theme') || 'GitHub Dark');
+showDashboard();
+refreshWorkspaces();
+refreshTasks();
+setInterval(poll, 2500);
+</script>
+</body>
+</html>

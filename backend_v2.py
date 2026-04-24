@@ -876,6 +876,39 @@ async def suggest_path(path: str = ""):
         return []
 
 
+@app.get("/browse")
+async def browse_directory(path: str = ""):
+    """Browse directory contents for file manager — returns files and dirs."""
+    try:
+        path = os.path.expanduser(path) if path else os.path.expanduser("~")
+        if not os.path.isdir(path):
+            return {"error": "Not a directory", "entries": []}
+        entries = []
+        try:
+            items = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x.lower()))
+        except PermissionError:
+            return {"path": path, "entries": [], "error": "Permission denied"}
+        for name in items:
+            if name.startswith('.'):
+                continue
+            full = os.path.join(path, name)
+            is_dir = os.path.isdir(full)
+            try:
+                stat = os.stat(full)
+                size = stat.st_size if not is_dir else None
+            except (OSError, PermissionError):
+                size = None
+            entries.append({
+                "name": name,
+                "path": full,
+                "is_dir": is_dir,
+                "size": size,
+            })
+        return {"path": path, "entries": entries[:200]}
+    except Exception as e:
+        return {"path": path, "entries": [], "error": str(e)}
+
+
 # ── Agent definitions (static list for the UI) ──────────────────────
 _AGENTS = [
     {"id": "claude-code", "name": "Claude Code", "provider": "claude", "description": "Anthropic's agentic coding assistant"},
