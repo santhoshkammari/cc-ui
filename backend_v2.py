@@ -59,6 +59,11 @@ def _init_db():
                 con.commit()
             except Exception:
                 pass
+        con.execute("""CREATE TABLE IF NOT EXISTS workspaces (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            path TEXT UNIQUE NOT NULL
+        )""")
 
 _init_db()
 
@@ -431,6 +436,13 @@ class CreateTaskRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     prompt: str
 
+class WorkspaceRequest(BaseModel):
+    path: str
+    name: str = ""
+
+class GitStageRequest(BaseModel):
+    files: list[str]
+
 class CreateJobRequest(BaseModel):
     name: str
     prompt: str
@@ -624,6 +636,125 @@ async def git_log(cwd: str = "", n: int = 20):
     return await GitService.get_log(cwd or os.getcwd(), n)
 
 
+# ── Routes: Workspaces ──────────────────────────────────────────────
+@app.get("/workspaces")
+async def list_workspaces():
+    with _db() as con:
+        rows = con.execute("SELECT id, name, path FROM workspaces ORDER BY name").fetchall()
+    return [{"id": r[0], "name": r[1], "path": r[2]} for r in rows]
+
+
+@app.post("/workspaces")
+async def add_workspace(req: WorkspaceRequest):
+    path = os.path.expanduser(req.path)
+    if not os.path.isdir(path):
+        raise HTTPException(400, "Path is not a directory")
+    name = req.name or os.path.basename(path.rstrip("/"))
+    ws_id = str(uuid.uuid4())
+    try:
+        with _db() as con:
+            con.execute("INSERT INTO workspaces (id, name, path) VALUES (?,?,?)", (ws_id, name, path))
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "Workspace already exists")
+    return {"id": ws_id, "name": name, "path": path}
+
+
+@app.delete("/workspaces/{ws_id}")
+async def remove_workspace(ws_id: str):
+    with _db() as con:
+        n = con.execute("DELETE FROM workspaces WHERE id=?", (ws_id,)).rowcount
+    if not n:
+        raise HTTPException(404, "Workspace not found")
+    return {"status": "deleted"}
+
+
+# ── Routes: Git file-level operations ────────────────────────────────
+@app.get("/git/changed-files")
+async def git_changed_files(cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "git", "status", "--porcelain", "-u",
+            cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            return {"error": stderr.decode().strip(), "files": [], "branch": ""}
+        files = []
+        for line in stdout.decode().splitlines():
+            if len(line) < 4:
+                continue
+            ix, wt = line[0], line[1]
+            filepath = line[3:]
+            staged = ix not in (" ", "?", "!")
+            unstaged = wt not in (" ", "?", "!")
+            untracked = ix == "?" and wt == "?"
+            files.append({"path": filepath, "index": ix, "working": wt,
+                          "staged": staged, "unstaged": unstaged, "untracked": untracked})
+        bp = await asyncio.create_subprocess_exec(
+            "git", "branch", "--show-current",
+            cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        bo, _ = await bp.communicate()
+        return {"files": files, "branch": bo.decode().strip()}
+    except Exception as e:
+        return {"error": str(e), "files": [], "branch": ""}
+
+
+@app.post("/git/stage")
+async def git_stage(req: GitStageRequest, cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc = await asyncio.create_subprocess_exec(
+        "git", "add", "--", *req.files,
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise HTTPException(400, stderr.decode().strip())
+    return {"status": "staged", "files": req.files}
+
+
+@app.post("/git/unstage")
+async def git_unstage(req: GitStageRequest, cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc = await asyncio.create_subprocess_exec(
+        "git", "reset", "HEAD", "--", *req.files,
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise HTTPException(400, stderr.decode().strip())
+    return {"status": "unstaged", "files": req.files}
+
+
+@app.get("/git/file-diff")
+async def git_file_diff(file: str, cwd: str = "", staged: bool = False):
+    cwd = cwd or os.getcwd()
+    cmd = ["git", "diff"]
+    if staged:
+        cmd.append("--cached")
+    cmd.extend(["--", file])
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await proc.communicate()
+    return {"file": file, "diff": stdout.decode(), "staged": staged}
+
+
+@app.post("/git/push")
+async def git_push(cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc = await asyncio.create_subprocess_exec(
+        "git", "push",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    output = (stdout.decode() + stderr.decode()).strip()
+    if proc.returncode != 0:
+        raise HTTPException(400, output)
+    return {"status": "pushed", "output": output}
+
+
 # ── Routes: Scheduler ────────────────────────────────────────────────
 @app.get("/scheduler/jobs")
 async def list_jobs():
@@ -688,40 +819,59 @@ async def suggest_path(path: str = ""):
     try:
         path = os.path.expanduser(path) if path else ""
         if not path:
-            return []
+            # Return home subdirs as starting suggestions
+            home = os.path.expanduser("~")
+            return sorted([
+                os.path.join(home, e) for e in os.listdir(home)
+                if not e.startswith(".") and os.path.isdir(os.path.join(home, e))
+            ])[:20]
 
+        # If path ends with / and is a dir, list its children
+        if path.endswith("/") and os.path.isdir(path):
+            results = [
+                os.path.join(path, e) for e in sorted(os.listdir(path))
+                if not e.startswith(".") and os.path.isdir(os.path.join(path, e))
+            ]
+            return results[:20]
+
+        # If exact dir exists, list children
         if os.path.isdir(path):
             results = [
                 os.path.join(path, e) for e in sorted(os.listdir(path))
                 if not e.startswith(".") and os.path.isdir(os.path.join(path, e))
             ]
-            return results[:15]
+            return results[:20]
 
+        # Partial match: search parent dir for matching names
         search_dir = os.path.dirname(path) or os.path.expanduser("~")
         pattern = os.path.basename(path).lower()
 
         if os.path.isdir(search_dir):
-            quick = [
-                os.path.join(search_dir, e) for e in sorted(os.listdir(search_dir))
+            quick = sorted([
+                os.path.join(search_dir, e) for e in os.listdir(search_dir)
                 if not e.startswith(".") and os.path.isdir(os.path.join(search_dir, e))
                 and pattern in e.lower()
-            ]
+            ])
             if quick:
-                return quick[:15]
+                return quick[:20]
 
+        # Deep search across home directory
         home = os.path.expanduser("~")
         proc = await asyncio.create_subprocess_exec(
-            "find", home, "-maxdepth", "3", "-type", "d",
+            "find", home, "-maxdepth", "4", "-type", "d",
             "-iname", f"*{pattern}*", "-not", "-path", "*/.*",
+            "-not", "-path", "*/__pycache__/*", "-not", "-path", "*/node_modules/*",
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
         )
         try:
-            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=1.0)
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=2.0)
         except asyncio.TimeoutError:
             proc.kill()
             stdout = b""
-        results = [l for l in stdout.decode().splitlines() if "/." not in l]
-        return results[:15]
+        results = [l for l in stdout.decode().splitlines() if "/." not in l and l.strip()]
+        # Sort: shorter paths first (more likely what user wants)
+        results.sort(key=lambda x: (x.count("/"), len(x)))
+        return results[:20]
     except Exception:
         return []
 
