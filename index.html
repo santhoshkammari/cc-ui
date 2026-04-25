@@ -1304,7 +1304,7 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 
 /* ── Chat Bar ───────────────────────────────────────────────────── */
 #chat-bar {
-  padding: 10px 25% 14px;
+  padding: 10px 12px 14px;
   flex-shrink: 0;
   background: transparent;
   border: none;
@@ -1350,53 +1350,6 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 }
 
 #cb-prompt::placeholder { color: var(--tx2); }
-
-/* ── Slash-command autocomplete ── */
-.slash-suggest {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  left: 12px;
-  right: 12px;
-  margin-bottom: 4px;
-  background: var(--bg1);
-  border: 1px solid var(--bd);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(0,0,0,.35);
-  max-height: 320px;
-  overflow-y: auto;
-  z-index: 100;
-  padding: 4px 0;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-.slash-suggest.open { display: block; }
-.slash-suggest-item {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 7px 14px;
-  cursor: pointer;
-  font-size: 13.5px;
-  transition: background var(--transition-fast);
-}
-.slash-suggest-item:hover,
-.slash-suggest-item.active {
-  background: rgba(217,119,87,.12);
-}
-.slash-suggest-item .slash-cmd {
-  color: var(--orange);
-  font-family: var(--font-mono, 'Fira Code', monospace);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.slash-suggest-item .slash-desc {
-  color: var(--tx2);
-  font-size: 12.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .chat-attachments {
   display: flex;
@@ -1474,44 +1427,49 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 #cb-controls button:hover { opacity: 0.85; }
 #cb-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* Advanced panel toggle */
-.cb-toggle-btn {
-  background: transparent !important;
-  border: 1px solid var(--bd) !important;
-  color: var(--tx2) !important;
-  font-weight: 400 !important;
-  padding: 3px 7px !important;
-  font-size: 14px !important;
-  border-radius: var(--radius-sm) !important;
+/* Inline controls for the options row */
+#cb-controls input[type="number"],
+#cb-controls input[type="text"] {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  color: var(--tx0);
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+#cb-controls input:focus { border-color: var(--orange); }
+#cb-controls .ctrl-label {
+  font-size: 10px;
+  color: var(--tx2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#cb-controls .ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#cb-controls .ctrl-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--bd);
+  margin: 0 4px;
+  opacity: 0.5;
+}
+#cb-controls label.ctrl-check {
+  font-size: 12px;
+  color: var(--tx1);
+  display: flex;
+  align-items: center;
+  gap: 3px;
   cursor: pointer;
-  transition: color var(--transition-fast), border-color var(--transition-fast) !important;
+  white-space: nowrap;
 }
-.cb-toggle-btn:hover { color: var(--tx0) !important; border-color: var(--orange) !important; opacity: 1 !important; }
-.cb-toggle-btn.active { color: var(--orange) !important; border-color: var(--orange) !important; }
-
-/* Advanced controls panel */
-.cb-advanced-panel {
-  padding: 8px 14px 10px;
-  border-top: 1px solid color-mix(in srgb, var(--bd) 50%, transparent);
-}
-.adv-row { margin-bottom: 6px; }
-.adv-row-inline { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-.adv-label { display: block; font-size: 11px; color: var(--tx2); margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-.adv-textarea {
-  width: 100%; background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--radius-sm);
-  color: var(--tx0); font-size: 12px; padding: 5px 8px; resize: vertical; min-height: 28px; max-height: 120px;
-  outline: none; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-.adv-textarea:focus { border-color: var(--orange); }
-.adv-field { display: flex; flex-direction: column; }
-.adv-field select, .adv-input {
-  background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--radius-sm);
-  color: var(--tx0); font-size: 12px; padding: 4px 6px; outline: none;
-}
-.adv-field select:focus, .adv-input:focus { border-color: var(--orange); }
-.adv-input { width: 80px; }
-.adv-field label { font-size: 12px; color: var(--tx1); display: flex; align-items: center; gap: 4px; cursor: pointer; }
-.adv-field label input[type="checkbox"] { accent-color: var(--orange); }
+#cb-controls label.ctrl-check input[type="checkbox"] { accent-color: var(--orange); }
 
 .upload-btn {
   background: transparent !important;
@@ -2878,9 +2836,8 @@ textarea:focus-visible {
 
     <!-- Chat Bar -->
     <div id="chat-bar">
-      <div class="chat-input-box" id="chat-dropzone" style="position:relative">
-        <div class="slash-suggest" id="slash-suggest"></div>
-        <textarea id="cb-prompt" placeholder="Type a prompt or / for commands…" rows="2"></textarea>
+      <div class="chat-input-box" id="chat-dropzone">
+        <textarea id="cb-prompt" placeholder="Describe your task…" rows="2"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
           <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
@@ -2894,41 +2851,35 @@ textarea:focus-visible {
             <option value="copilot">Copilot</option>
             <option value="gemini">Gemini</option>
           </select>
-          <!-- mode is always bypassPermissions, no selector needed -->
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-group">
+            <span class="ctrl-label">Model</span>
+            <input id="cb-model" type="text" placeholder="default" style="width:100px" />
+          </div>
+          <div class="ctrl-group">
+            <span class="ctrl-label">Effort</span>
+            <select id="cb-effort">
+              <option value="">default</option>
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+              <option value="xhigh">xhigh</option>
+              <option value="max">max</option>
+            </select>
+          </div>
+          <div class="ctrl-group">
+            <span class="ctrl-label">Budget $</span>
+            <input id="cb-budget" type="number" step="0.50" min="0" placeholder="∞" style="width:60px" />
+          </div>
+          <label class="ctrl-check"><input type="checkbox" id="cb-thinking" /> Think</label>
           <div style="flex:1"></div>
-          <button class="cb-toggle-btn" id="cb-advanced-toggle" onclick="toggleAdvancedPanel()" title="Advanced options">⚙</button>
+          <div class="ctrl-group">
+            <span class="ctrl-label">System</span>
+            <input id="cb-system-prompt" type="text" placeholder="system prompt…" style="width:160px" />
+          </div>
           <div class="cwd-wrap">
             <input class="cwd-input" id="cb-cwd" placeholder="~/project" autocomplete="off" />
             <div class="cwd-dropdown" id="cwd-dropdown"></div>
-          </div>
-        </div>
-        <!-- Advanced controls panel (hidden by default) -->
-        <div id="cb-advanced" class="cb-advanced-panel" style="display:none">
-          <div class="adv-row">
-            <label class="adv-label">System Prompt</label>
-            <textarea id="cb-system-prompt" class="adv-textarea" placeholder="Override system prompt…" rows="2"></textarea>
-          </div>
-          <div class="adv-row adv-row-inline">
-            <div class="adv-field">
-              <label class="adv-label">Effort</label>
-              <select id="cb-effort">
-                <option value="">default</option>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-                <option value="xhigh">xhigh</option>
-                <option value="max">max</option>
-              </select>
-            </div>
-            <div class="adv-field">
-              <label class="adv-label">Max Budget $</label>
-              <input id="cb-budget" type="number" step="0.50" min="0" placeholder="∞" class="adv-input" />
-            </div>
-            <div class="adv-field">
-              <label class="adv-label" style="cursor:pointer">
-                <input type="checkbox" id="cb-thinking" /> Thinking
-              </label>
-            </div>
           </div>
         </div>
       </div>
@@ -4624,132 +4575,7 @@ function renderConversation(history, container, target) {
 
 // ── Chat / Send ───────────────────────────────────────────────────
 
-function toggleAdvancedPanel() {
-  const panel = document.getElementById('cb-advanced');
-  const btn = document.getElementById('cb-advanced-toggle');
-  if (!panel) return;
-  const visible = panel.style.display !== 'none';
-  panel.style.display = visible ? 'none' : 'block';
-  if (btn) btn.classList.toggle('active', !visible);
-}
-
-function parseSlashCommands(text) {
-  // Returns { prompt, overrides } where overrides mutate task config
-  const overrides = {};
-  const lines = text.split('\n');
-  const kept = [];
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('/model ')) {
-      overrides.model = trimmed.slice(7).trim();
-    } else if (trimmed.startsWith('/mode ')) {
-      overrides.mode = trimmed.slice(6).trim();
-    } else if (trimmed.startsWith('/effort ')) {
-      overrides.effort = trimmed.slice(8).trim();
-    } else if (trimmed.startsWith('/budget ')) {
-      overrides.max_budget_usd = parseFloat(trimmed.slice(8).trim());
-    } else if (trimmed.startsWith('/system ')) {
-      overrides.system_prompt = trimmed.slice(8).trim();
-    } else if (trimmed.startsWith('/file ')) {
-      if (!overrides.files) overrides.files = [];
-      overrides.files.push(trimmed.slice(6).trim());
-    } else if (trimmed.startsWith('/tools ')) {
-      overrides.allowed_tools = trimmed.slice(7).trim().split(',').map(s => s.trim());
-    } else if (trimmed === '/fork') {
-      overrides.fork = true;
-    } else if (trimmed === '/thinking' || trimmed === '/think') {
-      overrides.thinking = true;
-    } else if (trimmed === '/clear') {
-      overrides._clear = true;
-    } else {
-      kept.push(line);
-    }
-  }
-  return { prompt: kept.join('\n').trim(), overrides };
-}
-
-// ── Slash-command autocomplete ──────────────────────────────────────
-const SLASH_COMMANDS = [
-  { cmd: '/model',    arg: '<name>',   desc: 'Override the model (e.g. gpt-4o, sonnet)' },
-  { cmd: '/mode',     arg: '<mode>',   desc: 'Set agent mode (plan, code, architect…)' },
-  { cmd: '/effort',   arg: '<level>',  desc: 'Set effort: low | medium | high | xhigh | max' },
-  { cmd: '/budget',   arg: '<$>',      desc: 'Set max budget in USD' },
-  { cmd: '/system',   arg: '<text>',   desc: 'Override the system prompt' },
-  { cmd: '/file',     arg: '<path>',   desc: 'Attach a file to the task' },
-  { cmd: '/tools',    arg: '<list>',   desc: 'Comma-separated list of allowed tools' },
-  { cmd: '/thinking', arg: '',         desc: 'Enable extended thinking / chain-of-thought' },
-  { cmd: '/fork',     arg: '',         desc: 'Fork the current task into a new session' },
-  { cmd: '/clear',    arg: '',         desc: 'Clear prompt and reset for next task' },
-];
-
-let _slashIdx = -1; // active suggestion index
-
-function slashSuggestOpen() {
-  const box = document.getElementById('slash-suggest');
-  return box && box.classList.contains('open');
-}
-
-function slashSuggestClose() {
-  const box = document.getElementById('slash-suggest');
-  if (box) { box.classList.remove('open'); box.innerHTML = ''; }
-  _slashIdx = -1;
-}
-
-function slashSuggestShow(filter) {
-  const box = document.getElementById('slash-suggest');
-  if (!box) return;
-  const q = filter.toLowerCase();
-  const matches = SLASH_COMMANDS.filter(c => c.cmd.startsWith('/' + q));
-  if (!matches.length) { slashSuggestClose(); return; }
-
-  _slashIdx = 0;
-  box.innerHTML = matches.map((c, i) =>
-    `<div class="slash-suggest-item${i === 0 ? ' active' : ''}" data-idx="${i}" data-cmd="${c.cmd}" data-arg="${c.arg}">
-       <span class="slash-cmd">${c.cmd}${c.arg ? ' ' + c.arg : ''}</span>
-       <span class="slash-desc">${c.desc}</span>
-     </div>`
-  ).join('');
-  box.classList.add('open');
-
-  box.querySelectorAll('.slash-suggest-item').forEach(el => {
-    el.addEventListener('mousedown', e => {
-      e.preventDefault();
-      slashAccept(el.dataset.cmd, el.dataset.arg);
-    });
-    el.addEventListener('mouseenter', () => {
-      box.querySelector('.slash-suggest-item.active')?.classList.remove('active');
-      el.classList.add('active');
-      _slashIdx = parseInt(el.dataset.idx);
-    });
-  });
-}
-
-function slashAccept(cmd, arg) {
-  const el = document.getElementById('cb-prompt');
-  if (!el) return;
-  const lines = el.value.split('\n');
-  const lastLine = lines.length - 1;
-  // replace the current /… token on the last line
-  lines[lastLine] = cmd + (arg ? ' ' : '') ;
-  el.value = lines.join('\n');
-  el.focus();
-  // place cursor at end
-  el.selectionStart = el.selectionEnd = el.value.length;
-  slashSuggestClose();
-}
-
-function slashSuggestNav(dir) {
-  const box = document.getElementById('slash-suggest');
-  if (!box) return;
-  const items = box.querySelectorAll('.slash-suggest-item');
-  if (!items.length) return;
-  items[_slashIdx]?.classList.remove('active');
-  _slashIdx = (_slashIdx + dir + items.length) % items.length;
-  items[_slashIdx]?.classList.add('active');
-  items[_slashIdx]?.scrollIntoView({ block: 'nearest' });
-}
-
-function getAdvancedExtras() {
+function getControlExtras() {
   const extras = {};
   const sp = document.getElementById('cb-system-prompt');
   if (sp && sp.value.trim()) extras.system_prompt = sp.value.trim();
@@ -4759,6 +4585,8 @@ function getAdvancedExtras() {
   if (bg && bg.value) extras.max_budget_usd = parseFloat(bg.value);
   const th = document.getElementById('cb-thinking');
   if (th && th.checked) extras.thinking = true;
+  const md = document.getElementById('cb-model');
+  if (md && md.value.trim()) extras.model_override = md.value.trim();
   return extras;
 }
 
@@ -4768,18 +4596,7 @@ async function handleSend() {
   let rawText = promptEl.value.trim();
   if (!rawText && !attachments.length) return;
 
-  // Parse slash commands
-  const { prompt: parsedPrompt, overrides } = parseSlashCommands(rawText);
-
-  // Handle /clear
-  if (overrides._clear) {
-    promptEl.value = '';
-    promptEl.style.height = 'auto';
-    toast('History cleared for next task', 'info');
-    return;
-  }
-
-  let prompt = parsedPrompt;
+  let prompt = rawText;
   if (attachments.length) {
     prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
   }
@@ -4801,23 +4618,12 @@ async function handleSend() {
       refreshDetailConversation();
     } catch (e) { toast('Error: ' + e.message, 'error'); }
   } else {
-    let model = overrides.model || (document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code');
-    const mode = overrides.mode || 'bypassPermissions';
+    const extras = getControlExtras();
+    let model = document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code';
+    const mode = 'bypassPermissions';
     const cwdInput = document.getElementById('cb-cwd') ? document.getElementById('cb-cwd').value.trim() : '';
     const cwd = cwdInput || '';
-    const body = { prompt, model, mode, cwd, extra: {} };
-
-    // Merge advanced panel extras
-    Object.assign(body.extra, getAdvancedExtras());
-
-    // Merge slash command overrides into extra
-    if (overrides.effort) body.extra.effort = overrides.effort;
-    if (overrides.max_budget_usd) body.extra.max_budget_usd = overrides.max_budget_usd;
-    if (overrides.system_prompt) body.extra.system_prompt = overrides.system_prompt;
-    if (overrides.files) body.extra.files = overrides.files;
-    if (overrides.allowed_tools) body.extra.allowed_tools = overrides.allowed_tools;
-    if (overrides.fork) body.extra.fork = true;
-    if (overrides.thinking) body.extra.thinking = true;
+    const body = { prompt, model, mode, cwd, extra: extras };
 
     // Provider-specific defaults
     if (model === 'local') {
@@ -5412,59 +5218,12 @@ function wireKeyboardShortcuts() {
     promptEl.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-
-      // Slash-command autocomplete trigger
-      const val = this.value;
-      const cursor = this.selectionStart;
-      // Find the start of the current line up to cursor
-      const before = val.substring(0, cursor);
-      const lastNl = before.lastIndexOf('\n');
-      const lineStart = before.substring(lastNl + 1);
-      const slashMatch = lineStart.match(/^\/(\S*)$/);
-      if (slashMatch) {
-        slashSuggestShow(slashMatch[1]);
-      } else {
-        slashSuggestClose();
-      }
     });
     promptEl.addEventListener('keydown', function(e) {
-      // Intercept keys when suggestion dropdown is open
-      if (slashSuggestOpen()) {
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          slashSuggestNav(1);
-          return;
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          slashSuggestNav(-1);
-          return;
-        }
-        if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
-          e.preventDefault();
-          const box = document.getElementById('slash-suggest');
-          const active = box?.querySelector('.slash-suggest-item.active');
-          if (active) {
-            slashAccept(active.dataset.cmd, active.dataset.arg);
-          } else {
-            slashSuggestClose();
-            if (e.key === 'Enter') handleSend();
-          }
-          return;
-        }
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          slashSuggestClose();
-          return;
-        }
-      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
-    });
-    promptEl.addEventListener('blur', () => {
-      setTimeout(slashSuggestClose, 150);
     });
   }
 
