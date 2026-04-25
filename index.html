@@ -4950,7 +4950,8 @@ async function handleSend() {
   const images = imageAttachments.map(img => img.data);
 
   promptEl.value = '';
-  promptEl.style.height = 'auto';
+  promptEl.style.height = '';
+  promptEl.style.paddingTop = '';
   attachments = [];
   imageAttachments = [];
   renderAttachments();
