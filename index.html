@@ -211,6 +211,47 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   display: flex !important;
 }
 
+/* ── Agent Tab (focused chat launcher) ─────────────────────────── */
+#view-agent {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+#agent-launch-box {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#agent-launch-box .chat-input-box {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+#agent-launch-box #cb-prompt {
+  flex: 1;
+  min-height: 120px;
+  max-height: 320px;
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 16px 20px 8px;
+}
+
+#agent-launch-box .agent-launch-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--tx2);
+  margin-top: 10px;
+  opacity: 0.7;
+}
+
 /* ── Agents View ────────────────────────────────────────────────── */
 #view-agents {
   position: relative;
@@ -2805,7 +2846,8 @@ textarea:focus-visible {
       <span class="nav-logo"><span class="brand-accent">AGENT-OS</span></span>
     </div>
     <div class="nav-tabs">
-      <button class="nav-tab active" data-tab="agents" onclick="switchTab('agents')">📋 Agents</button>
+      <button class="nav-tab active" data-tab="agent" onclick="switchTab('agent')">💬 Agent</button>
+      <button class="nav-tab" data-tab="agents" onclick="switchTab('agents')">📋 Agents</button>
       <button class="nav-tab" data-tab="workspace" onclick="switchTab('workspace')">📁 Workspaces</button>
       <button class="nav-tab" data-tab="trash" onclick="switchTab('trash')">🗑 Trash</button>
       <button class="nav-tab" data-tab="profile" onclick="switchTab('profile')">⚙ Settings</button>
@@ -2822,7 +2864,7 @@ textarea:focus-visible {
   </nav>
 
   <!-- ── Agents View (default) ───────────────────────────────────── -->
-  <div id="view-agents" class="tab-view active">
+  <div id="view-agents" class="tab-view">
     <div id="agents-area">
       <div id="agent-grid"></div>
       <aside id="agent-sidebar">
@@ -2833,11 +2875,13 @@ textarea:focus-visible {
         <div class="sidebar-conv"></div>
       </aside>
     </div>
+  </div>
 
-    <!-- Chat Bar -->
-    <div id="chat-bar">
+  <!-- ── Agent Tab (focused chat launcher) ──────────────────────── -->
+  <div id="view-agent" class="tab-view active">
+    <div id="agent-launch-box">
       <div class="chat-input-box" id="chat-dropzone">
-        <textarea id="cb-prompt" placeholder="Describe your task…" rows="2"></textarea>
+        <textarea id="cb-prompt" placeholder="Describe your task…" rows="4"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
           <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
@@ -2883,6 +2927,7 @@ textarea:focus-visible {
           </div>
         </div>
       </div>
+      <div class="agent-launch-hint">Enter ↵ to launch · Shift+Enter for new line</div>
     </div>
   </div>
 
@@ -3210,9 +3255,10 @@ const API = `http://${window.location.hostname}:8001`;
 // ── State ─────────────────────────────────────────────────────────
 let tasks = [];
 let workspaces = [];
-let activeTab = 'agents';
+let activeTab = 'agent';
 let sidebarTaskId = null;
 let detailTaskId = null;
+let _detailOriginTab = null;
 let detailGitData = { files: [], branch: '' };
 let detailSelectedFile = null;
 let detailReviewedFiles = new Set();
@@ -3528,6 +3574,7 @@ function switchTab(tabName) {
     detailTaskId = null;
     detailGitData = { files: [], branch: '' };
     detailSelectedFile = null;
+    _detailOriginTab = null;
   }
   closeSidebar();
 
@@ -3539,18 +3586,23 @@ function switchTab(tabName) {
     el.classList.toggle('active', el.dataset.tab === tabName);
   });
 
-  if (tabName === 'agents') {
+  const filters = document.getElementById('agent-filters');
+  if (tabName === 'agent') {
+    if (filters) filters.style.display = 'none';
+    const p = document.getElementById('cb-prompt');
+    if (p) setTimeout(() => p.focus(), 50);
+  } else if (tabName === 'agents') {
     refreshTasks();
-    document.getElementById('agent-filters').style.display = '';
+    if (filters) filters.style.display = '';
   } else if (tabName === 'workspace') {
     refreshWorkspaces();
-    document.getElementById('agent-filters').style.display = 'none';
+    if (filters) filters.style.display = 'none';
   } else if (tabName === 'trash') {
     refreshTrash();
-    document.getElementById('agent-filters').style.display = 'none';
+    if (filters) filters.style.display = 'none';
   } else if (tabName === 'profile') {
     loadSettings();
-    document.getElementById('agent-filters').style.display = 'none';
+    if (filters) filters.style.display = 'none';
   }
 }
 
@@ -3846,11 +3898,13 @@ function openDetailView(taskId) {
   detailAllDiffMode = false;
   detailPRViewOpen = false;
 
-  // Hide agents view, show detail view
-  const agentsView = document.getElementById('view-agents');
+  // Track which tab we came from so goBack returns to the right place
+  if (!_detailOriginTab) _detailOriginTab = activeTab;
+
+  // Hide current view, show detail view
+  document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
   const detail = document.getElementById('detail-view');
   if (!detail) return;
-  if (agentsView) agentsView.classList.remove('active');
   detail.classList.add('open');
 
   // Always start on Chat tab
@@ -3871,7 +3925,6 @@ function openDetailView(taskId) {
 
   updateDetailActions();
   refreshDetailConversation();
-  // Pre-fetch git data so it's ready when user switches to Git tab
   if (task && task.cwd) {
     refreshDetailGit(task.cwd);
   }
@@ -3910,10 +3963,10 @@ function goBack() {
   _tgState.detail = { expanded: new Set(), activePill: {} };
   const detail = document.getElementById('detail-view');
   if (detail) detail.classList.remove('open');
-  // Restore agents view
-  const agentsView = document.getElementById('view-agents');
-  if (agentsView && activeTab === 'agents') agentsView.classList.add('active');
-  refreshTasks();
+  // Return to the tab we came from
+  const returnTab = _detailOriginTab || 'agent';
+  _detailOriginTab = null;
+  switchTab(returnTab);
 }
 
 // ── Detail View: Git Operations ───────────────────────────────────
@@ -4687,9 +4740,13 @@ async function handleSend() {
     }
 
     try {
-      await api('POST', '/tasks', body);
+      const result = await api('POST', '/tasks', body);
       toast('Agent launched', 'success');
       await refreshTasks();
+      // Auto-open detail view for the new task when launched from Agent tab
+      if (activeTab === 'agent' && result && result.id) {
+        openDetailView(result.id);
+      }
     } catch (e) { toast('Error: ' + e.message, 'error'); }
   }
 }
@@ -5323,7 +5380,7 @@ function init() {
   wireDetailButtons();
   updateModelOptions();
 
-  switchTab('agents');
+  switchTab('agent');
   refreshWorkspaces();
   refreshTasks();
 
