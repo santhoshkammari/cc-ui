@@ -1446,15 +1446,19 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 }
 
 #cb-controls select {
-  background: var(--bg2);
+  background: transparent;
   border: 1px solid var(--bd);
   border-radius: var(--radius-md);
-  color: var(--tx0);
-  font-size: 13px;
-  padding: 5px 8px;
+  color: var(--tx1);
+  font-size: 12px;
+  padding: 3px 8px;
   cursor: pointer;
   outline: none;
   transition: border-color var(--transition-fast);
+}
+#cb-controls select option {
+  background: var(--bg2);
+  color: var(--tx0);
 }
 
 #cb-controls select:focus {
@@ -1634,6 +1638,8 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 
 .cwd-wrap {
   position: relative;
+  flex: 1;
+  min-width: 0;
 }
 .cwd-input {
   background: transparent;
@@ -1642,10 +1648,13 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   color: var(--tx0);
   font-size: 12px;
   padding: 3px 8px;
-  width: 360px;
+  width: 100%;
+  min-width: 80px;
   outline: none;
   transition: border-color var(--transition-fast);
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cwd-input::placeholder { color: var(--tx2); }
 .cwd-input:focus { border-color: var(--orange); }
@@ -2999,10 +3008,8 @@ textarea:focus-visible {
           </select>
           <div class="ctrl-sep"></div>
           <div class="ctrl-group">
-            <span class="ctrl-label">Model</span>
             <select id="cb-model"></select>
           </div>
-          <div style="flex:1"></div>
           <div class="cwd-wrap">
             <input class="cwd-input" id="cb-cwd" placeholder="~/project" autocomplete="off" />
             <div class="cwd-dropdown" id="cwd-dropdown"></div>
