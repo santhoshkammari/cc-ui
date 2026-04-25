@@ -81,8 +81,12 @@ class VLLMProvider(BaseProvider):
         # Case 3: No thinking markers
         return "", content.strip()
 
-    def _build_messages(self, prompt: str, history: list | None, cwd: str) -> list[dict]:
-        """Build the messages list with system prompt, history, and user prompt."""
+    def _build_messages(self, prompt: str, history: list | None, cwd: str, images: list | None = None) -> list[dict]:
+        """Build the messages list with system prompt, history, and user prompt.
+        
+        If images is provided (list of base64 data-URLs), the user message uses
+        the OpenAI multimodal content format with image_url entries.
+        """
         from services.tools.tool_manager import get_system_prompt
 
         messages = [{"role": "system", "content": get_system_prompt(cwd)}]
@@ -90,7 +94,20 @@ class VLLMProvider(BaseProvider):
             for h in history:
                 if h.get("role") in ("user", "assistant") and not h.get("metadata"):
                     messages.append({"role": h["role"], "content": h["content"]})
-        messages.append({"role": "user", "content": prompt})
+
+        # Build user message — multimodal if images present
+        if images:
+            content_parts = []
+            if prompt:
+                content_parts.append({"type": "text", "text": prompt})
+            for img_data in images:
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_data}
+                })
+            messages.append({"role": "user", "content": content_parts})
+        else:
+            messages.append({"role": "user", "content": prompt})
         return messages
 
     async def _execute_tool(self, name: str, arguments: dict, cwd: str) -> tuple[str, bool]:
@@ -134,7 +151,8 @@ class VLLMProvider(BaseProvider):
         from services.tools.tool_manager import TOOL_DEFINITIONS
 
         client = AsyncOpenAI(base_url=base_url, api_key=api_key)
-        messages = self._build_messages(prompt, history, cwd)
+        images = config.extra.get("images") if config.extra else None
+        messages = self._build_messages(prompt, history, cwd, images=images)
 
         for iteration in range(MAX_TOOL_ITERATIONS):
             if self._stop:

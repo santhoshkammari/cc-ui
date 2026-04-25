@@ -236,7 +236,6 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 }
 
 #agent-launch-box #cb-prompt {
-  flex: 1;
   min-height: 120px;
   max-height: 320px;
   font-size: 15px;
@@ -1422,6 +1421,16 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 
 .attach-chip .remove:hover { color: var(--red); }
 
+.attach-img-chip { padding: 2px 8px 2px 2px; }
+.attach-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
 @keyframes chipIn {
   from { opacity: 0; transform: scale(0.9); }
   to   { opacity: 1; transform: scale(1); }
@@ -1430,10 +1439,10 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 #cb-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px 8px;
-  border-top: 1px solid color-mix(in srgb, var(--bd) 50%, transparent);
-  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px 10px;
+  /* no separator line — unified box look */
+  flex-wrap: nowrap;
 }
 
 #cb-controls select {
@@ -1511,6 +1520,99 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   white-space: nowrap;
 }
 #cb-controls label.ctrl-check input[type="checkbox"] { accent-color: var(--orange); }
+
+/* ── Settings gear popover ────────────────────────────────────── */
+.settings-wrap {
+  position: relative;
+}
+.settings-btn {
+  background: transparent !important;
+  border: 1px solid var(--bd) !important;
+  color: var(--tx2) !important;
+  font-weight: 400 !important;
+  padding: 4px 7px !important;
+  font-size: 15px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast) !important;
+  display: flex !important;
+  align-items: center;
+  line-height: 1;
+}
+.settings-btn:hover,
+.settings-btn.open {
+  color: var(--tx0) !important;
+  border-color: var(--orange) !important;
+}
+.settings-popover {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 280px;
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  z-index: 200;
+  flex-direction: column;
+  gap: 10px;
+  animation: popIn 0.15s ease;
+}
+.settings-popover.open {
+  display: flex;
+}
+.settings-popover .sp-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx2);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.settings-popover .sp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-popover .sp-label {
+  font-size: 13px;
+  color: var(--tx1);
+  min-width: 70px;
+  white-space: nowrap;
+}
+.settings-popover select,
+.settings-popover input[type="number"],
+.settings-popover input[type="text"] {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  color: var(--tx0);
+  font-size: 13px;
+  padding: 5px 8px;
+  outline: none;
+  flex: 1;
+  transition: border-color var(--transition-fast);
+}
+.settings-popover select:focus,
+.settings-popover input:focus {
+  border-color: var(--orange);
+}
+.settings-popover label.sp-check {
+  font-size: 13px;
+  color: var(--tx1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.settings-popover label.sp-check input[type="checkbox"] { accent-color: var(--orange); }
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .upload-btn {
   background: transparent !important;
@@ -2900,30 +3002,38 @@ textarea:focus-visible {
             <span class="ctrl-label">Model</span>
             <select id="cb-model"></select>
           </div>
-          <div class="ctrl-group">
-            <span class="ctrl-label">Effort</span>
-            <select id="cb-effort">
-              <option value="">default</option>
-              <option value="low">low</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
-              <option value="xhigh">xhigh</option>
-              <option value="max">max</option>
-            </select>
-          </div>
-          <div class="ctrl-group">
-            <span class="ctrl-label">Budget $</span>
-            <input id="cb-budget" type="number" step="0.50" min="0" placeholder="∞" style="width:60px" />
-          </div>
-          <label class="ctrl-check"><input type="checkbox" id="cb-thinking" /> Think</label>
           <div style="flex:1"></div>
-          <div class="ctrl-group">
-            <span class="ctrl-label">System</span>
-            <input id="cb-system-prompt" type="text" placeholder="system prompt…" style="width:160px" />
-          </div>
           <div class="cwd-wrap">
             <input class="cwd-input" id="cb-cwd" placeholder="~/project" autocomplete="off" />
             <div class="cwd-dropdown" id="cwd-dropdown"></div>
+          </div>
+          <div class="settings-wrap">
+            <button class="settings-btn" onclick="toggleSettingsPopover()" title="Advanced settings">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M13.3 10a1.2 1.2 0 0 0 .24 1.32l.04.04a1.44 1.44 0 1 1-2.04 2.04l-.04-.04a1.2 1.2 0 0 0-1.32-.24 1.2 1.2 0 0 0-.72 1.1V14.5a1.44 1.44 0 0 1-2.88 0v-.06A1.2 1.2 0 0 0 5.7 13.3a1.2 1.2 0 0 0-1.32.24l-.04.04a1.44 1.44 0 1 1-2.04-2.04l.04-.04a1.2 1.2 0 0 0 .24-1.32A1.2 1.2 0 0 0 1.48 9.46H1.44a1.44 1.44 0 0 1 0-2.88h.06a1.2 1.2 0 0 0 1.1-.72 1.2 1.2 0 0 0-.24-1.32L2.32 4.5a1.44 1.44 0 1 1 2.04-2.04l.04.04a1.2 1.2 0 0 0 1.32.24h.06a1.2 1.2 0 0 0 .72-1.1V1.44a1.44 1.44 0 0 1 2.88 0v.06a1.2 1.2 0 0 0 .72 1.1 1.2 1.2 0 0 0 1.32-.24l.04-.04a1.44 1.44 0 1 1 2.04 2.04l-.04.04a1.2 1.2 0 0 0-.24 1.32v.06a1.2 1.2 0 0 0 1.1.72h.28a1.44 1.44 0 0 1 0 2.88h-.06a1.2 1.2 0 0 0-1.1.72Z"/></svg>
+            </button>
+            <div class="settings-popover" id="settings-popover">
+              <span class="sp-title">Advanced</span>
+              <div class="sp-row">
+                <span class="sp-label">Effort</span>
+                <select id="cb-effort">
+                  <option value="">default</option>
+                  <option value="low">low</option>
+                  <option value="medium">medium</option>
+                  <option value="high">high</option>
+                  <option value="xhigh">xhigh</option>
+                  <option value="max">max</option>
+                </select>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">Budget $</span>
+                <input id="cb-budget" type="number" step="0.50" min="0" placeholder="∞" />
+              </div>
+              <div class="sp-row">
+                <span class="sp-label">System</span>
+                <input id="cb-system-prompt" type="text" placeholder="system prompt…" />
+              </div>
+              <label class="sp-check"><input type="checkbox" id="cb-thinking" /> Enable thinking</label>
+            </div>
           </div>
         </div>
       </div>
@@ -4628,6 +4738,105 @@ function renderConversation(history, container, target) {
 
 // ── Chat / Send ───────────────────────────────────────────────────
 
+// ── Settings popover toggle ──
+function toggleSettingsPopover() {
+  const pop = document.getElementById('settings-popover');
+  const btn = pop && pop.previousElementSibling;
+  if (!pop) return;
+  pop.classList.toggle('open');
+  if (btn) btn.classList.toggle('open', pop.classList.contains('open'));
+}
+// Close settings popover on outside click
+document.addEventListener('click', function(e) {
+  const pop = document.getElementById('settings-popover');
+  if (!pop || !pop.classList.contains('open')) return;
+  const wrap = pop.closest('.settings-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    pop.classList.remove('open');
+    const btn = wrap.querySelector('.settings-btn');
+    if (btn) btn.classList.remove('open');
+  }
+});
+
+// ── Bottom-to-top textarea alignment ──
+function alignPromptBottom() {
+  const ta = document.getElementById('cb-prompt');
+  if (!ta) return;
+  const padBase = 8;
+  const padBottom = 8;
+
+  // Ghost textarea to measure true text content height
+  let ghost = document.getElementById('_prompt-ghost');
+  if (!ghost) {
+    ghost = document.createElement('textarea');
+    ghost.id = '_prompt-ghost';
+    ghost.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;overflow:hidden;height:0;min-height:0;max-height:none;padding:0;border:none;flex:none;';
+    document.body.appendChild(ghost);
+  }
+  const cs = getComputedStyle(ta);
+  ghost.style.width = cs.width;
+  ghost.style.fontFamily = cs.fontFamily;
+  ghost.style.fontSize = cs.fontSize;
+  ghost.style.lineHeight = cs.lineHeight;
+  ghost.style.letterSpacing = cs.letterSpacing;
+  ghost.style.paddingLeft = cs.paddingLeft;
+  ghost.style.paddingRight = cs.paddingRight;
+  ghost.style.boxSizing = 'border-box';
+  ghost.value = ta.value || ' ';
+  ghost.style.height = '0px';
+  const textH = ghost.scrollHeight;
+
+  // Compute available height from parent minus siblings (controls, attachments)
+  const parent = ta.closest('.chat-input-box');
+  if (!parent) return;
+  const parentH = parent.clientHeight;
+  let siblingsH = 0;
+  for (const child of parent.children) {
+    if (child !== ta) siblingsH += child.offsetHeight;
+  }
+  const availH = parentH - siblingsH; // space the textarea can occupy
+  const maxH = 320;
+  const neededH = textH + padBase + padBottom;
+
+  ta.style.overflowY = 'hidden';
+  if (neededH <= availH) {
+    // Text fits — push it to the bottom
+    ta.style.paddingTop = (availH - textH - padBottom) + 'px';
+    ta.style.height = availH + 'px';
+  } else if (neededH <= maxH) {
+    ta.style.paddingTop = padBase + 'px';
+    ta.style.height = neededH + 'px';
+  } else {
+    ta.style.paddingTop = padBase + 'px';
+    ta.style.height = maxH + 'px';
+    ta.style.overflowY = 'auto';
+  }
+}
+
+// ── Clipboard image paste ──
+let imageAttachments = []; // { name, data (base64 data-url) }
+
+function handleClipboardPaste(e) {
+  const items = (e.clipboardData || window.clipboardData).items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const blob = item.getAsFile();
+      if (!blob) continue;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const dataUrl = ev.target.result;
+        const name = 'clipboard-' + Date.now() + '.png';
+        imageAttachments.push({ name, data: dataUrl });
+        renderAttachments();
+      };
+      reader.readAsDataURL(blob);
+      return; // handle one image per paste
+    }
+  }
+}
+
 const AGENT_MODELS = {
   'local':       [{ v: '', label: 'VLLM_MODEL (auto)' }],
   'claude-code': [
@@ -4692,26 +4901,31 @@ async function handleSend() {
   const promptEl = document.getElementById('cb-prompt');
   if (!promptEl) return;
   let rawText = promptEl.value.trim();
-  if (!rawText && !attachments.length) return;
+  if (!rawText && !attachments.length && !imageAttachments.length) return;
 
   let prompt = rawText;
   if (attachments.length) {
     prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
   }
 
-  if (!prompt) return;
+  if (!prompt && !imageAttachments.length) return;
+
+  // Collect image data before clearing
+  const images = imageAttachments.map(img => img.data);
 
   promptEl.value = '';
   promptEl.style.height = 'auto';
   attachments = [];
+  imageAttachments = [];
   renderAttachments();
+  alignPromptBottom();
 
   const detailView = document.getElementById('detail-view');
   const inDetailView = detailView && detailView.classList.contains('open') && detailTaskId;
 
   if (inDetailView) {
     try {
-      await api('POST', `/tasks/${detailTaskId}/message`, { prompt });
+      await api('POST', `/tasks/${detailTaskId}/message`, { prompt, images: images.length ? images : undefined });
       await refreshTasks();
       refreshDetailConversation();
     } catch (e) { toast('Error: ' + e.message, 'error'); }
@@ -4722,6 +4936,10 @@ async function handleSend() {
     const mode = 'bypassPermissions';
     const cwdInput = document.getElementById('cb-cwd') ? document.getElementById('cb-cwd').value.trim() : '';
     const cwd = cwdInput || '';
+
+    // Include images in extras for the provider
+    if (images.length) extras.images = images;
+
     const body = { prompt, model: agent, mode, cwd, extra: extras };
 
     // Pass selected model into extras for the provider to use
@@ -4932,13 +5150,22 @@ function applyAgentFilter() {
 function renderAttachments() {
   const el = document.getElementById('cb-attachments');
   if (!el) return;
-  el.innerHTML = attachments.map((a, i) =>
+  const fileChips = attachments.map((a, i) =>
     `<span class="attach-chip">📄 ${esc(a.split('/').pop())}<span class="chip-rm" onclick="removeAttachment(${i})">✕</span></span>`
   ).join('');
+  const imgChips = imageAttachments.map((img, i) =>
+    `<span class="attach-chip attach-img-chip"><img src="${img.data}" class="attach-thumb" />${esc(img.name)}<span class="chip-rm" onclick="removeImageAttachment(${i})">✕</span></span>`
+  ).join('');
+  el.innerHTML = fileChips + imgChips;
 }
 
 function removeAttachment(i) {
   attachments.splice(i, 1);
+  renderAttachments();
+}
+
+function removeImageAttachment(i) {
+  imageAttachments.splice(i, 1);
   renderAttachments();
 }
 
@@ -5319,9 +5546,12 @@ function cwdHighlight(idx) {
 function wireKeyboardShortcuts() {
   const promptEl = document.getElementById('cb-prompt');
   if (promptEl) {
+    // Bottom-to-top alignment on input
     promptEl.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+      alignPromptBottom();
+    });
+    promptEl.addEventListener('focus', function() {
+      alignPromptBottom();
     });
     promptEl.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -5329,6 +5559,10 @@ function wireKeyboardShortcuts() {
         handleSend();
       }
     });
+    // Clipboard image paste
+    promptEl.addEventListener('paste', handleClipboardPaste);
+    // Initial bottom alignment
+    setTimeout(alignPromptBottom, 50);
   }
 
   document.addEventListener('keydown', e => {
