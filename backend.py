@@ -205,7 +205,7 @@ async def _run_task(task: dict):
     _providers[task["id"]] = provider
 
     config = ProviderConfig(
-        model=task.get("extra", {}).get("vllm_model") or task.get("extra", {}).get("model_override") or "",
+        model=task.get("extra", {}).get("selected_model") or task.get("extra", {}).get("vllm_model") or task.get("extra", {}).get("model_override") or "",
         mode=task["mode"],
         cwd=task["cwd"],
         session_id=task["session_id"],
@@ -213,13 +213,6 @@ async def _run_task(task: dict):
         api_key=task.get("extra", {}).get("vllm_key") or task.get("extra", {}).get("api_key") or "",
         extra=task.get("extra", {}),
     )
-
-    # Apply slash-command overrides from extra
-    sc = task.get("extra", {}).get("_slash_overrides", {})
-    if sc.get("model"):
-        config.model = sc["model"]
-    if sc.get("mode"):
-        config.mode = sc["mode"]
 
     history_snapshot = task["history"][:]
     tool_calls: list[list] = []  # [title, content, status]

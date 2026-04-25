@@ -2844,7 +2844,7 @@ textarea:focus-visible {
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 12V3M4.5 6.5L8 3l3.5 3.5M2.5 14h11"/></svg>
           </button>
           <input type="file" id="cb-file-picker" multiple style="display:none" />
-          <select id="cb-agent">
+          <select id="cb-agent" onchange="updateModelOptions()">
             <option value="local" selected>Local</option>
             <option value="claude-code">Claude Code</option>
             <option value="opencode">OpenCode</option>
@@ -2854,7 +2854,7 @@ textarea:focus-visible {
           <div class="ctrl-sep"></div>
           <div class="ctrl-group">
             <span class="ctrl-label">Model</span>
-            <input id="cb-model" type="text" placeholder="default" style="width:100px" />
+            <select id="cb-model"></select>
           </div>
           <div class="ctrl-group">
             <span class="ctrl-label">Effort</span>
@@ -4575,6 +4575,53 @@ function renderConversation(history, container, target) {
 
 // ── Chat / Send ───────────────────────────────────────────────────
 
+const AGENT_MODELS = {
+  'local':       [{ v: '', label: 'VLLM_MODEL (auto)' }],
+  'claude-code': [
+    { v: 'sonnet', label: 'sonnet' },
+    { v: 'opus',   label: 'opus' },
+    { v: 'haiku',  label: 'haiku' },
+  ],
+  'opencode': [
+    { v: 'opencode/big-pickle',          label: 'big-pickle' },
+    { v: 'opencode/gpt-5-nano',          label: 'gpt-5-nano' },
+    { v: 'opencode/hy3-preview-free',    label: 'hy3-preview-free' },
+    { v: 'opencode/ling-2.6-flash-free', label: 'ling-2.6-flash-free' },
+    { v: 'opencode/minimax-m2.5-free',   label: 'minimax-m2.5-free' },
+    { v: 'opencode/nemotron-3-super-free', label: 'nemotron-3-super-free' },
+  ],
+  'copilot': [
+    { v: 'gpt-5.4',           label: 'gpt-5.4' },
+    { v: 'gpt-5-mini',        label: 'gpt-5-mini' },
+    { v: 'gpt-4.1',           label: 'gpt-4.1' },
+    { v: 'gpt-4.1-mini',      label: 'gpt-4.1-mini' },
+    { v: 'claude-sonnet-4.6',  label: 'claude-sonnet-4.6' },
+    { v: 'claude-haiku-4.5',   label: 'claude-haiku-4.5' },
+    { v: 'claude-opus-4.6',    label: 'claude-opus-4.6' },
+    { v: 'o3-mini',           label: 'o3-mini' },
+    { v: 'o4-mini',           label: 'o4-mini' },
+  ],
+  'gemini': [
+    { v: 'gemini-2.5-pro',       label: 'gemini-2.5-pro' },
+    { v: 'gemini-2.5-flash',     label: 'gemini-2.5-flash' },
+    { v: 'gemini-2.0-flash',     label: 'gemini-2.0-flash' },
+    { v: 'gemini-2.0-flash-lite', label: 'gemini-2.0-flash-lite' },
+    { v: 'gemini-1.5-pro',       label: 'gemini-1.5-pro' },
+    { v: 'gemini-1.5-flash',     label: 'gemini-1.5-flash' },
+  ],
+};
+
+function updateModelOptions() {
+  const agentSel = document.getElementById('cb-agent');
+  const modelSel = document.getElementById('cb-model');
+  if (!agentSel || !modelSel) return;
+  const agent = agentSel.value;
+  const models = AGENT_MODELS[agent] || [{ v: '', label: 'default' }];
+  modelSel.innerHTML = models.map(m =>
+    `<option value="${m.v}">${m.label}</option>`
+  ).join('');
+}
+
 function getControlExtras() {
   const extras = {};
   const sp = document.getElementById('cb-system-prompt');
@@ -4585,8 +4632,6 @@ function getControlExtras() {
   if (bg && bg.value) extras.max_budget_usd = parseFloat(bg.value);
   const th = document.getElementById('cb-thinking');
   if (th && th.checked) extras.thinking = true;
-  const md = document.getElementById('cb-model');
-  if (md && md.value.trim()) extras.model_override = md.value.trim();
   return extras;
 }
 
@@ -4619,24 +4664,26 @@ async function handleSend() {
     } catch (e) { toast('Error: ' + e.message, 'error'); }
   } else {
     const extras = getControlExtras();
-    let model = document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code';
+    const agent = document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code';
+    const selectedModel = document.getElementById('cb-model') ? document.getElementById('cb-model').value : '';
     const mode = 'bypassPermissions';
     const cwdInput = document.getElementById('cb-cwd') ? document.getElementById('cb-cwd').value.trim() : '';
     const cwd = cwdInput || '';
-    const body = { prompt, model, mode, cwd, extra: extras };
+    const body = { prompt, model: agent, mode, cwd, extra: extras };
+
+    // Pass selected model into extras for the provider to use
+    if (selectedModel) extras.selected_model = selectedModel;
 
     // Provider-specific defaults
-    if (model === 'local') {
-      const storedModel = localStorage.getItem('vllm_model');
+    if (agent === 'local') {
       body.extra.vllm_url = `http://${localStorage.getItem('vllm_ip') || '192.168.170.76'}:${localStorage.getItem('vllm_port') || '8000'}`;
-      body.extra.vllm_model = storedModel !== null ? storedModel : '';
+      body.extra.vllm_model = selectedModel || '';
       body.extra.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
     }
-    if (model === 'gemini') {
+    if (agent === 'gemini') {
       const gKey = localStorage.getItem('gemini_api_key');
       if (gKey) body.extra.api_key = gKey;
-      const gModel = localStorage.getItem('gemini_model');
-      if (gModel) body.extra.gemini_model = gModel;
+      if (selectedModel) body.extra.gemini_model = selectedModel;
     }
 
     try {
@@ -5274,6 +5321,7 @@ function init() {
   wireCwdAutocomplete();
   wireKeyboardShortcuts();
   wireDetailButtons();
+  updateModelOptions();
 
   switchTab('agents');
   refreshWorkspaces();

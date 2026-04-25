@@ -37,7 +37,7 @@ class ClaudeProvider(BaseProvider):
             resume=config.session_id,
             cwd=config.cwd or None,
             env={**os.environ, **config.extra.get("env", {})},
-            model=config.extra.get("model_override"),
+            model=config.model or None,
         )
 
         # Extended CLI flags via extra dict
