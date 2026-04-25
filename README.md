@@ -27,8 +27,7 @@ python backend.py
 
 Open [http://localhost:8001](http://localhost:8001)
 
-![CC-UI](image.png)
-![CC-UI](im2.png)
+![CC-UI](screenshots/Screenshot%20from%202026-04-26%2002-32-57.png)
 
 
 ## Features
