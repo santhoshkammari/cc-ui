@@ -30,8 +30,6 @@
 
   --nav-h: 48px;
   --sidebar-w: 30%;
-  --detail-left: 70%;
-  --detail-right: 30%;
   --card-h: 58px;
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -582,21 +580,165 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
+/* Detail topbar tab switcher (Chat / Git) */
+.detail-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: 16px;
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.detail-tab {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx2);
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.detail-tab:hover { color: var(--tx1); }
+.detail-tab.active { color: var(--tx0); background: var(--bg1); }
+
+/* Detail topbar stats (right-aligned) */
+.detail-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 #detail-left {
-  width: var(--detail-left);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Git Full View (replaces detail-left when Git tab active) ──── */
+#detail-git-view {
+  display: none;
+  flex: 1;
+  flex-direction: row;
+  overflow: hidden;
+}
+#detail-git-view.active { display: flex; }
+
+.git-sidebar {
+  width: 280px;
+  min-width: 220px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--bd);
+  background: var(--bg0);
 }
 
-#detail-right {
-  width: var(--detail-right);
+.git-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--bg0);
 }
+
+/* Git sidebar sections */
+.git-branch-bar {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tx1);
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.git-commit-box {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.git-commit-box textarea {
+  width: 100%;
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: 5px;
+  color: var(--tx0);
+  font-size: 11px;
+  padding: 6px 8px;
+  resize: none;
+  font-family: inherit;
+  min-height: 32px;
+  max-height: 64px;
+  outline: none;
+}
+.git-commit-box textarea:focus { border-color: var(--green); }
+
+.git-btn-row {
+  display: flex;
+  gap: 4px;
+}
+.git-btn-row button {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--bd);
+  background: var(--bg2);
+  color: var(--tx0);
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.git-btn-row button:hover { background: var(--bd); }
+.git-btn-row .git-commit-btn {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+.git-btn-row .git-commit-btn:hover { opacity: 0.9; }
+
+.git-file-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Git main diff area */
+.git-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg1);
+  flex-shrink: 0;
+}
+
+.git-diff-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* PR sub-tab section inside git main */
+.git-pr-area {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.git-pr-area.active { display: flex; }
 
 #detail-conv {
   flex: 1;
@@ -1436,53 +1578,6 @@ a:hover { text-decoration: underline; }
 
 #commit-btn:hover { opacity: 0.9 !important; }
 
-/* ── Git Panel Toggle ──────────────────────────────────────────── */
-.git-toggle-btn {
-  background: var(--bg2);
-  border: 1px solid var(--bd);
-  border-radius: var(--radius-sm);
-  color: var(--tx1);
-  font-size: 11px;
-  padding: 3px 10px;
-  cursor: pointer;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: color var(--transition-fast), background var(--transition-fast);
-}
-.git-toggle-btn:hover { color: var(--tx0); background: var(--bd); }
-.git-toggle-btn.active { color: var(--green); border-color: var(--green); }
-
-#detail-right.collapsed { display: none; }
-#detail-left.expanded { width: 100%; border-right: none; }
-
-/* ── Git Panel Tabs (Changes / PRs) ────────────────────────────── */
-.git-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--bd);
-  background: var(--bg1);
-  flex-shrink: 0;
-}
-.git-tab {
-  flex: 1;
-  padding: 7px 8px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--tx2);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  text-align: center;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
-}
-.git-tab:hover { color: var(--tx1); }
-.git-tab.active { color: var(--tx0); border-bottom-color: var(--blue); }
-
-.git-tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-.git-tab-content.active { display: flex; }
-
 /* ── File Reviewed Badge ────────────────────────────────────────── */
 .rp-file-reviewed {
   font-size: 9px;
@@ -2074,7 +2169,7 @@ a:hover { text-decoration: underline; }
   background: transparent !important;
 }
 
-.glass-theme #detail-right {
+.glass-theme .git-sidebar {
   background: color-mix(in srgb, var(--bg0) 85%, transparent) !important;
   backdrop-filter: blur(12px) !important;
 }
@@ -2091,13 +2186,9 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 900px) {
-  #detail-left {
-    width: 100%;
-    border-right: none;
-  }
-
-  #detail-right {
-    display: none;
+  .git-sidebar {
+    width: 200px;
+    min-width: 160px;
   }
 
   #agent-sidebar {
@@ -2350,10 +2441,10 @@ textarea:focus-visible {
           </button>
           <input type="file" id="cb-file-picker" multiple style="display:none" />
           <select id="cb-agent">
+            <option value="local" selected>Local</option>
             <option value="claude-code">Claude Code</option>
             <option value="opencode">OpenCode</option>
             <option value="copilot">Copilot</option>
-            <option value="local">Local</option>
           </select>
           <!-- mode is always bypassPermissions, no selector needed -->
           <div style="flex:1"></div>
@@ -2371,12 +2462,18 @@ textarea:focus-visible {
     <div id="detail-topbar">
       <button id="back-btn" onclick="goBack()">← Back</button>
       <span id="detail-title"></span>
-      <span id="detail-cost"></span>
-      <span id="detail-tokens"></span>
-      <button class="git-toggle-btn" id="git-toggle-btn" onclick="toggleGitPanel()">⎇ Git</button>
+      <div class="detail-tabs">
+        <button class="detail-tab active" data-dtab="chat" onclick="switchDetailTab('chat')">💬 Chat</button>
+        <button class="detail-tab" data-dtab="git" onclick="switchDetailTab('git')">⎇ Git</button>
+      </div>
+      <div class="detail-stats">
+        <span id="detail-cost"></span>
+        <span id="detail-tokens"></span>
+      </div>
     </div>
     <div id="detail-content">
-      <div id="detail-left" class="expanded">
+      <!-- Chat Tab (default) -->
+      <div id="detail-left">
         <div id="detail-conv"></div>
         <div id="detail-chat">
           <div class="chat-input-box">
@@ -2387,50 +2484,53 @@ textarea:focus-visible {
           </div>
         </div>
       </div>
-      <div id="detail-right" class="collapsed">
-        <!-- Git Panel Tabs -->
-        <div class="git-tabs">
-          <button class="git-tab active" data-git-tab="changes" onclick="switchGitTab('changes')">Changes</button>
-          <button class="git-tab" data-git-tab="prs" onclick="switchGitTab('prs')">PRs</button>
-        </div>
 
-        <!-- Changes Tab -->
-        <div class="git-tab-content active" id="git-changes-tab">
-          <div class="diff-panel-header">
-            <span>⎇ <span id="detail-branch"></span></span>
+      <!-- Git Tab (VS Code-style, hidden by default) -->
+      <div id="detail-git-view">
+        <!-- Left: file sidebar with commit controls -->
+        <div class="git-sidebar">
+          <div class="git-branch-bar">
+            <span>⎇</span>
+            <span id="detail-branch">main</span>
           </div>
-          <div id="detail-commit-box">
+          <div class="git-commit-box">
             <div class="ai-commit-wrap">
               <textarea id="detail-commit-msg" placeholder="Commit message…" rows="1"></textarea>
-              <button class="ai-commit-btn" id="ai-commit-btn" onclick="aiGenerateCommitMsg()" title="AI generate commit message">✨</button>
+              <button class="ai-commit-btn" id="ai-commit-btn" onclick="aiGenerateCommitMsg()" title="AI generate">✨</button>
             </div>
-            <div id="detail-commit-actions">
-              <button id="detail-commit-btn">✓ Commit</button>
+            <div class="git-btn-row">
+              <button class="git-commit-btn" id="detail-commit-btn">✓ Commit</button>
               <button id="detail-push-btn">↑ Push</button>
             </div>
           </div>
           <div class="all-diff-bar">
-            <button class="all-diff-btn" id="all-diff-btn" onclick="toggleAllDiffView()">📋 Review All</button>
+            <button class="all-diff-btn" id="all-diff-btn" onclick="toggleAllDiffView()">📋 All</button>
+            <button class="all-diff-btn" id="pr-view-btn" onclick="togglePRView()">⎇ PRs</button>
             <span class="review-progress" id="review-progress"></span>
           </div>
-          <div id="detail-files"></div>
-          <div id="detail-diff-content"></div>
+          <div class="git-file-list" id="detail-files"></div>
         </div>
-
-        <!-- PRs Tab -->
-        <div class="git-tab-content" id="git-prs-tab">
-          <div class="pr-create-form" id="pr-create-form">
-            <input id="pr-title-input" placeholder="PR title…" />
-            <textarea id="pr-body-input" placeholder="Description (optional)" rows="2"></textarea>
-            <div class="pr-branch-row">
-              <span>base:</span>
-              <select id="pr-base-branch"><option>main</option></select>
-              <span>← head:</span>
-              <select id="pr-head-branch"></select>
-            </div>
-            <button class="pr-create-submit" onclick="createPR()">Create PR</button>
+        <!-- Right: diff viewer / PR area -->
+        <div class="git-main">
+          <div class="git-diff-header" id="git-diff-header">
+            <span id="git-diff-filename" style="font-size:11px;color:var(--tx1)">Select a file to view diff</span>
           </div>
-          <div class="pr-list" id="pr-list"></div>
+          <div class="git-diff-area" id="detail-diff-content"></div>
+          <!-- PR area (hidden by default) -->
+          <div class="git-pr-area" id="git-pr-area">
+            <div class="pr-create-form" id="pr-create-form">
+              <input id="pr-title-input" placeholder="PR title…" />
+              <textarea id="pr-body-input" placeholder="Description (optional)" rows="2"></textarea>
+              <div class="pr-branch-row">
+                <span>base:</span>
+                <select id="pr-base-branch"><option>main</option></select>
+                <span>← head:</span>
+                <select id="pr-head-branch"></select>
+              </div>
+              <button class="pr-create-submit" onclick="createPR()">Create PR</button>
+            </div>
+            <div class="pr-list" id="pr-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2509,7 +2609,6 @@ let detailTaskId = null;
 let detailGitData = { files: [], branch: '' };
 let detailSelectedFile = null;
 let detailReviewedFiles = new Set();
-let detailGitOpen = false;
 let detailAllDiffMode = false;
 let attachments = [];
 let clickTimer = null;
@@ -3074,6 +3173,7 @@ function openDetailView(taskId) {
   detailTaskId = taskId;
   detailReviewedFiles = new Set();
   detailAllDiffMode = false;
+  detailPRViewOpen = false;
 
   // Hide agents view, show detail view
   const agentsView = document.getElementById('view-agents');
@@ -3082,9 +3182,8 @@ function openDetailView(taskId) {
   if (agentsView) agentsView.classList.remove('active');
   detail.classList.add('open');
 
-  // Git panel starts collapsed
-  detailGitOpen = false;
-  syncGitPanelState();
+  // Always start on Chat tab
+  switchDetailTab('chat');
 
   const task = tasks.find(t => t.id === taskId);
   if (task) {
@@ -3100,7 +3199,7 @@ function openDetailView(taskId) {
   }
 
   refreshDetailConversation();
-  // Pre-fetch git data (even if panel hidden) so it's ready when toggled
+  // Pre-fetch git data so it's ready when user switches to Git tab
   if (task && task.cwd) {
     refreshDetailGit(task.cwd);
   }
@@ -3132,8 +3231,9 @@ function goBack() {
   detailGitData = { files: [], branch: '' };
   detailSelectedFile = null;
   detailReviewedFiles = new Set();
-  detailGitOpen = false;
   detailAllDiffMode = false;
+  detailPRViewOpen = false;
+  detailActiveTab = 'chat';
   _tgState.detail = { expanded: new Set(), activePill: {} };
   const detail = document.getElementById('detail-view');
   if (detail) detail.classList.remove('open');
@@ -3199,7 +3299,15 @@ function renderDetailFiles() {
 
 async function viewDetailDiff(file, staged) {
   detailSelectedFile = file;
+  detailAllDiffMode = false;
+  const allBtn = document.getElementById('all-diff-btn');
+  if (allBtn) allBtn.classList.remove('active');
+  // Hide PR area if open
+  if (detailPRViewOpen) togglePRView();
   renderDetailFiles();
+  // Update filename header
+  const fnEl = document.getElementById('git-diff-filename');
+  if (fnEl) fnEl.textContent = file + (staged ? ' (staged)' : '');
   const task = tasks.find(t => t.id === detailTaskId);
   const cwd = task ? task.cwd : '';
   const diffEl = document.getElementById('detail-diff-content');
@@ -3274,38 +3382,44 @@ async function detailPush() {
   } catch (e) { toast('Push failed: ' + e.message, 'error'); }
 }
 
-// ── Git Panel Toggle ──────────────────────────────────────────────
-function toggleGitPanel() {
-  detailGitOpen = !detailGitOpen;
-  syncGitPanelState();
-  if (detailGitOpen) {
+// ── Detail View Tab Switching (Chat / Git) ────────────────────────
+let detailActiveTab = 'chat';
+let detailPRViewOpen = false;
+
+function switchDetailTab(tab) {
+  detailActiveTab = tab;
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.toggle('active', t.dataset.dtab === tab));
+  const left = document.getElementById('detail-left');
+  const gitView = document.getElementById('detail-git-view');
+  if (tab === 'chat') {
+    if (left) left.style.display = 'flex';
+    if (gitView) gitView.classList.remove('active');
+  } else {
+    if (left) left.style.display = 'none';
+    if (gitView) gitView.classList.add('active');
     const task = tasks.find(t => t.id === detailTaskId);
     if (task && task.cwd) refreshDetailGit(task.cwd);
   }
 }
 
-function syncGitPanelState() {
-  const left = document.getElementById('detail-left');
-  const right = document.getElementById('detail-right');
-  const btn = document.getElementById('git-toggle-btn');
-  if (!left || !right) return;
-  if (detailGitOpen) {
-    left.classList.remove('expanded');
-    left.style.width = '';
-    right.classList.remove('collapsed');
-    if (btn) btn.classList.add('active');
+function togglePRView() {
+  detailPRViewOpen = !detailPRViewOpen;
+  const diffHeader = document.getElementById('git-diff-header');
+  const diffArea = document.getElementById('detail-diff-content');
+  const prArea = document.getElementById('git-pr-area');
+  const prBtn = document.getElementById('pr-view-btn');
+  if (detailPRViewOpen) {
+    if (diffHeader) diffHeader.style.display = 'none';
+    if (diffArea) diffArea.style.display = 'none';
+    if (prArea) prArea.classList.add('active');
+    if (prBtn) prBtn.classList.add('active');
+    refreshPRs();
   } else {
-    left.classList.add('expanded');
-    right.classList.add('collapsed');
-    if (btn) btn.classList.remove('active');
+    if (diffHeader) diffHeader.style.display = '';
+    if (diffArea) diffArea.style.display = '';
+    if (prArea) prArea.classList.remove('active');
+    if (prBtn) prBtn.classList.remove('active');
   }
-}
-
-// ── Git Sub-tabs (Changes / PRs) ──────────────────────────────────
-function switchGitTab(tab) {
-  document.querySelectorAll('.git-tab').forEach(t => t.classList.toggle('active', t.dataset.gitTab === tab));
-  document.querySelectorAll('.git-tab-content').forEach(c => c.classList.toggle('active', c.id === `git-${tab}-tab`));
-  if (tab === 'prs') refreshPRs();
 }
 
 // ── File Review Tracking ──────────────────────────────────────────
@@ -3334,17 +3448,22 @@ function updateReviewProgress() {
 async function toggleAllDiffView() {
   const btn = document.getElementById('all-diff-btn');
   const diffEl = document.getElementById('detail-diff-content');
+  const fnEl = document.getElementById('git-diff-filename');
   if (!diffEl) return;
+  // Hide PR view if open
+  if (detailPRViewOpen) togglePRView();
   if (detailAllDiffMode) {
     detailAllDiffMode = false;
     if (btn) btn.classList.remove('active');
     diffEl.innerHTML = '';
+    if (fnEl) fnEl.textContent = 'Select a file to view diff';
     detailSelectedFile = null;
     renderDetailFiles();
     return;
   }
   detailAllDiffMode = true;
   if (btn) btn.classList.add('active');
+  if (fnEl) fnEl.textContent = 'All Changes';
   detailSelectedFile = null;
   renderDetailFiles();
   const cwd = getDetailCwd();
@@ -3464,9 +3583,11 @@ async function mergePR(prNumber) {
 async function viewPRDiff(prNumber) {
   const cwd = getDetailCwd();
   const diffEl = document.getElementById('detail-diff-content');
+  const fnEl = document.getElementById('git-diff-filename');
   if (!diffEl || !cwd) return;
-  // Switch to changes tab to show diff
-  switchGitTab('changes');
+  // Close PR view, show diff area
+  if (detailPRViewOpen) togglePRView();
+  if (fnEl) fnEl.textContent = `PR #${prNumber} Diff`;
   diffEl.innerHTML = '<div style="padding:12px;color:var(--tx2)">Loading PR diff…</div>';
   try {
     const data = await api('GET', `/git/pr/${prNumber}/diff?cwd=${encodeURIComponent(cwd)}`);
