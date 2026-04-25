@@ -157,6 +157,35 @@ a:hover { text-decoration: underline; }
   gap: 4px;
 }
 
+/* ── Filter Sub-tabs (agent status filters) ────────────────────── */
+.filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  padding: 2px;
+}
+.filter-tab {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.3;
+}
+.filter-tab:hover { color: var(--tx1); }
+.filter-tab.active {
+  color: var(--tx0);
+  background: var(--bg2);
+  font-weight: 600;
+}
+
 .nav-badge {
   background: var(--bg2);
   color: var(--tx2);
@@ -757,6 +786,84 @@ a:hover { text-decoration: underline; }
   padding: 0;
   font-size: 12px;
 }
+
+/* ── Markdown Rendering ────────────────────────────────────────── */
+.msg .md-h { margin: 10px 0 6px; color: var(--tx0); font-weight: 600; line-height: 1.3; }
+.msg h1.md-h { font-size: 18px; border-bottom: 1px solid var(--bd); padding-bottom: 4px; }
+.msg h2.md-h { font-size: 16px; border-bottom: 1px solid var(--bd); padding-bottom: 3px; }
+.msg h3.md-h { font-size: 14px; }
+.msg h4.md-h, .msg h5.md-h, .msg h6.md-h { font-size: 13px; }
+
+.msg .md-p { margin: 4px 0; line-height: 1.55; }
+
+.msg .md-pre {
+  background: var(--bg0);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.msg .md-pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--tx0);
+}
+
+.msg .md-bq {
+  border-left: 3px solid var(--blue);
+  margin: 8px 0;
+  padding: 4px 12px;
+  color: var(--tx1);
+  background: rgba(56, 139, 253, 0.05);
+  border-radius: 0 4px 4px 0;
+}
+
+.msg .md-list {
+  margin: 4px 0 4px 20px;
+  padding: 0;
+  line-height: 1.55;
+}
+.msg .md-list li { margin: 2px 0; }
+
+.msg .md-hr {
+  border: none;
+  border-top: 1px solid var(--bd);
+  margin: 10px 0;
+}
+
+.msg .md-link {
+  color: var(--blue);
+  text-decoration: none;
+}
+.msg .md-link:hover { text-decoration: underline; }
+
+.msg .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.msg .md-table th, .msg .md-table td {
+  border: 1px solid var(--bd);
+  padding: 5px 10px;
+  text-align: left;
+}
+.msg .md-table th {
+  background: var(--bg2);
+  font-weight: 600;
+  color: var(--tx0);
+}
+.msg .md-table td { color: var(--tx1); }
+.msg .md-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.msg del { color: var(--tx2); text-decoration: line-through; }
+.msg em { font-style: italic; }
+.msg strong { font-weight: 600; color: var(--tx0); }
 
 .tool-header {
   color: var(--tx1);
@@ -1447,6 +1554,100 @@ a:hover { text-decoration: underline; }
   color: var(--tx0);
 }
 
+/* ── Trash View ─────────────────────────────────────────────────── */
+#view-trash {
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.trash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.trash-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.agent-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.trash-empty-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.trash-empty-btn:hover {
+  background: rgba(248, 81, 73, 0.2);
+}
+
+.trash-card {
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: border-color var(--transition-fast);
+}
+.trash-card:hover { border-color: var(--tx2); }
+
+.trash-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx0);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trash-card-meta {
+  font-size: 11px;
+  color: var(--tx2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trash-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.trash-card-actions button {
+  padding: 4px 12px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--bd);
+  transition: all var(--transition-fast);
+}
+.trash-restore-btn {
+  background: rgba(63, 185, 80, 0.1);
+  color: var(--green);
+  border-color: rgba(63, 185, 80, 0.3) !important;
+}
+.trash-restore-btn:hover { background: rgba(63, 185, 80, 0.2); }
+
+.trash-perma-btn {
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--red);
+  border-color: rgba(248, 81, 73, 0.3) !important;
+}
+.trash-perma-btn:hover { background: rgba(248, 81, 73, 0.2); }
+
 /* ── Profile / Settings View ────────────────────────────────────── */
 #view-profile {
   overflow-y: auto;
@@ -1870,9 +2071,15 @@ textarea:focus-visible {
     <div class="nav-tabs">
       <button class="nav-tab active" data-tab="agents" onclick="switchTab('agents')">📋 Agents</button>
       <button class="nav-tab" data-tab="workspace" onclick="switchTab('workspace')">📁 Workspaces</button>
+      <button class="nav-tab" data-tab="trash" onclick="switchTab('trash')">🗑 Trash</button>
       <button class="nav-tab" data-tab="profile" onclick="switchTab('profile')">⚙ Settings</button>
     </div>
     <div class="nav-right">
+      <div class="filter-tabs" id="agent-filters">
+        <button class="filter-tab active" data-filter="all" onclick="filterAgents('all')">All</button>
+        <button class="filter-tab" data-filter="running" onclick="filterAgents('running')">Running</button>
+        <button class="filter-tab" data-filter="done" onclick="filterAgents('done')">Done</button>
+      </div>
       <span class="nav-stat" id="task-count" title="Active tasks">0 tasks</span>
       <span class="nav-stat" id="total-cost" title="Total cost">$0.00</span>
     </div>
@@ -1963,6 +2170,18 @@ textarea:focus-visible {
       <button id="add-ws-btn" onclick="openWsDialog()">+ Add Workspace</button>
     </div>
     <div id="ws-grid"></div>
+  </div>
+
+  <!-- ── Trash View ────────────────────────────────────────────────── -->
+  <div id="view-trash" class="tab-view">
+    <div class="trash-header">
+      <h2>🗑 Trash</h2>
+      <button class="trash-empty-btn" id="empty-trash-btn" onclick="emptyTrash()">Empty Trash</button>
+    </div>
+    <div id="trash-grid" class="agent-grid-layout"></div>
+    <div id="trash-empty-msg" style="display:none;text-align:center;padding:60px 20px;color:var(--tx2);font-size:14px;">
+      Trash is empty
+    </div>
   </div>
 
   <!-- ── Profile / Settings View ─────────────────────────────────── -->
@@ -2065,12 +2284,160 @@ function esc(s) {
 
 function renderMd(text) {
   if (!text) return '';
-  let s = esc(text);
-  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, l, c) => `<pre><code>${c}</code></pre>`);
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/\n/g, '<br>');
+  // Protect code blocks from being processed
+  const codeBlocks = [];
+  let s = String(text);
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre class="md-pre"><code class="lang-${lang || 'text'}">${esc(code)}</code></pre>`);
+    return `\x00CB${idx}\x00`;
+  });
+  // Protect inline code
+  const inlineCodes = [];
+  s = s.replace(/`([^`\n]+)`/g, (_, code) => {
+    const idx = inlineCodes.length;
+    inlineCodes.push(`<code>${esc(code)}</code>`);
+    return `\x00IC${idx}\x00`;
+  });
+
+  // Process line-by-line for block elements
+  const lines = s.split('\n');
+  const out = [];
+  let inList = false, listType = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Code block placeholder — pass through
+    if (/^\x00CB\d+\x00$/.test(line.trim())) {
+      if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+      out.push(line.trim());
+      continue;
+    }
+
+    // Headings
+    const hMatch = line.match(/^(#{1,6})\s+(.+)/);
+    if (hMatch) {
+      if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+      const level = hMatch[1].length;
+      out.push(`<h${level} class="md-h">${inlineMd(esc(hMatch[2]))}</h${level}>`);
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(\*{3,}|-{3,}|_{3,})\s*$/.test(line.trim())) {
+      if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+      out.push('<hr class="md-hr">');
+      continue;
+    }
+
+    // Blockquote
+    if (line.match(/^>\s?(.*)/)) {
+      if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+      let bq = line.replace(/^>\s?/, '');
+      while (i + 1 < lines.length && lines[i + 1].match(/^>\s?/)) {
+        i++;
+        bq += '\n' + lines[i].replace(/^>\s?/, '');
+      }
+      out.push(`<blockquote class="md-bq">${inlineMd(esc(bq)).replace(/\n/g, '<br>')}</blockquote>`);
+      continue;
+    }
+
+    // Unordered list item
+    const ulMatch = line.match(/^(\s*)[-*+]\s+(.*)/);
+    if (ulMatch) {
+      if (!inList || listType !== 'ul') {
+        if (inList) out.push(listType === 'ul' ? '</ul>' : '</ol>');
+        out.push('<ul class="md-list">');
+        inList = true; listType = 'ul';
+      }
+      out.push(`<li>${inlineMd(esc(ulMatch[2]))}</li>`);
+      continue;
+    }
+
+    // Ordered list item
+    const olMatch = line.match(/^(\s*)\d+[.)]\s+(.*)/);
+    if (olMatch) {
+      if (!inList || listType !== 'ol') {
+        if (inList) out.push(listType === 'ul' ? '</ul>' : '</ol>');
+        out.push('<ol class="md-list">');
+        inList = true; listType = 'ol';
+      }
+      out.push(`<li>${inlineMd(esc(olMatch[2]))}</li>`);
+      continue;
+    }
+
+    // Table row detection
+    if (line.includes('|') && line.trim().startsWith('|')) {
+      if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+      // Collect table rows
+      const tableRows = [line];
+      while (i + 1 < lines.length && lines[i + 1].includes('|') && lines[i + 1].trim().startsWith('|')) {
+        i++;
+        tableRows.push(lines[i]);
+      }
+      out.push(renderMdTable(tableRows));
+      continue;
+    }
+
+    // Close list if not a list item
+    if (inList) { out.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+
+    // Empty line
+    if (line.trim() === '') {
+      out.push('');
+      continue;
+    }
+
+    // Normal paragraph
+    out.push(`<p class="md-p">${inlineMd(esc(line))}</p>`);
+  }
+
+  if (inList) out.push(listType === 'ul' ? '</ul>' : '</ol>');
+
+  s = out.join('\n');
+
+  // Restore code blocks and inline code
+  s = s.replace(/\x00CB(\d+)\x00/g, (_, idx) => codeBlocks[parseInt(idx)]);
+  s = s.replace(/\x00IC(\d+)\x00/g, (_, idx) => inlineCodes[parseInt(idx)]);
+
   return s;
+}
+
+function inlineMd(s) {
+  // Bold + italic
+  s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  // Bold
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  s = s.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Strikethrough
+  s = s.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  // Links [text](url)
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="md-link">$1</a>');
+  // Restore inline code placeholders (they're already safe)
+  return s;
+}
+
+function renderMdTable(rows) {
+  if (rows.length < 2) return rows.map(r => `<p class="md-p">${esc(r)}</p>`).join('');
+  const parseRow = r => r.split('|').slice(1, -1).map(c => c.trim());
+  const headers = parseRow(rows[0]);
+  // Skip separator row (row[1] is like |---|---|)
+  const startIdx = /^[\s|:-]+$/.test(rows[1].replace(/\|/g, '').replace(/-/g, '').replace(/:/g, '').trim()) ? 2 : 1;
+  let html = '<table class="md-table"><thead><tr>';
+  for (const h of headers) html += `<th>${inlineMd(esc(h))}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = startIdx; r < rows.length; r++) {
+    const cells = parseRow(rows[r]);
+    html += '<tr>';
+    for (const c of cells) html += `<td>${inlineMd(esc(c))}</td>`;
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
 }
 
 // ── Agent Badge Helper ────────────────────────────────────────────
@@ -2192,10 +2559,16 @@ function switchTab(tabName) {
 
   if (tabName === 'agents') {
     refreshTasks();
+    document.getElementById('agent-filters').style.display = '';
   } else if (tabName === 'workspace') {
     refreshWorkspaces();
+    document.getElementById('agent-filters').style.display = 'none';
+  } else if (tabName === 'trash') {
+    refreshTrash();
+    document.getElementById('agent-filters').style.display = 'none';
   } else if (tabName === 'profile') {
     loadSettings();
+    document.getElementById('agent-filters').style.display = 'none';
   }
 }
 
@@ -2214,11 +2587,20 @@ function updateNavStats() {
   if (!navRight) return;
   const running = tasks.filter(t => t.status === 'running').length;
   const totalCost = tasks.reduce((s, t) => s + (t.total_cost || 0), 0);
+
+  // Preserve filter tabs, only update stats
+  let statsEl = navRight.querySelector('.nav-stats-inner');
+  if (!statsEl) {
+    statsEl = document.createElement('span');
+    statsEl.className = 'nav-stats-inner';
+    navRight.appendChild(statsEl);
+  }
+
   let parts = [];
   if (running) parts.push(`<span style="color:var(--orange);font-weight:600">${running} running</span>`);
   parts.push(`<span>${tasks.length} agents</span>`);
   if (totalCost) parts.push(`<span style="color:var(--green);font-weight:600">$${formatCost(totalCost)}</span>`);
-  navRight.innerHTML = parts.join(' · ');
+  statsEl.innerHTML = parts.join(' · ');
 }
 
 // ── Task/Agent Management ─────────────────────────────────────────
@@ -2284,7 +2666,7 @@ function renderAgentCards() {
     actionsHtml += `<button class="ac-btn danger" onclick="deleteAgent('${t.id}',event)" title="Delete">🗑</button>`;
     actionsHtml += `<button class="ac-btn" onclick="showDiff('${t.id}',event)" title="Diff">±</button>`;
 
-    return `<div class="agent-card ${t.status}${sidebarTaskId === t.id ? ' selected' : ''}" data-id="${t.id}">
+    return `<div class="agent-card ${t.status}${sidebarTaskId === t.id ? ' selected' : ''}" data-id="${t.id}" data-status="${t.status}">
       <div class="ac-line1">
         <span class="status-dot ${t.status}"></span>
         <div class="ac-ticker-wrap"><span class="ac-ticker">${tickerText}</span></div>
@@ -2305,6 +2687,7 @@ function renderAgentCards() {
   }).join('');
 
   checkTickers();
+  applyAgentFilter();
 }
 
 // ── Ticker Animation Check ────────────────────────────────────────
@@ -2933,7 +3316,7 @@ async function deleteAgent(id, ev) {
     if (sidebarTaskId === id) closeSidebar();
     if (detailTaskId === id) goBack();
     await refreshTasks();
-    toast('Agent deleted', 'info');
+    toast('Moved to trash', 'info');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
 }
 
@@ -2943,6 +3326,93 @@ async function resumeAgent(id, ev) {
     await api('POST', `/tasks/${id}/resume`);
     await refreshTasks();
   } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── Trash Management ──────────────────────────────────────────────
+async function refreshTrash() {
+  try {
+    const items = await api('GET', '/trash');
+    const grid = document.getElementById('trash-grid');
+    const emptyMsg = document.getElementById('trash-empty-msg');
+    if (!grid) return;
+
+    if (!items.length) {
+      grid.innerHTML = '';
+      if (emptyMsg) emptyMsg.style.display = '';
+      return;
+    }
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    grid.innerHTML = items.map(t => {
+      const deletedDate = t.deleted_at ? new Date(t.deleted_at).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+      const { label: badgeLabel, cls: badgeCls } = agentBadge(t.model);
+      return `<div class="trash-card">
+        <div class="trash-card-title">${esc(t.label)}</div>
+        <div class="trash-card-meta">
+          <span class="${badgeCls}" style="font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600">${badgeLabel}</span>
+          <span>Deleted ${deletedDate}</span>
+          ${t.cwd ? '<span>📁 ' + esc((t.cwd || '').split('/').pop()) + '</span>' : ''}
+        </div>
+        <div class="trash-card-actions">
+          <button class="trash-restore-btn" onclick="restoreFromTrash('${t.id}')">↩ Restore</button>
+          <button class="trash-perma-btn" onclick="permanentDelete('${t.id}')">✕ Delete Forever</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { toast('Error loading trash: ' + e.message, 'error'); }
+}
+
+async function restoreFromTrash(id) {
+  try {
+    await api('POST', `/trash/${id}/restore`);
+    await refreshTrash();
+    toast('Agent restored', 'info');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function permanentDelete(id) {
+  try {
+    await api('DELETE', `/trash/${id}`);
+    await refreshTrash();
+    toast('Permanently deleted', 'info');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function emptyTrash() {
+  try {
+    const items = await api('GET', '/trash');
+    for (const t of items) {
+      await api('DELETE', `/trash/${t.id}`);
+    }
+    await refreshTrash();
+    toast('Trash emptied', 'info');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── Agent Filter Tabs ─────────────────────────────────────────────
+let agentFilter = 'all';
+
+function filterAgents(filter) {
+  agentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === filter);
+  });
+  applyAgentFilter();
+}
+
+function applyAgentFilter() {
+  const grid = document.getElementById('agent-grid');
+  if (!grid) return;
+  grid.querySelectorAll('.agent-card').forEach(card => {
+    const status = card.dataset.status || '';
+    let show = true;
+    if (agentFilter === 'running') {
+      show = status === 'running';
+    } else if (agentFilter === 'done') {
+      show = status === 'done' || status === 'completed' || status === 'stopped';
+    }
+    card.style.display = show ? '' : 'none';
+  });
 }
 
 // ── File Attachments ──────────────────────────────────────────────

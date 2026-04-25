@@ -53,7 +53,7 @@ def _init_db():
             prompt TEXT, created_at TEXT, finished_at TEXT,
             total_cost REAL, usage TEXT, branch TEXT
         )""")
-        for col, ctype in [("finished_at","TEXT"),("total_cost","REAL"),("usage","TEXT"),("branch","TEXT"),("advisor","TEXT"),("advisor_model","TEXT")]:
+        for col, ctype in [("finished_at","TEXT"),("total_cost","REAL"),("usage","TEXT"),("branch","TEXT"),("advisor","TEXT"),("advisor_model","TEXT"),("deleted_at","TEXT")]:
             try:
                 con.execute(f"ALTER TABLE tasks ADD COLUMN {col} {ctype}")
                 con.commit()
@@ -102,20 +102,21 @@ def _save(task: dict):
         return
     with _db() as con:
         con.execute("""INSERT OR REPLACE INTO tasks
-            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at, total_cost, usage, branch, advisor, advisor_model)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (id, label, status, history, session_id, cwd, mode, model, prompt, created_at, finished_at, total_cost, usage, branch, advisor, advisor_model, deleted_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (task["id"], task["label"], task["status"],
              json.dumps(task["history"]), task["session_id"],
              task["cwd"], task["mode"], task["model"],
              task["prompt"], task["created_at"], task.get("finished_at"),
              task.get("total_cost", 0), json.dumps(task.get("usage", {})),
-             task.get("branch", ""), task.get("advisor", ""), task.get("advisor_model", "")))
+             task.get("branch", ""), task.get("advisor", ""), task.get("advisor_model", ""),
+             task.get("deleted_at")))
 
 def _load_all() -> dict[str, dict]:
     with _db() as con:
         rows = con.execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
     result = {}
-    cols = ["id","label","status","history","session_id","cwd","mode","model","prompt","created_at","finished_at","total_cost","usage","branch","advisor","advisor_model"]
+    cols = ["id","label","status","history","session_id","cwd","mode","model","prompt","created_at","finished_at","total_cost","usage","branch","advisor","advisor_model","deleted_at"]
     for r in rows:
         t = {}
         for i, col in enumerate(cols):
@@ -505,6 +506,8 @@ async def list_tasks_route():
     monitor.update_task_stats(_tasks)
     result = []
     for t in sorted(_tasks.values(), key=lambda x: x["created_at"], reverse=True):
+        if t.get("deleted_at"):
+            continue
         last = ""
         for msg in reversed(t["history"]):
             if msg.get("role") == "assistant" and not msg.get("metadata"):
@@ -582,14 +585,59 @@ async def resume_task(task_id: str):
 
 @app.delete("/tasks/{task_id}")
 async def delete_task(task_id: str):
-    task = _tasks.pop(task_id, None)
+    """Soft-delete: move task to trash."""
+    task = _tasks.get(task_id)
     if not task:
         raise HTTPException(404, "Task not found")
     task["_stop"] = True
-    task["_deleted"] = True
     provider = _providers.pop(task_id, None)
     if provider:
         await provider.stop()
+    task["deleted_at"] = datetime.now().isoformat()
+    if task["status"] == "running":
+        task["status"] = "stopped"
+        task["finished_at"] = datetime.now().isoformat()
+    _save(task)
+    return {"status": "trashed"}
+
+
+@app.get("/trash")
+async def list_trash():
+    """List trashed tasks."""
+    result = []
+    for t in sorted(_tasks.values(), key=lambda x: x.get("deleted_at") or "", reverse=True):
+        if not t.get("deleted_at"):
+            continue
+        result.append({
+            "id": t["id"], "label": t["label"], "status": t["status"],
+            "created_at": t["created_at"], "finished_at": t.get("finished_at"),
+            "deleted_at": t["deleted_at"],
+            "cwd": t["cwd"], "model": t.get("model"),
+            "total_cost": t.get("total_cost", 0),
+        })
+    return result
+
+
+@app.post("/trash/{task_id}/restore")
+async def restore_task(task_id: str):
+    """Restore a trashed task."""
+    task = _tasks.get(task_id)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    if not task.get("deleted_at"):
+        raise HTTPException(400, "Task is not in trash")
+    task["deleted_at"] = None
+    _save(task)
+    return {"status": "restored"}
+
+
+@app.delete("/trash/{task_id}")
+async def permanent_delete(task_id: str):
+    """Permanently delete a trashed task."""
+    task = _tasks.pop(task_id, None)
+    if not task:
+        raise HTTPException(404, "Task not found")
+    task["_deleted"] = True
     with _db() as con:
         con.execute("DELETE FROM tasks WHERE id=?", (task_id,))
     return {"status": "deleted"}
