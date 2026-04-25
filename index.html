@@ -1363,9 +1363,9 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 }
 
 .chat-input-box:focus-within {
-  border-color: var(--orange);
-  box-shadow: 0 6px 36px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(217, 119, 87, 0.14);
-  transform: translateY(-1px);
+  border-color: var(--bd);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 0 40px rgba(0, 0, 0, 0.1);
+  transform: none;
 }
 
 .chat-input-box.dragover {
@@ -2468,8 +2468,9 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 /* ── Profile / Settings View ────────────────────────────────────── */
 #view-profile {
   overflow-y: auto;
-  padding: 24px;
-  max-width: 640px;
+  padding: 24px 40px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-section {
@@ -3231,6 +3232,16 @@ textarea:focus-visible {
         <div class="settings-row"><label>IP</label><input id="s-vllm-ip" placeholder="localhost"></div>
         <div class="settings-row"><label>Port</label><input id="s-vllm-port" placeholder="8000"></div>
         <div class="settings-row"><label>Model</label><input id="s-vllm-model" placeholder="model path"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Background Vibes</div>
+        <div class="settings-row">
+          <label>Roast Mode</label>
+          <label class="ctrl-check" title="Uses vLLM to generate live roast/hype words from your recent tasks on the background canvas">
+            <input type="checkbox" id="s-vibe-words" onchange="saveVibeWordsSetting()">
+            AI roast words on canvas (needs vLLM)
+          </label>
+        </div>
       </div>
       <div class="settings-actions">
         <button id="settings-apply">Apply Settings</button>
@@ -5437,15 +5448,22 @@ function wireWsDialog() {
 }
 
 // ── Profile / Settings ────────────────────────────────────────────
+function saveVibeWordsSetting() {
+  const el = document.getElementById('s-vibe-words');
+  if (el) localStorage.setItem('vibe_words', el.checked ? '1' : '0');
+}
+
 function loadSettings() {
   pendingTheme = localStorage.getItem('theme') || 'Claude Dark';
   buildThemeGrid();
   const ipEl = document.getElementById('s-vllm-ip');
   const portEl = document.getElementById('s-vllm-port');
   const modelEl = document.getElementById('s-vllm-model');
+  const vibeEl = document.getElementById('s-vibe-words');
   if (ipEl) ipEl.value = localStorage.getItem('vllm_ip') || '192.168.170.76';
   if (portEl) portEl.value = localStorage.getItem('vllm_port') || '8000';
   if (modelEl) modelEl.value = localStorage.getItem('vllm_model') || '';
+  if (vibeEl) vibeEl.checked = localStorage.getItem('vibe_words') === '1';
 }
 
 function wireSettings() {
@@ -5658,12 +5676,18 @@ if (document.readyState === 'loading') {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  const AGENT_LABELS = ['Claude','GPT','Gemini','Copilot','Llama','Mistral','Phi','Qwen','Grok','DeepSeek'];
   const STAR_COUNT = 160;
-  const AGENT_COUNT = 8;
-  const LINK_DIST = 220;
+  const WORD_COUNT = 12;
 
-  let W, H, stars, agents, frame;
+  const FALLBACK_WORDS = [
+    'shipit','todo','fixlater','wip','refactor','debug','deploy',
+    'review','merge','yolo','lgtm','oops','sendhelp','itworks',
+    'whyyyy','404brain','justship','sleepless','coffeemode','blamegit'
+  ];
+
+  let W, H, stars, words, frame;
+  let vibeWords = [...FALLBACK_WORDS];
+  let lastFetch = 0;
 
   function resize() {
     W = canvas.width = canvas.offsetWidth;
@@ -5683,16 +5707,24 @@ if (document.readyState === 'loading') {
     }));
   }
 
-  function initAgents() {
-    agents = Array.from({length: AGENT_COUNT}, (_, i) => ({
-      x: rand(60, W - 60), y: rand(60, H - 60),
-      dx: rand(-0.35, 0.35), dy: rand(-0.35, 0.35),
-      r: rand(18, 28),
-      label: AGENT_LABELS[i % AGENT_LABELS.length],
-      pulse: rand(0, Math.PI * 2),
-      dpulse: rand(0.018, 0.032),
-      hue: rand(20, 45),
-    }));
+  function makeWord(txt) {
+    return {
+      x: rand(40, W - 40), y: rand(40, H - 40),
+      dx: rand(-0.22, 0.22) || 0.1, dy: rand(-0.18, 0.18) || 0.08,
+      text: txt,
+      a: rand(0.08, 0.22),
+      da: rand(-0.0008, 0.0008),
+      fontSize: rand(11, 20),
+      hue: rand(18, 42),
+    };
+  }
+
+  function initWords() {
+    const pool = vibeWords.length ? vibeWords : FALLBACK_WORDS;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    words = Array.from({length: WORD_COUNT}, (_, i) =>
+      makeWord(shuffled[i % shuffled.length])
+    );
   }
 
   function drawStar(s) {
@@ -5702,60 +5734,17 @@ if (document.readyState === 'loading') {
     ctx.fill();
   }
 
-  function drawAgent(a) {
-    const glow = 0.45 + 0.3 * Math.sin(a.pulse);
-    // outer glow ring
-    const grad = ctx.createRadialGradient(a.x, a.y, a.r * 0.5, a.x, a.y, a.r * 2.2);
-    grad.addColorStop(0, `hsla(${a.hue},80%,60%,${glow * 0.35})`);
-    grad.addColorStop(1, `hsla(${a.hue},80%,60%,0)`);
-    ctx.beginPath();
-    ctx.arc(a.x, a.y, a.r * 2.2, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // core circle
-    ctx.beginPath();
-    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
-    ctx.strokeStyle = `hsla(${a.hue},75%,62%,${0.6 + glow * 0.3})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.fillStyle = `hsla(${a.hue},40%,12%,0.85)`;
-    ctx.fill();
-
-    // label
-    ctx.fillStyle = `hsla(${a.hue},70%,72%,${0.7 + glow * 0.25})`;
-    ctx.font = `600 ${Math.round(a.r * 0.52)}px 'SF Mono','Fira Code',monospace`;
-    ctx.textAlign = 'center';
+  function drawWord(w) {
+    ctx.font = `600 ${w.fontSize}px 'SF Mono','Fira Code',monospace`;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(a.label, a.x, a.y);
-  }
-
-  function drawLinks() {
-    for (let i = 0; i < agents.length; i++) {
-      for (let j = i + 1; j < agents.length; j++) {
-        const ai = agents[i], aj = agents[j];
-        const dx = aj.x - ai.x, dy = aj.y - ai.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < LINK_DIST) {
-          const alpha = (1 - dist / LINK_DIST) * 0.28;
-          const grad = ctx.createLinearGradient(ai.x, ai.y, aj.x, aj.y);
-          grad.addColorStop(0, `hsla(${ai.hue},70%,60%,${alpha})`);
-          grad.addColorStop(1, `hsla(${aj.hue},70%,60%,${alpha})`);
-          ctx.beginPath();
-          ctx.moveTo(ai.x, ai.y);
-          ctx.lineTo(aj.x, aj.y);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-        }
-      }
-    }
+    ctx.fillStyle = `hsla(${w.hue},65%,65%,${w.a})`;
+    ctx.fillText(w.text, w.x, w.y);
   }
 
   function tick() {
     ctx.clearRect(0, 0, W, H);
 
-    // stars
     for (const s of stars) {
       s.a += s.da;
       if (s.a > 0.95 || s.a < 0.1) s.da *= -1;
@@ -5765,30 +5754,73 @@ if (document.readyState === 'loading') {
       drawStar(s);
     }
 
-    // links
-    drawLinks();
-
-    // agents
-    for (const a of agents) {
-      a.x += a.dx; a.y += a.dy;
-      if (a.x < a.r || a.x > W - a.r) a.dx *= -1;
-      if (a.y < a.r || a.y > H - a.r) a.dy *= -1;
-      a.pulse += a.dpulse;
-      drawAgent(a);
+    const vibeOn = document.getElementById('s-vibe-words')?.checked;
+    if (vibeOn && words) {
+      for (const w of words) {
+        w.a += w.da;
+        if (w.a > 0.25 || w.a < 0.04) w.da *= -1;
+        w.x += w.dx; w.y += w.dy;
+        if (w.x < 0 || w.x > W) w.dx *= -1;
+        if (w.y < 0 || w.y > H) w.dy *= -1;
+        drawWord(w);
+      }
     }
 
     frame = requestAnimationFrame(tick);
   }
 
+  async function fetchVibeWords() {
+    const now = Date.now();
+    if (now - lastFetch < 60000) return; // refresh every 60s max
+    lastFetch = now;
+    try {
+      const cfg = JSON.parse(localStorage.getItem('agentSettings') || '{}');
+      const ip = cfg.vllmIp || 'localhost';
+      const port = cfg.vllmPort || '8000';
+      const model = cfg.vllmModel || '';
+      // get recent task names for context
+      const tasks = await fetch('/api/tasks?limit=10').then(r => r.json()).catch(() => []);
+      const taskNames = tasks.map(t => t.name || t.prompt || '').filter(Boolean).slice(0, 6).join(', ');
+      const prompt = `You are a roast comedian. Given these recent AI coding tasks: "${taskNames || 'fixing bugs, shipping features, sleeping at desk'}". Generate exactly 20 short funny roast/hype words or phrases (2-4 words max each) that mock or hype up the developer. Make them hilarious. Return ONLY a JSON array of strings, nothing else.`;
+      const res = await fetch(`http://${ip}:${port}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          model: model || 'default',
+          messages: [{role: 'user', content: prompt}],
+          max_tokens: 300, temperature: 1.1,
+        })
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || '';
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          vibeWords = parsed;
+          initWords();
+        }
+      }
+    } catch(e) { /* silently keep fallback */ }
+  }
+
   function start() {
     resize();
     initStars();
-    initAgents();
+    initWords();
     if (frame) cancelAnimationFrame(frame);
     tick();
+    const vibeOn = document.getElementById('s-vibe-words')?.checked;
+    if (vibeOn) fetchVibeWords();
   }
 
-  // Only run when agent tab is visible
+  // re-fetch when vibe toggle changes
+  document.addEventListener('change', e => {
+    if (e.target.id === 's-vibe-words') {
+      if (e.target.checked) fetchVibeWords();
+    }
+  });
+
   const observer = new MutationObserver(() => {
     const view = document.getElementById('view-agent');
     if (!view) return;
@@ -5804,11 +5836,7 @@ if (document.readyState === 'loading') {
     if (view.classList.contains('active')) start();
   }
 
-  window.addEventListener('resize', () => {
-    resize();
-    initStars();
-    initAgents();
-  });
+  window.addEventListener('resize', () => { resize(); initStars(); initWords(); });
 })();
 
 </script>
