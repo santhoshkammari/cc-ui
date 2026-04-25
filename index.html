@@ -1058,6 +1058,87 @@ a:hover { text-decoration: underline; }
 #cb-controls button:hover { opacity: 0.85; }
 #cb-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.upload-btn {
+  background: transparent !important;
+  border: 1px solid var(--bd) !important;
+  color: var(--tx2) !important;
+  font-weight: 400 !important;
+  padding: 4px 7px !important;
+  font-size: 13px !important;
+  border-radius: var(--radius-sm) !important;
+  transition: color var(--transition-fast), border-color var(--transition-fast) !important;
+  display: flex !important;
+  align-items: center;
+}
+.upload-btn:hover {
+  color: var(--tx0) !important;
+  border-color: var(--tx1) !important;
+  opacity: 1 !important;
+}
+
+.cwd-wrap {
+  position: relative;
+}
+.cwd-input {
+  background: transparent;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  color: var(--tx0);
+  font-size: 11px;
+  padding: 5px 10px;
+  width: 500px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+.cwd-input::placeholder { color: var(--tx2); }
+.cwd-input:focus { border-color: var(--blue); }
+
+/* CWD dropdown — opens UPWARD as a floating popup */
+.cwd-dropdown {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.35);
+  z-index: 200;
+  padding: 4px 0;
+}
+.cwd-dropdown.open { display: block; }
+
+.cwd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--tx1);
+  transition: background 0.1s;
+}
+.cwd-item:hover, .cwd-item.highlighted {
+  background: var(--bg2);
+  color: var(--tx0);
+}
+.cwd-icon { font-size: 13px; flex-shrink: 0; }
+.cwd-path { font-weight: 500; color: var(--tx0); }
+.cwd-short {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--tx2);
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 /* ── Git Diff Panel ─────────────────────────────────────────────── */
 .diff-header {
   padding: 8px 12px;
@@ -1816,7 +1897,9 @@ textarea:focus-visible {
         <textarea id="cb-prompt" placeholder="Describe a task..." rows="2"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
-          <button class="attach-btn" onclick="document.getElementById('cb-file-picker').click()" title="Attach files">📎</button>
+          <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 12V3M4.5 6.5L8 3l3.5 3.5M2.5 14h11"/></svg>
+          </button>
           <input type="file" id="cb-file-picker" multiple style="display:none" />
           <select id="cb-agent">
             <option value="claude-code">Claude Code</option>
@@ -2540,9 +2623,24 @@ function showDiff(taskId, ev) {
 
 const TOOL_CATEGORIES = {
   'bash': 'code', 'read': 'code', 'edit': 'code', 'write': 'code',
-  'multiEdit': 'code', 'glob': 'code', 'grep': 'code', 'list': 'code',
-  'search': 'code', 'find': 'code', 'cat': 'code', 'ls': 'code',
-  'websearch': 'web', 'web_search': 'web', 'fetch': 'web',
+  'view': 'code', 'create': 'code',
+  'multiEdit': 'code', 'glob': 'code', 'grep': 'code', 'glob_search': 'code',
+  'list': 'code', 'search': 'code', 'find': 'code', 'cat': 'code', 'ls': 'code',
+  'websearch': 'web', 'web_search': 'web', 'web_fetch': 'web', 'fetch': 'web',
+};
+
+const TOOL_DISPLAY_NAMES = {
+  'bash': '⌘ bash', 'read': '📄 read', 'edit': '✏️ edit', 'write': '📝 write',
+  'view': '👁 view', 'create': '➕ create',
+  'multiEdit': '✏️ multiEdit', 'glob': '🔍 glob', 'grep': '🔎 grep',
+  'glob_search': '🔍 glob', 'list': '📋 list', 'search': '🔎 search',
+  'find': '🔍 find', 'cat': '📄 cat', 'ls': '📂 ls',
+  'websearch': '🌐 search', 'web_search': '🌐 search', 'web_fetch': '🌐 fetch', 'fetch': '🌐 fetch',
+};
+
+const GROUP_LABELS = {
+  'code': '🛠 Code Tools',
+  'web': '🌐 Web Tools',
 };
 
 // Preserve expanded/active state across re-renders
@@ -2681,16 +2779,17 @@ function renderHistoryHtml(history) {
 function renderToolGroupHtml(group, gidx) {
   const count = group.pairs.length;
   const hasRunning = group.pairs.some(p => p.pending);
-  const catLabel = { code: 'code', web: 'web' }[group.category] || group.category;
+  const catLabel = GROUP_LABELS[group.category] || group.category;
   const st = _tgState[_tgTarget];
   const isExpanded = st.expanded.has(gidx);
   const activePairIdx = st.activePill[gidx];
 
   const pills = group.pairs.map((p, pi) => {
     const icon = p.pending ? '⟳' : (p.resultStatus === 'error' ? '❌' : '✓');
+    const displayName = TOOL_DISPLAY_NAMES[p.toolName] || p.toolName;
     const cls = p.pending ? ' tg-pending' : (p.resultStatus === 'error' ? ' tg-error' : '');
     const act = (activePairIdx === String(pi)) ? ' active' : '';
-    return '<button class="tg-pill' + cls + act + '" data-pair="' + pi + '" onclick="toggleToolPair(this)">' + icon + ' ' + esc(p.toolName) + '</button>';
+    return '<button class="tg-pill' + cls + act + '" data-pair="' + pi + '" onclick="toggleToolPair(this)">' + icon + ' ' + esc(displayName) + '</button>';
   }).join('');
 
   const contents = group.pairs.map((p, pi) => {
@@ -3032,6 +3131,10 @@ function wireCwdAutocomplete() {
     } else if (e.key === 'Enter' && cwdSelectedIdx >= 0) {
       e.preventDefault();
       cwdSelect(cwdSelectedIdx);
+    } else if (e.key === 'Enter' && cwdSelectedIdx < 0) {
+      // Enter with no selection — confirm current value and close
+      e.preventDefault();
+      cwdHide();
     } else if (e.key === 'Tab') {
       e.preventDefault();
       if (cwdSelectedIdx >= 0) cwdSelect(cwdSelectedIdx);
@@ -3097,8 +3200,7 @@ function cwdHighlight(idx) {
   const cwdDrop = document.getElementById('cwd-dropdown');
   if (!cwdDrop) return;
   cwdDrop.querySelectorAll('.cwd-item').forEach((el, i) => {
-    el.style.background = i === idx ? 'var(--bg2)' : '';
-    el.style.color = i === idx ? 'var(--tx0)' : '';
+    el.classList.toggle('highlighted', i === idx);
   });
 }
 
