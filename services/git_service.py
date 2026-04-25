@@ -149,3 +149,71 @@ class GitService:
     async def stash_pop(cwd: str) -> dict:
         rc, out, err = await GitService._run(["git", "stash", "pop"], cwd)
         return {"success": rc == 0, "output": out or err}
+
+    @staticmethod
+    async def list_prs(cwd: str, limit: int = 20) -> list[dict]:
+        """List open PRs using gh CLI."""
+        rc, out, err = await GitService._run(
+            ["gh", "pr", "list", "--json",
+             "number,title,author,headRefName,baseRefName,state,url,createdAt,isDraft",
+             "--limit", str(limit)],
+            cwd,
+        )
+        if rc != 0:
+            return []
+        import json
+        try:
+            return json.loads(out)
+        except Exception:
+            return []
+
+    @staticmethod
+    async def create_pr(cwd: str, title: str, body: str = "", base: str = "main", head: str = "") -> dict:
+        """Create a PR using gh CLI."""
+        cmd = ["gh", "pr", "create", "--title", title, "--body", body, "--base", base]
+        if head:
+            cmd.extend(["--head", head])
+        rc, out, err = await GitService._run(cmd, cwd)
+        return {"success": rc == 0, "output": out or err}
+
+    @staticmethod
+    async def merge_pr(cwd: str, pr_number: int, method: str = "merge") -> dict:
+        """Merge a PR using gh CLI."""
+        rc, out, err = await GitService._run(
+            ["gh", "pr", "merge", str(pr_number), f"--{method}"], cwd
+        )
+        return {"success": rc == 0, "output": out or err}
+
+    @staticmethod
+    async def pr_diff(cwd: str, pr_number: int) -> str:
+        """Get diff for a PR using gh CLI."""
+        rc, out, err = await GitService._run(
+            ["gh", "pr", "diff", str(pr_number)], cwd
+        )
+        return out if rc == 0 else err
+
+    @staticmethod
+    async def get_all_diffs(cwd: str) -> dict:
+        """Get staged, unstaged, and untracked diffs."""
+        _, staged, _ = await GitService._run(["git", "diff", "--cached"], cwd)
+        _, unstaged, _ = await GitService._run(["git", "diff"], cwd)
+        _, untracked_files, _ = await GitService._run(
+            ["git", "ls-files", "--others", "--exclude-standard"], cwd
+        )
+        untracked_diff = ""
+        for f in untracked_files.splitlines():
+            if f:
+                try:
+                    fpath = os.path.join(cwd, f)
+                    if os.path.isfile(fpath) and os.path.getsize(fpath) < 50000:
+                        with open(fpath, 'r', errors='replace') as fh:
+                            content = fh.read()
+                        untracked_diff += f"\n--- /dev/null\n+++ b/{f}\n" + "\n".join("+" + line for line in content.splitlines()) + "\n"
+                except Exception:
+                    pass
+        return {
+            "staged": staged,
+            "unstaged": unstaged,
+            "untracked": untracked_diff,
+            "total": staged + "\n" + unstaged + "\n" + untracked_diff,
+        }

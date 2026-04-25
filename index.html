@@ -1042,7 +1042,7 @@ a:hover { text-decoration: underline; }
 
 /* ── Chat Bar ───────────────────────────────────────────────────── */
 #chat-bar {
-  padding: 10px 16px 14px;
+  padding: 10px 25% 14px;
   flex-shrink: 0;
   background: transparent;
   border: none;
@@ -1435,6 +1435,247 @@ a:hover { text-decoration: underline; }
 }
 
 #commit-btn:hover { opacity: 0.9 !important; }
+
+/* ── Git Panel Toggle ──────────────────────────────────────────── */
+.git-toggle-btn {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-sm);
+  color: var(--tx1);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.git-toggle-btn:hover { color: var(--tx0); background: var(--bd); }
+.git-toggle-btn.active { color: var(--green); border-color: var(--green); }
+
+#detail-right.collapsed { display: none; }
+#detail-left.expanded { width: 100%; border-right: none; }
+
+/* ── Git Panel Tabs (Changes / PRs) ────────────────────────────── */
+.git-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg1);
+  flex-shrink: 0;
+}
+.git-tab {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx2);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  text-align: center;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.git-tab:hover { color: var(--tx1); }
+.git-tab.active { color: var(--tx0); border-bottom-color: var(--blue); }
+
+.git-tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.git-tab-content.active { display: flex; }
+
+/* ── File Reviewed Badge ────────────────────────────────────────── */
+.rp-file-reviewed {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--green);
+  color: #000;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.rp-file-unreviewed {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  color: var(--tx2);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.rp-file-unreviewed:hover { background: var(--bd); color: var(--tx1); }
+
+/* ── All Diff Review Banner ──────────────────────────────────────── */
+.all-diff-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+}
+.all-diff-btn {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--bd);
+  background: var(--bg2);
+  color: var(--tx1);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background var(--transition-fast);
+}
+.all-diff-btn:hover { background: var(--bd); color: var(--tx0); }
+.all-diff-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.review-progress {
+  font-size: 10px;
+  color: var(--tx2);
+  margin-left: auto;
+}
+.review-progress .done { color: var(--green); font-weight: 600; }
+
+/* ── AI Commit Button ──────────────────────────────────────────── */
+.ai-commit-wrap {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+.ai-commit-wrap textarea { flex: 1; }
+.ai-commit-btn {
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  color: var(--purple);
+  font-size: 13px;
+  padding: 0 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-commit-btn:hover { background: var(--bd); border-color: var(--purple); }
+.ai-commit-btn.loading { opacity: 0.5; pointer-events: none; }
+
+/* ── PR Section ────────────────────────────────────────────────── */
+.pr-list { flex: 1; overflow-y: auto; }
+.pr-card {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bd);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.pr-card:hover { background: var(--bg1); }
+.pr-card-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tx0);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pr-card-title .pr-num {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 11px;
+}
+.pr-card-meta {
+  font-size: 10px;
+  color: var(--tx2);
+  display: flex;
+  gap: 8px;
+}
+.pr-card.draft { opacity: 0.6; }
+.pr-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.pr-merge-btn {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--green);
+  background: var(--green);
+  color: #000;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pr-merge-btn:hover { opacity: 0.9; }
+.pr-diff-btn {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--bd);
+  background: var(--bg2);
+  color: var(--tx1);
+  font-size: 10px;
+  cursor: pointer;
+}
+.pr-diff-btn:hover { background: var(--bd); color: var(--tx0); }
+
+/* PR Create Form */
+.pr-create-form {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bd);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pr-create-form input, .pr-create-form textarea {
+  width: 100%;
+  background: var(--bg0);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  color: var(--tx0);
+  font-size: 11px;
+  padding: 6px 8px;
+  font-family: inherit;
+  outline: none;
+}
+.pr-create-form input:focus, .pr-create-form textarea:focus { border-color: var(--blue); }
+.pr-create-form textarea { resize: none; min-height: 36px; max-height: 60px; }
+.pr-branch-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--tx2);
+}
+.pr-branch-row select {
+  background: var(--bg0);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  color: var(--tx0);
+  font-size: 10px;
+  padding: 3px 6px;
+  outline: none;
+}
+.pr-create-submit {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--green);
+  background: var(--green);
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.pr-create-submit:hover { opacity: 0.9; }
+
+.pr-empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--tx2);
+  font-size: 12px;
+}
 
 /* ── Workspace View ─────────────────────────────────────────────── */
 #view-workspace {
@@ -2132,9 +2373,10 @@ textarea:focus-visible {
       <span id="detail-title"></span>
       <span id="detail-cost"></span>
       <span id="detail-tokens"></span>
+      <button class="git-toggle-btn" id="git-toggle-btn" onclick="toggleGitPanel()">⎇ Git</button>
     </div>
     <div id="detail-content">
-      <div id="detail-left">
+      <div id="detail-left" class="expanded">
         <div id="detail-conv"></div>
         <div id="detail-chat">
           <div class="chat-input-box">
@@ -2145,20 +2387,51 @@ textarea:focus-visible {
           </div>
         </div>
       </div>
-      <div id="detail-right">
-        <div class="diff-panel-header">
-          <span>⎇ Git Changes</span>
-          <span id="detail-branch"></span>
+      <div id="detail-right" class="collapsed">
+        <!-- Git Panel Tabs -->
+        <div class="git-tabs">
+          <button class="git-tab active" data-git-tab="changes" onclick="switchGitTab('changes')">Changes</button>
+          <button class="git-tab" data-git-tab="prs" onclick="switchGitTab('prs')">PRs</button>
         </div>
-        <div id="detail-commit-box">
-          <textarea id="detail-commit-msg" placeholder="Commit message…" rows="1"></textarea>
-          <div id="detail-commit-actions">
-            <button id="detail-commit-btn">✓ Commit</button>
-            <button id="detail-push-btn">↑ Push</button>
+
+        <!-- Changes Tab -->
+        <div class="git-tab-content active" id="git-changes-tab">
+          <div class="diff-panel-header">
+            <span>⎇ <span id="detail-branch"></span></span>
           </div>
+          <div id="detail-commit-box">
+            <div class="ai-commit-wrap">
+              <textarea id="detail-commit-msg" placeholder="Commit message…" rows="1"></textarea>
+              <button class="ai-commit-btn" id="ai-commit-btn" onclick="aiGenerateCommitMsg()" title="AI generate commit message">✨</button>
+            </div>
+            <div id="detail-commit-actions">
+              <button id="detail-commit-btn">✓ Commit</button>
+              <button id="detail-push-btn">↑ Push</button>
+            </div>
+          </div>
+          <div class="all-diff-bar">
+            <button class="all-diff-btn" id="all-diff-btn" onclick="toggleAllDiffView()">📋 Review All</button>
+            <span class="review-progress" id="review-progress"></span>
+          </div>
+          <div id="detail-files"></div>
+          <div id="detail-diff-content"></div>
         </div>
-        <div id="detail-files"></div>
-        <div id="detail-diff-content"></div>
+
+        <!-- PRs Tab -->
+        <div class="git-tab-content" id="git-prs-tab">
+          <div class="pr-create-form" id="pr-create-form">
+            <input id="pr-title-input" placeholder="PR title…" />
+            <textarea id="pr-body-input" placeholder="Description (optional)" rows="2"></textarea>
+            <div class="pr-branch-row">
+              <span>base:</span>
+              <select id="pr-base-branch"><option>main</option></select>
+              <span>← head:</span>
+              <select id="pr-head-branch"></select>
+            </div>
+            <button class="pr-create-submit" onclick="createPR()">Create PR</button>
+          </div>
+          <div class="pr-list" id="pr-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2235,6 +2508,9 @@ let sidebarTaskId = null;
 let detailTaskId = null;
 let detailGitData = { files: [], branch: '' };
 let detailSelectedFile = null;
+let detailReviewedFiles = new Set();
+let detailGitOpen = false;
+let detailAllDiffMode = false;
 let attachments = [];
 let clickTimer = null;
 let pendingTheme = null;
@@ -2796,6 +3072,8 @@ function wireSidebarClose() {
 function openDetailView(taskId) {
   closeSidebar();
   detailTaskId = taskId;
+  detailReviewedFiles = new Set();
+  detailAllDiffMode = false;
 
   // Hide agents view, show detail view
   const agentsView = document.getElementById('view-agents');
@@ -2803,6 +3081,10 @@ function openDetailView(taskId) {
   if (!detail) return;
   if (agentsView) agentsView.classList.remove('active');
   detail.classList.add('open');
+
+  // Git panel starts collapsed
+  detailGitOpen = false;
+  syncGitPanelState();
 
   const task = tasks.find(t => t.id === taskId);
   if (task) {
@@ -2818,6 +3100,7 @@ function openDetailView(taskId) {
   }
 
   refreshDetailConversation();
+  // Pre-fetch git data (even if panel hidden) so it's ready when toggled
   if (task && task.cwd) {
     refreshDetailGit(task.cwd);
   }
@@ -2848,6 +3131,9 @@ function goBack() {
   detailTaskId = null;
   detailGitData = { files: [], branch: '' };
   detailSelectedFile = null;
+  detailReviewedFiles = new Set();
+  detailGitOpen = false;
+  detailAllDiffMode = false;
   _tgState.detail = { expanded: new Set(), activePill: {} };
   const detail = document.getElementById('detail-view');
   if (detail) detail.classList.remove('open');
@@ -2880,11 +3166,16 @@ function renderDetailFiles() {
   const unstaged = detailGitData.files.filter(f => f.unstaged || f.untracked);
   let html = '';
 
+  const reviewBadge = (fpath) => detailReviewedFiles.has(fpath)
+    ? `<span class="rp-file-reviewed" onclick="event.stopPropagation();toggleFileReviewed('${esc(fpath)}')" title="Mark unreviewed">Viewed</span>`
+    : `<span class="rp-file-unreviewed" onclick="event.stopPropagation();toggleFileReviewed('${esc(fpath)}')" title="Mark as viewed">Review</span>`;
+
   if (staged.length) {
     html += `<div class="rp-section"><div class="rp-section-hdr">Staged (${staged.length})<span class="rp-act" onclick="detailUnstageAll()">Unstage All</span></div>`;
     html += staged.map(f => `<div class="rp-file${detailSelectedFile === f.path ? ' selected' : ''}" onclick="viewDetailDiff('${esc(f.path)}',true)">
       <span class="rp-file-icon file-${f.index}">${f.index}</span>
       <span class="rp-file-name">${esc(f.path)}</span>
+      ${reviewBadge(f.path)}
       <span class="rp-file-action" onclick="event.stopPropagation();detailUnstageFile('${esc(f.path)}')">−</span>
     </div>`).join('');
     html += '</div>';
@@ -2894,6 +3185,7 @@ function renderDetailFiles() {
     html += unstaged.map(f => `<div class="rp-file${detailSelectedFile === f.path ? ' selected' : ''}" onclick="viewDetailDiff('${esc(f.path)}',false)">
       <span class="rp-file-icon file-${f.untracked ? 'U' : f.working}">${f.untracked ? 'U' : f.working}</span>
       <span class="rp-file-name">${esc(f.path)}</span>
+      ${reviewBadge(f.path)}
       <span class="rp-file-action" onclick="event.stopPropagation();detailStageFile('${esc(f.path)}')">+</span>
     </div>`).join('');
     html += '</div>';
@@ -2902,6 +3194,7 @@ function renderDetailFiles() {
     html = '<div style="padding:16px 12px;color:var(--tx2);font-size:12px;text-align:center">Working tree clean ✓</div>';
   }
   el.innerHTML = html;
+  updateReviewProgress();
 }
 
 async function viewDetailDiff(file, staged) {
@@ -2981,12 +3274,220 @@ async function detailPush() {
   } catch (e) { toast('Push failed: ' + e.message, 'error'); }
 }
 
+// ── Git Panel Toggle ──────────────────────────────────────────────
+function toggleGitPanel() {
+  detailGitOpen = !detailGitOpen;
+  syncGitPanelState();
+  if (detailGitOpen) {
+    const task = tasks.find(t => t.id === detailTaskId);
+    if (task && task.cwd) refreshDetailGit(task.cwd);
+  }
+}
+
+function syncGitPanelState() {
+  const left = document.getElementById('detail-left');
+  const right = document.getElementById('detail-right');
+  const btn = document.getElementById('git-toggle-btn');
+  if (!left || !right) return;
+  if (detailGitOpen) {
+    left.classList.remove('expanded');
+    left.style.width = '';
+    right.classList.remove('collapsed');
+    if (btn) btn.classList.add('active');
+  } else {
+    left.classList.add('expanded');
+    right.classList.add('collapsed');
+    if (btn) btn.classList.remove('active');
+  }
+}
+
+// ── Git Sub-tabs (Changes / PRs) ──────────────────────────────────
+function switchGitTab(tab) {
+  document.querySelectorAll('.git-tab').forEach(t => t.classList.toggle('active', t.dataset.gitTab === tab));
+  document.querySelectorAll('.git-tab-content').forEach(c => c.classList.toggle('active', c.id === `git-${tab}-tab`));
+  if (tab === 'prs') refreshPRs();
+}
+
+// ── File Review Tracking ──────────────────────────────────────────
+function toggleFileReviewed(filePath) {
+  if (detailReviewedFiles.has(filePath)) {
+    detailReviewedFiles.delete(filePath);
+  } else {
+    detailReviewedFiles.add(filePath);
+  }
+  renderDetailFiles();
+  updateReviewProgress();
+}
+
+function updateReviewProgress() {
+  const el = document.getElementById('review-progress');
+  if (!el) return;
+  const total = detailGitData.files.length;
+  const reviewed = detailReviewedFiles.size;
+  if (total === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = reviewed === total
+    ? `<span class="done">✓ All ${total} reviewed</span>`
+    : `${reviewed}/${total} reviewed`;
+}
+
+// ── All Diff View ─────────────────────────────────────────────────
+async function toggleAllDiffView() {
+  const btn = document.getElementById('all-diff-btn');
+  const diffEl = document.getElementById('detail-diff-content');
+  if (!diffEl) return;
+  if (detailAllDiffMode) {
+    detailAllDiffMode = false;
+    if (btn) btn.classList.remove('active');
+    diffEl.innerHTML = '';
+    detailSelectedFile = null;
+    renderDetailFiles();
+    return;
+  }
+  detailAllDiffMode = true;
+  if (btn) btn.classList.add('active');
+  detailSelectedFile = null;
+  renderDetailFiles();
+  const cwd = getDetailCwd();
+  if (!cwd) return;
+  try {
+    diffEl.innerHTML = '<div style="padding:12px;color:var(--tx2)">Loading all diffs…</div>';
+    const data = await api('GET', `/git/all-diffs?cwd=${encodeURIComponent(cwd)}`);
+    diffEl.innerHTML = renderDiffHtml(data.total);
+    diffEl.style.display = 'block';
+  } catch (e) {
+    diffEl.innerHTML = `<div style="color:var(--red);padding:8px">${esc(e.message)}</div>`;
+  }
+}
+
+// ── AI Commit Message ─────────────────────────────────────────────
+async function aiGenerateCommitMsg() {
+  const btn = document.getElementById('ai-commit-btn');
+  const msgEl = document.getElementById('detail-commit-msg');
+  if (!btn || !msgEl) return;
+  const cwd = getDetailCwd();
+  if (!cwd) return;
+  btn.classList.add('loading');
+  btn.textContent = '⏳';
+  try {
+    const data = await api('POST', `/git/ai-commit-message?cwd=${encodeURIComponent(cwd)}`);
+    msgEl.value = data.message;
+    toast('AI commit message generated', 'success');
+  } catch (e) {
+    toast('AI message failed: ' + e.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.textContent = '✨';
+  }
+}
+
+// ── PR Functions ──────────────────────────────────────────────────
+async function refreshPRs() {
+  const cwd = getDetailCwd();
+  const listEl = document.getElementById('pr-list');
+  if (!listEl || !cwd) return;
+  listEl.innerHTML = '<div style="padding:12px;color:var(--tx2);font-size:11px">Loading PRs…</div>';
+  try {
+    const prs = await api('GET', `/git/prs?cwd=${encodeURIComponent(cwd)}`);
+    if (!prs.length) {
+      listEl.innerHTML = '<div class="pr-empty">No open PRs</div>';
+      return;
+    }
+    listEl.innerHTML = prs.map(pr => `
+      <div class="pr-card${pr.isDraft ? ' draft' : ''}">
+        <div class="pr-card-title">
+          <span class="pr-num">#${pr.number}</span>
+          ${esc(pr.title)}
+        </div>
+        <div class="pr-card-meta">
+          <span>${esc(pr.headRefName)} → ${esc(pr.baseRefName)}</span>
+          <span>${pr.author?.login || ''}</span>
+          ${pr.isDraft ? '<span style="color:var(--orange)">Draft</span>' : ''}
+        </div>
+        <div class="pr-actions">
+          <button class="pr-diff-btn" onclick="viewPRDiff(${pr.number})">View Diff</button>
+          <button class="pr-merge-btn" onclick="mergePR(${pr.number})">Merge</button>
+        </div>
+      </div>
+    `).join('');
+    // Populate branch selectors
+    populatePRBranches();
+  } catch (e) {
+    listEl.innerHTML = `<div class="pr-empty" style="color:var(--red)">${esc(e.message)}</div>`;
+  }
+}
+
+async function populatePRBranches() {
+  const cwd = getDetailCwd();
+  if (!cwd) return;
+  try {
+    const branches = await api('GET', `/git/branches?cwd=${encodeURIComponent(cwd)}`);
+    const baseEl = document.getElementById('pr-base-branch');
+    const headEl = document.getElementById('pr-head-branch');
+    if (!baseEl || !headEl) return;
+    const currentBranch = branches.find(b => b.current)?.name || '';
+    baseEl.innerHTML = branches.filter(b => !b.name.startsWith('remotes/')).map(b =>
+      `<option value="${esc(b.name)}"${b.name === 'main' ? ' selected' : ''}>${esc(b.name)}</option>`
+    ).join('');
+    headEl.innerHTML = branches.filter(b => !b.name.startsWith('remotes/')).map(b =>
+      `<option value="${esc(b.name)}"${b.name === currentBranch ? ' selected' : ''}>${esc(b.name)}</option>`
+    ).join('');
+  } catch(e) { /* silent */ }
+}
+
+async function createPR() {
+  const cwd = getDetailCwd();
+  if (!cwd) return;
+  const title = document.getElementById('pr-title-input')?.value?.trim();
+  const body = document.getElementById('pr-body-input')?.value?.trim() || '';
+  const base = document.getElementById('pr-base-branch')?.value || 'main';
+  const head = document.getElementById('pr-head-branch')?.value || '';
+  if (!title) { toast('Enter a PR title', 'error'); return; }
+  try {
+    const res = await api('POST', `/git/pr/create?cwd=${encodeURIComponent(cwd)}`, { title, body, base, head });
+    toast('PR created ✓', 'success');
+    document.getElementById('pr-title-input').value = '';
+    document.getElementById('pr-body-input').value = '';
+    refreshPRs();
+  } catch (e) { toast('PR creation failed: ' + e.message, 'error'); }
+}
+
+async function mergePR(prNumber) {
+  const cwd = getDetailCwd();
+  if (!cwd) return;
+  try {
+    await api('POST', `/git/pr/merge?cwd=${encodeURIComponent(cwd)}`, { pr_number: prNumber, method: 'merge' });
+    toast(`PR #${prNumber} merged ✓`, 'success');
+    refreshPRs();
+  } catch (e) { toast('Merge failed: ' + e.message, 'error'); }
+}
+
+async function viewPRDiff(prNumber) {
+  const cwd = getDetailCwd();
+  const diffEl = document.getElementById('detail-diff-content');
+  if (!diffEl || !cwd) return;
+  // Switch to changes tab to show diff
+  switchGitTab('changes');
+  diffEl.innerHTML = '<div style="padding:12px;color:var(--tx2)">Loading PR diff…</div>';
+  try {
+    const data = await api('GET', `/git/pr/${prNumber}/diff?cwd=${encodeURIComponent(cwd)}`);
+    diffEl.innerHTML = renderDiffHtml(data.diff);
+    diffEl.style.display = 'block';
+  } catch (e) {
+    diffEl.innerHTML = `<div style="color:var(--red);padding:8px">${esc(e.message)}</div>`;
+  }
+}
+
 function renderDiffHtml(diffText) {
-  if (!diffText) return '<div style="color:var(--tx2);font-size:11px;padding:8px">No diff</div>';
+  if (!diffText || !diffText.trim()) return '<div style="color:var(--tx2);font-size:11px;padding:8px">No diff</div>';
   const lines = diffText.split('\n');
   let html = '';
   for (const line of lines) {
-    if (line.startsWith('diff --git')) continue;
+    if (line.startsWith('diff --git')) {
+      const match = line.match(/b\/(.+)$/);
+      const fname = match ? match[1] : line;
+      html += `<div class="diff-file-header">${esc(fname)}</div>`;
+      continue;
+    }
     if (line.startsWith('index ') || line.startsWith('--- ') || line.startsWith('+++ ')) continue;
     if (line.startsWith('@@')) html += `<span class="diff-hunk">${esc(line)}</span>`;
     else if (line.startsWith('+')) html += `<span class="diff-add">${esc(line)}</span>`;

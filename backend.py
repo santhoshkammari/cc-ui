@@ -464,6 +464,16 @@ class GitCommitRequest(BaseModel):
     message: str
     add_all: bool = True
 
+class GitPRCreateRequest(BaseModel):
+    title: str
+    body: str = ""
+    base: str = "main"
+    head: str = ""
+
+class GitPRMergeRequest(BaseModel):
+    pr_number: int
+    method: str = "merge"  # merge, squash, rebase
+
 
 # ── Routes: Static ───────────────────────────────────────────────────
 @app.get("/")
@@ -788,17 +798,176 @@ async def git_file_diff(file: str, cwd: str = "", staged: bool = False):
 
 
 @app.post("/git/push")
-async def git_push(cwd: str = ""):
+async def git_push(cwd: str = "", set_upstream: bool = False):
+    cwd = cwd or os.getcwd()
+    cmd = ["git", "push"]
+    if set_upstream:
+        bp = await asyncio.create_subprocess_exec(
+            "git", "branch", "--show-current",
+            cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        bo, _ = await bp.communicate()
+        branch = bo.decode().strip()
+        cmd = ["git", "push", "--set-upstream", "origin", branch]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    output = (stdout.decode() + stderr.decode()).strip()
+    if proc.returncode != 0:
+        if not set_upstream and ("no upstream" in output.lower() or "set-upstream" in output.lower()):
+            return await git_push(cwd=cwd, set_upstream=True)
+        raise HTTPException(400, output)
+    return {"status": "pushed", "output": output}
+
+
+@app.get("/git/prs")
+async def git_list_prs(cwd: str = ""):
     cwd = cwd or os.getcwd()
     proc = await asyncio.create_subprocess_exec(
-        "git", "push",
+        "gh", "pr", "list",
+        "--json", "number,title,author,headRefName,baseRefName,state,url,createdAt,isDraft",
+        "--limit", "20",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise HTTPException(400, stderr.decode().strip())
+    return json.loads(stdout.decode())
+
+
+@app.post("/git/pr/create")
+async def git_create_pr(req: GitPRCreateRequest, cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    cmd = ["gh", "pr", "create", "--title", req.title, "--body", req.body, "--base", req.base]
+    if req.head:
+        cmd.extend(["--head", req.head])
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    output = (stdout.decode() + stderr.decode()).strip()
+    if proc.returncode != 0:
+        raise HTTPException(400, output)
+    return {"status": "created", "url": stdout.decode().strip()}
+
+
+@app.post("/git/pr/merge")
+async def git_merge_pr(req: GitPRMergeRequest, cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    if req.method not in ("merge", "squash", "rebase"):
+        raise HTTPException(400, "method must be merge, squash, or rebase")
+    proc = await asyncio.create_subprocess_exec(
+        "gh", "pr", "merge", str(req.pr_number), f"--{req.method}",
         cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate()
     output = (stdout.decode() + stderr.decode()).strip()
     if proc.returncode != 0:
         raise HTTPException(400, output)
-    return {"status": "pushed", "output": output}
+    return {"status": "merged", "output": output}
+
+
+@app.get("/git/pr/{pr_number}/diff")
+async def git_pr_diff(pr_number: int, cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc = await asyncio.create_subprocess_exec(
+        "gh", "pr", "diff", str(pr_number),
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise HTTPException(400, stderr.decode().strip())
+    return {"pr_number": pr_number, "diff": stdout.decode()}
+
+
+@app.get("/git/all-diffs")
+async def git_all_diffs(cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc1 = await asyncio.create_subprocess_exec(
+        "git", "diff", "--cached",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    staged_out, _ = await proc1.communicate()
+    proc2 = await asyncio.create_subprocess_exec(
+        "git", "diff",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    unstaged_out, _ = await proc2.communicate()
+    proc3 = await asyncio.create_subprocess_exec(
+        "git", "ls-files", "--others", "--exclude-standard",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    untracked_out, _ = await proc3.communicate()
+    untracked_diff = ""
+    for f in untracked_out.decode().strip().splitlines():
+        if f:
+            try:
+                fpath = os.path.join(cwd, f)
+                if os.path.isfile(fpath) and os.path.getsize(fpath) < 50000:
+                    with open(fpath, 'r', errors='replace') as fh:
+                        content = fh.read()
+                    untracked_diff += f"\n--- /dev/null\n+++ b/{f}\n" + "\n".join("+" + line for line in content.splitlines()) + "\n"
+            except Exception:
+                pass
+    return {
+        "staged": staged_out.decode(),
+        "unstaged": unstaged_out.decode(),
+        "untracked": untracked_diff,
+        "total": staged_out.decode() + "\n" + unstaged_out.decode() + "\n" + untracked_diff,
+    }
+
+
+async def _generate_commit_message(diff_text: str) -> str:
+    """Call vLLM to generate commit message from diff."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                "http://192.168.170.76:8000/v1/chat/completions",
+                json={
+                    "model": "",
+                    "messages": [
+                        {"role": "system", "content": "Generate a concise conventional commit message (type: description format) for the following diff. Return ONLY the commit message, no explanation. /no_think"},
+                        {"role": "user", "content": diff_text[:8000]},
+                    ],
+                    "max_tokens": 300,
+                    "temperature": 0.3,
+                },
+            )
+            data = resp.json()
+            msg = data["choices"][0]["message"]["content"].strip()
+            msg = msg.strip('`"\'')
+            # Strip Qwen3 thinking content
+            if '</think>' in msg:
+                msg = msg.split('</think>')[-1].strip()
+            if '<think>' in msg:
+                msg = msg.split('<think>')[0].strip()
+            # If msg still has multi-line thinking, take last non-empty line
+            lines = [l.strip() for l in msg.splitlines() if l.strip()]
+            if len(lines) > 3:
+                # Likely thinking leaked — grab lines that look like a commit msg
+                for l in reversed(lines):
+                    if ':' in l and len(l) < 200:
+                        return l.strip('`"\'')
+            return lines[-1].strip('`"\'') if lines else msg
+    except Exception:
+        return f"Update: changes in {diff_text.count('diff --git')} file(s)"
+
+
+@app.post("/git/ai-commit-message")
+async def git_ai_commit_message(cwd: str = ""):
+    cwd = cwd or os.getcwd()
+    proc = await asyncio.create_subprocess_exec(
+        "git", "diff", "--cached",
+        cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await proc.communicate()
+    diff_text = stdout.decode().strip()
+    if not diff_text:
+        raise HTTPException(400, "No staged changes to generate commit message from")
+    message = await _generate_commit_message(diff_text)
+    return {"message": message}
 
 
 # ── Routes: Scheduler ────────────────────────────────────────────────

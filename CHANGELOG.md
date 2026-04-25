@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-04-25] — Session 4: Rich Git Integration
+
+### Added
+- **Collapsible Git Panel**: Git panel hidden by default in detail view, toggle with "⎇ Git" button in topbar
+- **Git Sub-tabs**: Changes and PRs tabs within the git panel
+- **File Review Tracking**: GitHub-style "Review" / "Viewed" badges per file with progress counter (X/Y reviewed)
+- **All-Diff Review**: "📋 Review All" button shows all staged + unstaged + untracked diffs concatenated
+- **AI Commit Messages**: ✨ button calls vLLM to auto-generate conventional commit messages from staged diff
+- **PR Management**: Create PRs (title, body, base/head branch), list open PRs, view PR diffs, merge PRs — all via `gh` CLI
+- **Enhanced Push**: Auto-retries with `--set-upstream` when no upstream branch configured
+- **Backend Endpoints**: `GET /git/prs`, `POST /git/pr/create`, `POST /git/pr/merge`, `GET /git/pr/{n}/diff`, `GET /git/all-diffs`, `POST /git/ai-commit-message`
+- **Centered Chatbox**: Chat bar uses 25% horizontal padding for aesthetic centered layout
+
+### Changed
+- `backend.py`: Added PR models, AI commit generation with Qwen3 thinking extraction, enhanced push with upstream fallback
+- `services/git_service.py`: Added `list_prs()`, `create_pr()`, `merge_pr()`, `pr_diff()`, `get_all_diffs()` methods
+- `index.html`: Rewrote detail-right panel with tabs, collapsible toggle, review badges, PR form, AI button
+- `renderDiffHtml()`: Now shows file headers from `diff --git` lines for all-diff view
+
 ## [2026-04-25] — Session 3: Features, Fixes & Integrations
 
 ### Added
