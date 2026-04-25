@@ -55,12 +55,14 @@ class OpenAIAgentProvider(BaseProvider):
             )
 
             text_buf = ""
+            last_chunk = None
             async for chunk in stream:
                 if self._stop:
                     yield ProviderEvent(type=EventType.TEXT, content="⏹ *stopped*")
                     yield ProviderEvent(type=EventType.DONE)
                     return
 
+                last_chunk = chunk
                 delta = chunk.choices[0].delta if chunk.choices else None
                 if delta and delta.content:
                     text_buf += delta.content
@@ -75,6 +77,31 @@ class OpenAIAgentProvider(BaseProvider):
         except Exception as e:
             yield ProviderEvent(type=EventType.ERROR, content=str(e))
             return
+
+        # Emit cost event from usage metadata on last chunk
+        from .model_costs import estimate_cost
+        input_tokens = 0
+        output_tokens = 0
+        if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
+            input_tokens = last_chunk.usage.prompt_tokens or 0
+            output_tokens = last_chunk.usage.completion_tokens or 0
+
+        usage = {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
+        total_cost = estimate_cost(
+            model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+        yield ProviderEvent(
+            type=EventType.COST,
+            metadata={
+                "total_cost_usd": total_cost,
+                "usage": usage,
+            },
+        )
 
         yield ProviderEvent(type=EventType.DONE)
 

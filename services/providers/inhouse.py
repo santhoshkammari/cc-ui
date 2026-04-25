@@ -91,12 +91,21 @@ class InhouseProvider(BaseProvider):
                         metadata={"is_error": False},
                     )
                 elif isinstance(event, StepResult):
+                    from .model_costs import estimate_cost
+                    it = event.input_tokens or 0
+                    ot = event.output_tokens or 0
+                    step_cost = estimate_cost(
+                        model or "auto",
+                        input_tokens=it,
+                        output_tokens=ot,
+                    )
                     yield ProviderEvent(
                         type=EventType.COST,
                         metadata={
+                            "total_cost_usd": step_cost,
                             "usage": {
-                                "input_tokens": event.input_tokens or 0,
-                                "output_tokens": event.output_tokens or 0,
+                                "input_tokens": it,
+                                "output_tokens": ot,
                             },
                         },
                     )

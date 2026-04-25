@@ -11,30 +11,31 @@
 
 /* ── Design Tokens ──────────────────────────────────────────────── */
 :root {
-  --bg0: #0d1117;
-  --bg1: #161b22;
-  --bg2: #21262d;
-  --bd: #30363d;
-  --tx0: #e6edf3;
-  --tx1: #8b949e;
-  --tx2: #6e7681;
-  --blue: #388bfd;
-  --green: #3fb950;
-  --orange: #f0883e;
-  --red: #f85149;
-  --purple: #a371f7;
-  --usr-bg: #1f3a5c;
-  --code-bg: #0d1117;
-  --diff-add: #0d1f10;
-  --diff-del: #1f0d0d;
+  /* Claude Dark palette — warm charcoal + terracotta */
+  --bg0: #1a1915;
+  --bg1: #211f1b;
+  --bg2: #2c2a25;
+  --bd: #3d3b34;
+  --tx0: #f5f3ec;
+  --tx1: #b0ada4;
+  --tx2: #706e67;
+  --blue: #7aaee0;
+  --green: #8aab68;
+  --orange: #d97757;
+  --red: #e05a45;
+  --purple: #a896d4;
+  --usr-bg: #2e2118;
+  --code-bg: #15140f;
+  --diff-add: #1c2912;
+  --diff-del: #2e160f;
 
   --nav-h: 48px;
   --sidebar-w: 30%;
   --card-h: 58px;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-pill: 20px;
+  --radius-lg: 14px;
+  --radius-pill: 22px;
   --transition-fast: 0.15s ease;
   --transition-med: 0.25s ease;
   --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,7 +47,7 @@
 body {
   background: var(--bg0);
   color: var(--tx0);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
   height: 100vh;
   overflow: hidden;
   font-size: 15px;
@@ -55,15 +56,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { color: var(--blue); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--orange); text-decoration: none; }
+a:hover { text-decoration: underline; opacity: 0.85; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--tx2); }
 
-::selection { background: rgba(56, 139, 253, 0.3); }
+::selection { background: rgba(217, 119, 87, 0.28); }
 
 /* ── App Shell ──────────────────────────────────────────────────── */
 #app {
@@ -97,7 +98,11 @@ a:hover { text-decoration: underline; }
   color: var(--tx0);
   white-space: nowrap;
   flex-shrink: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+}
+
+.nav-brand .brand-accent {
+  color: var(--orange);
 }
 
 .nav-brand svg,
@@ -136,6 +141,7 @@ a:hover { text-decoration: underline; }
   color: var(--tx0);
   background: var(--bg2);
   font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--orange);
 }
 
 .nav-right {
@@ -224,13 +230,75 @@ a:hover { text-decoration: underline; }
 #agent-grid {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   align-content: start;
   transition: flex var(--transition-slow);
   min-width: 0;
+}
+
+.cwd-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cwd-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cwd-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tx2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cwd-group[data-bucket="running"] .cwd-group-label {
+  color: var(--orange);
+}
+
+.cwd-group-count {
+  font-size: 10px;
+  color: var(--tx2);
+  background: var(--bg2);
+  border-radius: 8px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.cwd-group-line {
+  flex: 1;
+  height: 1px;
+  background: var(--bd);
+  opacity: 0.5;
+}
+
+.cwd-group-chevron {
+  font-size: 10px;
+  color: var(--tx2);
+  flex-shrink: 0;
+}
+
+.cwd-group-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+
+.cwd-group-cards.collapsed {
+  display: none;
 }
 
 #agent-grid:empty::after {
@@ -258,14 +326,14 @@ a:hover { text-decoration: underline; }
 }
 
 .agent-card:hover {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 1px rgba(56, 139, 253, 0.15);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px rgba(217, 119, 87, 0.18);
 }
 
 .agent-card.selected {
-  border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 6%, var(--bg1));
-  box-shadow: 0 0 0 1px rgba(56, 139, 253, 0.25);
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 7%, var(--bg1));
+  box-shadow: 0 0 0 1px rgba(217, 119, 87, 0.28);
 }
 
 /* Status border-left indicators */
@@ -382,6 +450,8 @@ a:hover { text-decoration: underline; }
 .ac-meta-item.cost { color: var(--green); font-weight: 600; }
 .ac-meta-item.tokens { color: var(--tx2); }
 .ac-meta-item.time { color: var(--tx2); }
+.ac-meta-item.ac-cwd { color: var(--tx1); font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: 11px; }
+.ac-meta-item.ac-time { background: none; padding-left: 2px; }
 
 .ac-actions {
   display: flex;
@@ -816,7 +886,7 @@ a:hover { text-decoration: underline; }
   background: transparent;
   border: none;
   color: var(--tx0);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   padding: 10px 14px;
   resize: none;
@@ -914,7 +984,7 @@ a:hover { text-decoration: underline; }
   max-width: 85%;
   padding: 10px 14px;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   word-break: break-word;
 }
@@ -937,7 +1007,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--bd);
   align-self: flex-start;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   width: 100%;
   max-width: 100%;
 }
@@ -947,7 +1017,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--bd);
   border-radius: 3px;
   padding: 1px 5px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
@@ -964,15 +1034,15 @@ a:hover { text-decoration: underline; }
   background: none;
   border: none;
   padding: 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* ── Markdown Rendering ────────────────────────────────────────── */
 .msg .md-h { margin: 10px 0 6px; color: var(--tx0); font-weight: 600; line-height: 1.3; }
-.msg h1.md-h { font-size: 20px; border-bottom: 1px solid var(--bd); padding-bottom: 4px; }
-.msg h2.md-h { font-size: 18px; border-bottom: 1px solid var(--bd); padding-bottom: 3px; }
-.msg h3.md-h { font-size: 16px; }
-.msg h4.md-h, .msg h5.md-h, .msg h6.md-h { font-size: 15px; }
+.msg h1.md-h { font-size: 19px; border-bottom: 1px solid var(--bd); padding-bottom: 4px; }
+.msg h2.md-h { font-size: 17px; border-bottom: 1px solid var(--bd); padding-bottom: 3px; }
+.msg h3.md-h { font-size: 15px; }
+.msg h4.md-h, .msg h5.md-h, .msg h6.md-h { font-size: 14px; }
 
 .msg .md-p { margin: 4px 0; line-height: 1.55; }
 
@@ -983,14 +1053,14 @@ a:hover { text-decoration: underline; }
   padding: 10px 12px;
   overflow-x: auto;
   margin: 8px 0;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 .msg .md-pre code {
   background: none;
   border: none;
   padding: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--tx0);
 }
 
@@ -999,7 +1069,7 @@ a:hover { text-decoration: underline; }
   margin: 8px 0;
   padding: 4px 12px;
   color: var(--tx1);
-  background: rgba(56, 139, 253, 0.05);
+  background: rgba(217, 119, 87, 0.05);
   border-radius: 0 4px 4px 0;
 }
 
@@ -1026,7 +1096,7 @@ a:hover { text-decoration: underline; }
   width: 100%;
   border-collapse: collapse;
   margin: 8px 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 .msg .md-table th, .msg .md-table td {
   border: 1px solid var(--bd);
@@ -1175,9 +1245,9 @@ a:hover { text-decoration: underline; }
 }
 .tg-pill:hover { color: var(--tx0); border-color: var(--tx2); }
 .tg-pill.active {
-  background: rgba(56, 139, 253, 0.15);
+  background: rgba(217, 119, 87, 0.15);
   color: var(--blue);
-  border-color: var(--blue);
+  border-color: var(--orange);
 }
 .tg-error { color: var(--red); border-color: rgba(248, 81, 73, 0.3); }
 .tg-pending { color: var(--orange); border-color: rgba(240, 136, 62, 0.3); }
@@ -1244,15 +1314,15 @@ a:hover { text-decoration: underline; }
 }
 
 .chat-input-box:focus-within {
-  border-color: var(--blue);
-  box-shadow: 0 6px 36px rgba(0, 0, 0, 0.25), 0 0 0 3px rgba(56, 139, 253, 0.12);
+  border-color: var(--orange);
+  box-shadow: 0 6px 36px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(217, 119, 87, 0.14);
   transform: translateY(-1px);
 }
 
 .chat-input-box.dragover {
-  border-color: var(--blue);
+  border-color: var(--orange);
   border-style: dashed;
-  background: rgba(56, 139, 253, 0.06);
+  background: rgba(217, 119, 87, 0.05);
 }
 
 #cb-prompt {
@@ -1262,7 +1332,7 @@ a:hover { text-decoration: underline; }
   background: transparent;
   border: none;
   color: var(--tx0);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.7;
   padding: 12px 18px 4px;
   resize: none;
@@ -1330,7 +1400,7 @@ a:hover { text-decoration: underline; }
 
 #cb-controls select:focus {
   outline: none;
-  border-color: var(--blue);
+  border-color: var(--orange);
 }
 
 #cb-controls button {
@@ -1374,15 +1444,15 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--bd);
   border-radius: var(--radius-md);
   color: var(--tx0);
-  font-size: 13px;
-  padding: 5px 10px;
-  width: 500px;
+  font-size: 12px;
+  padding: 3px 8px;
+  width: 360px;
   outline: none;
   transition: border-color var(--transition-fast);
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 .cwd-input::placeholder { color: var(--tx2); }
-.cwd-input:focus { border-color: var(--blue); }
+.cwd-input:focus { border-color: var(--orange); }
 
 /* CWD dropdown — opens UPWARD as a floating popup */
 .cwd-dropdown {
@@ -1665,7 +1735,7 @@ a:hover { text-decoration: underline; }
   transition: background var(--transition-fast);
 }
 .all-diff-btn:hover { background: var(--bd); color: var(--tx0); }
-.all-diff-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.all-diff-btn.active { background: var(--orange); border-color: var(--orange); color: #fff; }
 
 .review-progress {
   font-size: 12px;
@@ -1775,7 +1845,7 @@ a:hover { text-decoration: underline; }
   font-family: inherit;
   outline: none;
 }
-.pr-create-form input:focus, .pr-create-form textarea:focus { border-color: var(--blue); }
+.pr-create-form input:focus, .pr-create-form textarea:focus { border-color: var(--orange); }
 .pr-create-form textarea { resize: none; min-height: 36px; max-height: 60px; }
 .pr-branch-row {
   display: flex;
@@ -2038,8 +2108,8 @@ a:hover { text-decoration: underline; }
 }
 
 .ws-card:hover {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 1px rgba(56, 139, 253, 0.15);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px rgba(217, 119, 87, 0.15);
 }
 
 .ws-card-name {
@@ -2092,7 +2162,7 @@ a:hover { text-decoration: underline; }
 }
 
 .ws-add-btn:hover {
-  border-color: var(--blue);
+  border-color: var(--orange);
   color: var(--tx0);
 }
 
@@ -2240,7 +2310,7 @@ a:hover { text-decoration: underline; }
 
 .settings-row input:focus,
 .settings-row select:focus {
-  border-color: var(--blue);
+  border-color: var(--orange);
 }
 
 .settings-actions {
@@ -2282,8 +2352,8 @@ a:hover { text-decoration: underline; }
   color: var(--tx1);
 }
 
-.theme-swatch:hover { border-color: var(--blue); }
-.theme-swatch.selected { border-color: var(--blue); }
+.theme-swatch:hover { border-color: var(--orange); }
+.theme-swatch.selected { border-color: var(--orange); }
 
 .swatch-preview {
   height: 36px;
@@ -2382,7 +2452,7 @@ a:hover { text-decoration: underline; }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  #agent-grid {
+  .cwd-group-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -2404,8 +2474,10 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 768px) {
   #agent-grid {
-    grid-template-columns: 1fr;
     padding: 8px;
+  }
+  .cwd-group-cards {
+    grid-template-columns: 1fr;
   }
 
   #agent-sidebar {
@@ -2435,7 +2507,7 @@ a:hover { text-decoration: underline; }
 
   #cb-prompt {
     min-height: 44px;
-    font-size: 15px;
+font-size: 14px;
     padding: 10px 14px 4px;
   }
 
@@ -2569,7 +2641,7 @@ textarea:focus-visible {
   margin-bottom: 12px;
   outline: none;
 }
-#ws-path-input:focus { border-color: var(--blue); }
+#ws-path-input:focus { border-color: var(--orange); }
 #ws-dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -2603,8 +2675,7 @@ textarea:focus-visible {
   <!-- ── Top Navigation Bar ──────────────────────────────────────── -->
   <nav id="top-nav">
     <div class="nav-brand">
-      <span class="nav-logo">AGENT-OS</span>
-      <span class="nav-tagline">Ship · Sleep · Repeat</span>
+      <span class="nav-logo"><span class="brand-accent">AGENT-OS</span></span>
     </div>
     <div class="nav-tabs">
       <button class="nav-tab active" data-tab="agents" onclick="switchTab('agents')">📋 Agents</button>
@@ -2639,7 +2710,7 @@ textarea:focus-visible {
     <!-- Chat Bar -->
     <div id="chat-bar">
       <div class="chat-input-box" id="chat-dropzone">
-        <textarea id="cb-prompt" placeholder="Describe a task..." rows="2"></textarea>
+        <textarea id="cb-prompt" placeholder="Ship Features ..." rows="2"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
           <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
@@ -3130,8 +3201,8 @@ const THEMES = {
   'macOS Dark':       {bg0:'#1c1c1e',bg1:'#2c2c2e',bg2:'#3a3a3c',bd:'#48484a',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a',purple:'#bf5af2','usr-bg':'#0a3055','diff-add':'#0d2b14','diff-del':'#2d1010'},
   'macOS Light':      {bg0:'#f2f2f7',bg1:'#ffffff',bg2:'#e5e5ea',bd:'#c7c7cc',tx0:'#1c1c1e',tx1:'#6c6c70',tx2:'#aeaeb2',blue:'#007aff',green:'#34c759',orange:'#ff9500',red:'#ff3b30',purple:'#af52de','usr-bg':'#d6eaff','diff-add':'#d4f5dc','diff-del':'#ffd5d3'},
   'macOS Glass Dark': {bg0:'#12121480',bg1:'#1e1e2280',bg2:'#2c2c3080',bd:'#ffffff18',tx0:'#f5f5f7',tx1:'#aeaeb2',tx2:'#636366',blue:'#0a84ff',green:'#30d158',orange:'#ff9f0a',red:'#ff453a',purple:'#bf5af2','usr-bg':'#0a3055aa','diff-add':'#0d2b1466','diff-del':'#2d101066',glass:'1'},
-  'Claude Dark':      {bg0:'#141413',bg1:'#1c1b19',bg2:'#252420',bd:'#3a3830',tx0:'#faf9f5',tx1:'#b0aea5',tx2:'#6e6c64',blue:'#6a9bcc',green:'#788c5d',orange:'#d97757',red:'#e05a45',purple:'#9b8ec4','usr-bg':'#2a1f1a','diff-add':'#1a2210','diff-del':'#2a150f'},
-  'Claude Light':     {bg0:'#faf9f5',bg1:'#f0ede4',bg2:'#e8e4d9',bd:'#ccc9be',tx0:'#141413',tx1:'#5c5a54',tx2:'#9b998f',blue:'#6a9bcc',green:'#788c5d',orange:'#d97757',red:'#c0392b',purple:'#8b7db8','usr-bg':'#e8e4d9','diff-add':'#e8f0d8','diff-del':'#fce8e0'},
+  'Claude Dark':      {bg0:'#1a1915',bg1:'#211f1b',bg2:'#2c2a25',bd:'#3d3b34',tx0:'#f5f3ec',tx1:'#b0ada4',tx2:'#706e67',blue:'#7aaee0',green:'#8aab68',orange:'#d97757',red:'#e05a45',purple:'#a896d4','usr-bg':'#2e2118','diff-add':'#1c2912','diff-del':'#2e160f'},
+  'Claude Light':     {bg0:'#f5f3ec',bg1:'#edeae0',bg2:'#e4e0d4',bd:'#ccc8bb',tx0:'#1a1915',tx1:'#5c5a52',tx2:'#9a9890',blue:'#4f86b8',green:'#6a8f50',orange:'#c96a45',red:'#c0392b',purple:'#7c6fb0','usr-bg':'#ecddd5','diff-add':'#dce8cc','diff-del':'#f5ddd6'},
   'Cursor Dark':      {bg0:'#1e1e1e',bg1:'#252526',bg2:'#2d2d30',bd:'#3e3e42',tx0:'#d4d4d4',tx1:'#858585',tx2:'#6a6a6a',blue:'#3794ff',green:'#4ec9b0',orange:'#dcdcaa',red:'#f14c4c',purple:'#c586c0','usr-bg':'#1e3a5f','diff-add':'#1e3a1e','diff-del':'#3e1e1e'},
 };
 
@@ -3151,7 +3222,7 @@ function applyTheme(name) {
 function buildThemeGrid() {
   const grid = document.getElementById('theme-grid');
   if (!grid) return;
-  const current = localStorage.getItem('theme') || 'GitHub Dark';
+  const current = localStorage.getItem('theme') || 'Claude Dark';
   grid.innerHTML = Object.entries(THEMES).map(([name, t]) => {
     const bg = t.glass ? 'linear-gradient(135deg,#1a1a2e,#0a0a0f)' : t.bg1;
     return `<div class="theme-swatch${name === current ? ' selected' : ''}" data-theme="${name}">
@@ -3257,6 +3328,77 @@ async function refreshTasks() {
 }
 
 // ── Agent Card Rendering ──────────────────────────────────────────
+function makeCardHtml(t) {
+  let activity = '';
+  for (let i = t.history ? t.history.length - 1 : -1; i >= 0; i--) {
+    const m = t.history ? t.history[i] : null;
+    if (!m) break;
+    if (m.metadata && m.metadata.title) { activity = m.metadata.title; break; }
+    if (m.role === 'assistant' && !m.metadata) { activity = (m.content || '').substring(0, 120); break; }
+  }
+  if (!activity && t.preview) activity = t.preview;
+
+  const tickerText = esc(t.label) + (activity ? ' — ' + esc(activity) : '');
+  const tokens = formatTokens(t.usage);
+  const isRunning = t.status === 'running';
+  const { label: badgeLabel, cls: badgeCls } = agentBadge(t.model);
+  const gitBranch = t.branch || '';
+  const cwdShort = t.cwd ? t.cwd.replace(/\/+$/, '').split('/').pop() : '';
+  const durationStr = timeAgo(t.created_at);
+  const startStr = t.created_at ? formatDateTime(t.created_at) : '';
+  const endStr = t.finished_at ? formatDateTime(t.finished_at) : '';
+
+  let actionsHtml = '';
+  if (isRunning) {
+    actionsHtml += `<button class="ac-btn" onclick="stopAgent('${t.id}',event)" title="Stop">⏹</button>`;
+  }
+  if (!isRunning && t.status !== 'done') {
+    actionsHtml += `<button class="ac-btn" onclick="resumeAgent('${t.id}',event)" title="Resume">▶</button>`;
+  }
+  actionsHtml += `<button class="ac-btn danger" onclick="deleteAgent('${t.id}',event)" title="Delete">🗑</button>`;
+  actionsHtml += `<button class="ac-btn" onclick="showDiff('${t.id}',event)" title="Diff">±</button>`;
+
+  return `<div class="agent-card ${t.status}${sidebarTaskId === t.id ? ' selected' : ''}" data-id="${t.id}" data-status="${t.status}">
+    <div class="ac-line1">
+      <span class="status-dot ${t.status}"></span>
+      <div class="ac-ticker-wrap"><span class="ac-ticker">${tickerText}</span></div>
+    </div>
+    <div class="ac-line2">
+      <div class="ac-meta">
+        ${cwdShort ? `<span class="ac-meta-item ac-cwd" title="${esc(t.cwd || '')}">${esc(cwdShort)}</span>` : ''}
+        <span class="ac-meta-item ${badgeCls}" title="Agent">${badgeLabel}</span>
+        ${gitBranch ? `<span class="ac-meta-item" title="Branch">⎇ ${esc(gitBranch)}</span>` : ''}
+        ${tokens ? `<span class="ac-meta-item" title="Tokens">${tokens}</span>` : ''}
+        <span class="ac-meta-item ac-time" title="${esc(startStr)}${endStr ? ' → ' + esc(endStr) : ''}">${durationStr}</span>
+      </div>
+      <div class="ac-actions" onclick="event.stopPropagation()">
+        ${actionsHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function timeBucket(isoStr) {
+  if (!isoStr) return 'older';
+  const d = new Date(isoStr);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday - 86400000);
+  const startOfWeek = new Date(startOfToday - 6 * 86400000);
+  if (d >= startOfToday) return 'today';
+  if (d >= startOfYesterday) return 'yesterday';
+  if (d >= startOfWeek) return 'this week';
+  return 'older';
+}
+
+// Persist collapsed state across re-renders
+const collapsedGroups = new Set();
+
+function toggleCwdGroup(key) {
+  if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+  else collapsedGroups.add(key);
+}
+
 function renderAgentCards() {
   const grid = document.getElementById('agent-grid');
   if (!grid) return;
@@ -3266,59 +3408,38 @@ function renderAgentCards() {
     return;
   }
 
-  grid.innerHTML = tasks.map(t => {
-    let activity = '';
-    for (let i = t.history ? t.history.length - 1 : -1; i >= 0; i--) {
-      const m = t.history ? t.history[i] : null;
-      if (!m) break;
-      if (m.metadata && m.metadata.title) { activity = m.metadata.title; break; }
-      if (m.role === 'assistant' && !m.metadata) { activity = (m.content || '').substring(0, 120); break; }
+  // Separate running first, then bucket the rest by time
+  const BUCKETS = ['running', 'today', 'yesterday', 'this week', 'older'];
+  const BUCKET_LABELS = { running: 'Running', today: 'Today', yesterday: 'Yesterday', 'this week': 'This Week', older: 'Older' };
+  const bucketMap = {};
+  BUCKETS.forEach(b => bucketMap[b] = []);
+
+  for (const t of tasks) {
+    if (t.status === 'running') {
+      bucketMap['running'].push(t);
+    } else {
+      bucketMap[timeBucket(t.created_at)].push(t);
     }
-    if (!activity && t.preview) activity = t.preview;
+  }
 
-    const tickerText = esc(t.label) + (activity ? ' — ' + esc(activity) : '');
-    const cwdShort = t.cwd ? t.cwd.split('/').slice(-2).join('/') : '';
-    const tokens = formatTokens(t.usage);
-    const isRunning = t.status === 'running';
-    const { label: badgeLabel, cls: badgeCls } = agentBadge(t.model);
-
-    let gitBranch = '';
-    if (t.branch) gitBranch = t.branch;
-
-    // Time info: start, end, duration
-    const startStr = t.created_at ? formatDateTime(t.created_at) : '';
-    const endStr = t.finished_at ? formatDateTime(t.finished_at) : '';
-    const durationStr = timeAgo(t.created_at);
-
-    let actionsHtml = '';
-    if (isRunning) {
-      actionsHtml += `<button class="ac-btn" onclick="stopAgent('${t.id}',event)" title="Stop">⏹</button>`;
-    }
-    if (!isRunning && t.status !== 'done') {
-      actionsHtml += `<button class="ac-btn" onclick="resumeAgent('${t.id}',event)" title="Resume">▶</button>`;
-    }
-    actionsHtml += `<button class="ac-btn danger" onclick="deleteAgent('${t.id}',event)" title="Delete">🗑</button>`;
-    actionsHtml += `<button class="ac-btn" onclick="showDiff('${t.id}',event)" title="Diff">±</button>`;
-
-    return `<div class="agent-card ${t.status}${sidebarTaskId === t.id ? ' selected' : ''}" data-id="${t.id}" data-status="${t.status}">
-      <div class="ac-line1">
-        <span class="status-dot ${t.status}"></span>
-        <div class="ac-ticker-wrap"><span class="ac-ticker">${tickerText}</span></div>
+  let html = '';
+  for (const bucket of BUCKETS) {
+    const group = bucketMap[bucket];
+    if (!group.length) continue;
+    const isCollapsed = collapsedGroups.has(bucket);
+    const safeKey = bucket.replace(/'/g, "\\'");
+    const cardsHtml = group.map(makeCardHtml).join('');
+    html += `<div class="cwd-group" data-bucket="${bucket}">
+      <div class="cwd-group-header" onclick="toggleCwdGroup('${safeKey}');this.nextElementSibling.classList.toggle('collapsed')">
+        <span class="cwd-group-label">${BUCKET_LABELS[bucket]}</span>
+        <span class="cwd-group-count">${group.length}</span>
+        <span class="cwd-group-line"></span>
+        <span class="cwd-group-chevron">${isCollapsed ? '▸' : '▾'}</span>
       </div>
-      <div class="ac-line2">
-        <div class="ac-meta">
-          ${cwdShort ? `<span class="ac-meta-item" title="Directory">📁 ${esc(cwdShort)}</span>` : ''}
-          ${gitBranch ? `<span class="ac-meta-item" title="Branch">⎇ ${esc(gitBranch)}</span>` : ''}
-          <span class="ac-meta-item ${badgeCls}" title="Agent">${badgeLabel}</span>
-          ${tokens ? `<span class="ac-meta-item" title="Tokens">${tokens}</span>` : ''}
-          <span class="ac-meta-item" title="Started: ${esc(startStr)}${endStr ? ' → Ended: ' + esc(endStr) : ' (running)'}">🕐 ${esc(startStr)}${endStr ? ' → ' + esc(endStr) : ''} (${durationStr})</span>
-        </div>
-        <div class="ac-actions" onclick="event.stopPropagation()">
-          ${actionsHtml}
-        </div>
-      </div>
+      <div class="cwd-group-cards${isCollapsed ? ' collapsed' : ''}">${cardsHtml}</div>
     </div>`;
-  }).join('');
+  }
+  grid.innerHTML = html;
 
   checkTickers();
   applyAgentFilter();
@@ -4379,6 +4500,11 @@ function applyAgentFilter() {
     }
     card.style.display = show ? '' : 'none';
   });
+  // Hide groups where all cards are hidden
+  grid.querySelectorAll('.cwd-group').forEach(group => {
+    const visible = [...group.querySelectorAll('.agent-card')].some(c => c.style.display !== 'none');
+    group.style.display = visible ? '' : 'none';
+  });
 }
 
 // ── File Attachments ──────────────────────────────────────────────
@@ -4639,7 +4765,7 @@ function wireWsDialog() {
 
 // ── Profile / Settings ────────────────────────────────────────────
 function loadSettings() {
-  pendingTheme = localStorage.getItem('theme') || 'GitHub Dark';
+  pendingTheme = localStorage.getItem('theme') || 'Claude Dark';
   buildThemeGrid();
   const ipEl = document.getElementById('s-vllm-ip');
   const portEl = document.getElementById('s-vllm-port');
@@ -4820,7 +4946,7 @@ async function poll() {
 
 // ── Init ──────────────────────────────────────────────────────────
 function init() {
-  applyTheme(localStorage.getItem('theme') || 'GitHub Dark');
+  applyTheme(localStorage.getItem('theme') || 'Claude Dark');
 
   wireTabHandlers();
   wireSidebarClose();

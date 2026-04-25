@@ -79,6 +79,12 @@ class KiviProvider(BaseProvider):
                 if chunk.choices and chunk.choices[0].finish_reason:
                     break
 
+            # Emit cost event (self-hosted = $0)
+            yield ProviderEvent(
+                type=EventType.COST,
+                metadata={"total_cost_usd": 0.0, "usage": {}},
+            )
+
         except ImportError:
             yield ProviderEvent(type=EventType.ERROR, content="openai package required: pip install openai")
             return

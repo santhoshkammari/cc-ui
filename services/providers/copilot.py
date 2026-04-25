@@ -71,6 +71,8 @@ class CopilotProvider(BaseProvider):
         total_cost = 0.0
         usage = {}
         resolved_session_id = None
+        total_input_tokens = 0
+        total_output_tokens = 0
 
         try:
             self._client = CopilotClient()
@@ -155,8 +157,12 @@ class CopilotProvider(BaseProvider):
                 elif ev_type == 'assistant.usage' and data:
                     u = getattr(data, 'usage', None)
                     if u:
-                        usage["input_tokens"] = getattr(u, 'input_tokens', 0) or 0
-                        usage["output_tokens"] = getattr(u, 'output_tokens', 0) or 0
+                        it = getattr(u, 'input_tokens', 0) or 0
+                        ot = getattr(u, 'output_tokens', 0) or 0
+                        total_input_tokens += it
+                        total_output_tokens += ot
+                        usage["input_tokens"] = total_input_tokens
+                        usage["output_tokens"] = total_output_tokens
 
                 elif ev_type == 'subagent.started' and data:
                     agent_id = getattr(data, 'session_id', '') or ''
@@ -196,7 +202,14 @@ class CopilotProvider(BaseProvider):
             self._session = None
             self._client = None
 
-        # Emit cost/session info
+        # Emit cost/session info with calculated cost
+        from .model_costs import estimate_cost
+        if total_input_tokens or total_output_tokens:
+            total_cost = estimate_cost(
+                model,
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+            )
         if resolved_session_id or usage:
             yield ProviderEvent(
                 type=EventType.COST,

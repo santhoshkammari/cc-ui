@@ -60,6 +60,8 @@ class GeminiProvider(BaseProvider):
             )
 
             text_buf = ""
+            total_input_tokens = 0
+            total_output_tokens = 0
             for chunk in response:
                 if self._stop:
                     yield ProviderEvent(type=EventType.TEXT, content="⏹ *stopped*")
@@ -70,6 +72,12 @@ class GeminiProvider(BaseProvider):
                     text_buf += chunk.text
                     yield ProviderEvent(type=EventType.TEXT, content=chunk.text)
 
+                # Capture usage metadata (available in the final chunk or via usage_metadata)
+                if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
+                    um = chunk.usage_metadata
+                    total_input_tokens += getattr(um, 'prompt_token_count', 0) or 0
+                    total_output_tokens += getattr(um, 'candidates_token_count', 0) or 0
+
         except ImportError:
             yield ProviderEvent(
                 type=EventType.ERROR,
@@ -79,6 +87,25 @@ class GeminiProvider(BaseProvider):
         except Exception as e:
             yield ProviderEvent(type=EventType.ERROR, content=str(e))
             return
+
+        # Emit cost event with calculated cost from usage
+        from .model_costs import estimate_cost
+        usage = {
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens,
+        }
+        total_cost = estimate_cost(
+            model,
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
+        )
+        yield ProviderEvent(
+            type=EventType.COST,
+            metadata={
+                "total_cost_usd": total_cost,
+                "usage": usage,
+            },
+        )
 
         yield ProviderEvent(type=EventType.DONE)
 

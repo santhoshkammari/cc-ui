@@ -224,14 +224,17 @@ class VLLMProvider(BaseProvider):
                     "content": result_text[:8000],  # truncate for context limits
                 })
 
-            # Usage info
+            # Usage info (self-hosted = $0 cost)
             if response.usage:
                 yield ProviderEvent(
                     type=EventType.COST,
-                    metadata={"usage": {
-                        "input_tokens": response.usage.prompt_tokens or 0,
-                        "output_tokens": response.usage.completion_tokens or 0,
-                    }},
+                    metadata={
+                        "total_cost_usd": 0.0,
+                        "usage": {
+                            "input_tokens": response.usage.prompt_tokens or 0,
+                            "output_tokens": response.usage.completion_tokens or 0,
+                        },
+                    },
                 )
         else:
             yield ProviderEvent(
@@ -270,10 +273,13 @@ class VLLMProvider(BaseProvider):
             if last_chunk and hasattr(last_chunk, 'usage') and last_chunk.usage:
                 yield ProviderEvent(
                     type=EventType.COST,
-                    metadata={"usage": {
-                        "input_tokens": last_chunk.usage.prompt_tokens or 0,
-                        "output_tokens": last_chunk.usage.completion_tokens or 0,
-                    }},
+                    metadata={
+                        "total_cost_usd": 0.0,
+                        "usage": {
+                            "input_tokens": last_chunk.usage.prompt_tokens or 0,
+                            "output_tokens": last_chunk.usage.completion_tokens or 0,
+                        },
+                    },
                 )
         except Exception as e:
             yield ProviderEvent(type=EventType.ERROR, content=str(e))
