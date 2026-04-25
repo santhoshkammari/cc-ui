@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_VLLM_URL = "http://192.168.170.76:8000"
 DEFAULT_VLLM_MODEL = ""  # empty = vLLM auto-picks the loaded model
-MAX_TOOL_ITERATIONS = 25  # safety limit for agentic loop
+MAX_TOOL_ITERATIONS = 1248  # safety limit for agentic loop
 
 
 class VLLMProvider(BaseProvider):
