@@ -1351,6 +1351,53 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 
 #cb-prompt::placeholder { color: var(--tx2); }
 
+/* ── Slash-command autocomplete ── */
+.slash-suggest {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  right: 12px;
+  margin-bottom: 4px;
+  background: var(--bg1);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 4px 0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.slash-suggest.open { display: block; }
+.slash-suggest-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: background var(--transition-fast);
+}
+.slash-suggest-item:hover,
+.slash-suggest-item.active {
+  background: rgba(217,119,87,.12);
+}
+.slash-suggest-item .slash-cmd {
+  color: var(--orange);
+  font-family: var(--font-mono, 'Fira Code', monospace);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.slash-suggest-item .slash-desc {
+  color: var(--tx2);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .chat-attachments {
   display: flex;
   flex-wrap: wrap;
@@ -2831,8 +2878,9 @@ textarea:focus-visible {
 
     <!-- Chat Bar -->
     <div id="chat-bar">
-      <div class="chat-input-box" id="chat-dropzone">
-        <textarea id="cb-prompt" placeholder="Type a prompt or /model /effort /system /file /fork …" rows="2"></textarea>
+      <div class="chat-input-box" id="chat-dropzone" style="position:relative">
+        <div class="slash-suggest" id="slash-suggest"></div>
+        <textarea id="cb-prompt" placeholder="Type a prompt or / for commands…" rows="2"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
           <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
@@ -4620,6 +4668,87 @@ function parseSlashCommands(text) {
   return { prompt: kept.join('\n').trim(), overrides };
 }
 
+// ── Slash-command autocomplete ──────────────────────────────────────
+const SLASH_COMMANDS = [
+  { cmd: '/model',    arg: '<name>',   desc: 'Override the model (e.g. gpt-4o, sonnet)' },
+  { cmd: '/mode',     arg: '<mode>',   desc: 'Set agent mode (plan, code, architect…)' },
+  { cmd: '/effort',   arg: '<level>',  desc: 'Set effort: low | medium | high | xhigh | max' },
+  { cmd: '/budget',   arg: '<$>',      desc: 'Set max budget in USD' },
+  { cmd: '/system',   arg: '<text>',   desc: 'Override the system prompt' },
+  { cmd: '/file',     arg: '<path>',   desc: 'Attach a file to the task' },
+  { cmd: '/tools',    arg: '<list>',   desc: 'Comma-separated list of allowed tools' },
+  { cmd: '/thinking', arg: '',         desc: 'Enable extended thinking / chain-of-thought' },
+  { cmd: '/fork',     arg: '',         desc: 'Fork the current task into a new session' },
+  { cmd: '/clear',    arg: '',         desc: 'Clear prompt and reset for next task' },
+];
+
+let _slashIdx = -1; // active suggestion index
+
+function slashSuggestOpen() {
+  const box = document.getElementById('slash-suggest');
+  return box && box.classList.contains('open');
+}
+
+function slashSuggestClose() {
+  const box = document.getElementById('slash-suggest');
+  if (box) { box.classList.remove('open'); box.innerHTML = ''; }
+  _slashIdx = -1;
+}
+
+function slashSuggestShow(filter) {
+  const box = document.getElementById('slash-suggest');
+  if (!box) return;
+  const q = filter.toLowerCase();
+  const matches = SLASH_COMMANDS.filter(c => c.cmd.startsWith('/' + q));
+  if (!matches.length) { slashSuggestClose(); return; }
+
+  _slashIdx = 0;
+  box.innerHTML = matches.map((c, i) =>
+    `<div class="slash-suggest-item${i === 0 ? ' active' : ''}" data-idx="${i}" data-cmd="${c.cmd}" data-arg="${c.arg}">
+       <span class="slash-cmd">${c.cmd}${c.arg ? ' ' + c.arg : ''}</span>
+       <span class="slash-desc">${c.desc}</span>
+     </div>`
+  ).join('');
+  box.classList.add('open');
+
+  box.querySelectorAll('.slash-suggest-item').forEach(el => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      slashAccept(el.dataset.cmd, el.dataset.arg);
+    });
+    el.addEventListener('mouseenter', () => {
+      box.querySelector('.slash-suggest-item.active')?.classList.remove('active');
+      el.classList.add('active');
+      _slashIdx = parseInt(el.dataset.idx);
+    });
+  });
+}
+
+function slashAccept(cmd, arg) {
+  const el = document.getElementById('cb-prompt');
+  if (!el) return;
+  const lines = el.value.split('\n');
+  const lastLine = lines.length - 1;
+  // replace the current /… token on the last line
+  lines[lastLine] = cmd + (arg ? ' ' : '') ;
+  el.value = lines.join('\n');
+  el.focus();
+  // place cursor at end
+  el.selectionStart = el.selectionEnd = el.value.length;
+  slashSuggestClose();
+}
+
+function slashSuggestNav(dir) {
+  const box = document.getElementById('slash-suggest');
+  if (!box) return;
+  const items = box.querySelectorAll('.slash-suggest-item');
+  if (!items.length) return;
+  items[_slashIdx]?.classList.remove('active');
+  _slashIdx = (_slashIdx + dir + items.length) % items.length;
+  items[_slashIdx]?.classList.add('active');
+  items[_slashIdx]?.scrollIntoView({ block: 'nearest' });
+}
+
 function getAdvancedExtras() {
   const extras = {};
   const sp = document.getElementById('cb-system-prompt');
@@ -5283,12 +5412,59 @@ function wireKeyboardShortcuts() {
     promptEl.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+
+      // Slash-command autocomplete trigger
+      const val = this.value;
+      const cursor = this.selectionStart;
+      // Find the start of the current line up to cursor
+      const before = val.substring(0, cursor);
+      const lastNl = before.lastIndexOf('\n');
+      const lineStart = before.substring(lastNl + 1);
+      const slashMatch = lineStart.match(/^\/(\S*)$/);
+      if (slashMatch) {
+        slashSuggestShow(slashMatch[1]);
+      } else {
+        slashSuggestClose();
+      }
     });
     promptEl.addEventListener('keydown', function(e) {
+      // Intercept keys when suggestion dropdown is open
+      if (slashSuggestOpen()) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          slashSuggestNav(1);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          slashSuggestNav(-1);
+          return;
+        }
+        if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+          e.preventDefault();
+          const box = document.getElementById('slash-suggest');
+          const active = box?.querySelector('.slash-suggest-item.active');
+          if (active) {
+            slashAccept(active.dataset.cmd, active.dataset.arg);
+          } else {
+            slashSuggestClose();
+            if (e.key === 'Enter') handleSend();
+          }
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          slashSuggestClose();
+          return;
+        }
+      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
+    });
+    promptEl.addEventListener('blur', () => {
+      setTimeout(slashSuggestClose, 150);
     });
   }
 
