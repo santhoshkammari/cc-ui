@@ -724,6 +724,92 @@ async def remove_workspace(ws_id: str):
     return {"status": "deleted"}
 
 
+@app.get("/analytics")
+async def analytics():
+    """Return dashboard analytics computed from tasks DB."""
+    with _db() as con:
+        con.row_factory = sqlite3.Row
+        rows = con.execute("""
+            SELECT id, label, status, cwd, mode, model, total_cost,
+                   usage, created_at, finished_at, deleted_at
+            FROM tasks WHERE deleted_at IS NULL
+        """).fetchall()
+
+    tasks_list = [dict(r) for r in rows]
+    for t in tasks_list:
+        t["usage"] = json.loads(t["usage"] or "{}")
+        t["total_cost"] = t["total_cost"] or 0
+
+    total_tasks = len(tasks_list)
+    total_cost = sum(t["total_cost"] for t in tasks_list)
+    total_input = sum((t["usage"].get("input_tokens", 0) + t["usage"].get("cache_read_input_tokens", 0) + t["usage"].get("cache_creation_input_tokens", 0)) for t in tasks_list)
+    total_output = sum(t["usage"].get("output_tokens", 0) for t in tasks_list)
+    by_status = {}
+    for t in tasks_list:
+        by_status[t["status"]] = by_status.get(t["status"], 0) + 1
+
+    # Folder breakdown
+    folder_map: dict[str, dict] = {}
+    for t in tasks_list:
+        cwd = t["cwd"] or "unknown"
+        # Normalize trailing slashes
+        cwd = cwd.rstrip("/")
+        if cwd not in folder_map:
+            folder_map[cwd] = {"path": cwd, "tasks": 0, "cost": 0, "input_tokens": 0, "output_tokens": 0, "running": 0, "done": 0, "error": 0, "stopped": 0, "models": set()}
+        f = folder_map[cwd]
+        f["tasks"] += 1
+        f["cost"] += t["total_cost"]
+        f["input_tokens"] += (t["usage"].get("input_tokens", 0) + t["usage"].get("cache_read_input_tokens", 0) + t["usage"].get("cache_creation_input_tokens", 0))
+        f["output_tokens"] += t["usage"].get("output_tokens", 0)
+        if t["status"] in f:
+            f[t["status"]] += 1
+        if t["model"]:
+            f["models"].add(t["model"])
+    folders = sorted(folder_map.values(), key=lambda x: x["tasks"], reverse=True)
+    for f in folders:
+        f["models"] = list(f["models"])
+
+    # Agent/model breakdown
+    model_map: dict[str, dict] = {}
+    for t in tasks_list:
+        m = t["model"] or "unknown"
+        if m not in model_map:
+            model_map[m] = {"model": m, "tasks": 0, "cost": 0, "input_tokens": 0, "output_tokens": 0}
+        e = model_map[m]
+        e["tasks"] += 1
+        e["cost"] += t["total_cost"]
+        e["input_tokens"] += (t["usage"].get("input_tokens", 0) + t["usage"].get("cache_read_input_tokens", 0) + t["usage"].get("cache_creation_input_tokens", 0))
+        e["output_tokens"] += t["usage"].get("output_tokens", 0)
+    models = sorted(model_map.values(), key=lambda x: x["tasks"], reverse=True)
+
+    # Daily timeline (last 30 days)
+    from collections import defaultdict
+    daily: dict[str, dict] = defaultdict(lambda: {"date": "", "tasks": 0, "cost": 0, "input_tokens": 0, "output_tokens": 0})
+    for t in tasks_list:
+        if t["created_at"]:
+            day = t["created_at"][:10]
+            d = daily[day]
+            d["date"] = day
+            d["tasks"] += 1
+            d["cost"] += t["total_cost"]
+            d["input_tokens"] += (t["usage"].get("input_tokens", 0) + t["usage"].get("cache_read_input_tokens", 0) + t["usage"].get("cache_creation_input_tokens", 0))
+            d["output_tokens"] += t["usage"].get("output_tokens", 0)
+    timeline = sorted(daily.values(), key=lambda x: x["date"])[-30:]
+
+    return {
+        "summary": {
+            "total_tasks": total_tasks,
+            "total_cost": total_cost,
+            "total_input_tokens": total_input,
+            "total_output_tokens": total_output,
+            "by_status": by_status,
+        },
+        "folders": folders,
+        "models": models,
+        "timeline": timeline,
+    }
+
+
 # ── Routes: Git file-level operations ────────────────────────────────
 @app.get("/git/changed-files")
 async def git_changed_files(cwd: str = ""):
