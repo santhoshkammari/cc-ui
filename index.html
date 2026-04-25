@@ -2946,6 +2946,23 @@ textarea:focus-visible {
 #ws-add-cancel:hover { background: var(--bd); }
 #ws-add-confirm:hover { opacity: 0.9; }
 
+/* ── Agent BG Canvas ───────────────────────────────────────────── */
+#agent-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+#view-agent {
+  position: relative;
+}
+#agent-launch-box {
+  position: relative;
+  z-index: 1;
+}
+
 </style>
 </head>
 <body>
@@ -2990,6 +3007,7 @@ textarea:focus-visible {
 
   <!-- ── Agent Tab (focused chat launcher) ──────────────────────── -->
   <div id="view-agent" class="tab-view active">
+    <canvas id="agent-bg-canvas"></canvas>
     <div id="agent-launch-box">
       <div class="chat-input-box" id="chat-dropzone">
         <textarea id="cb-prompt" placeholder="Describe your task…" rows="4"></textarea>
@@ -5633,6 +5651,165 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+/* ── Agent Background Animation ──────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('agent-bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const AGENT_LABELS = ['Claude','GPT','Gemini','Copilot','Llama','Mistral','Phi','Qwen','Grok','DeepSeek'];
+  const STAR_COUNT = 160;
+  const AGENT_COUNT = 8;
+  const LINK_DIST = 220;
+
+  let W, H, stars, agents, frame;
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function initStars() {
+    stars = Array.from({length: STAR_COUNT}, () => ({
+      x: rand(0, W), y: rand(0, H),
+      r: rand(0.3, 1.4),
+      a: rand(0.2, 0.9),
+      da: rand(-0.004, 0.004),
+      dx: rand(-0.08, 0.08),
+      dy: rand(-0.08, 0.08),
+    }));
+  }
+
+  function initAgents() {
+    agents = Array.from({length: AGENT_COUNT}, (_, i) => ({
+      x: rand(60, W - 60), y: rand(60, H - 60),
+      dx: rand(-0.35, 0.35), dy: rand(-0.35, 0.35),
+      r: rand(18, 28),
+      label: AGENT_LABELS[i % AGENT_LABELS.length],
+      pulse: rand(0, Math.PI * 2),
+      dpulse: rand(0.018, 0.032),
+      hue: rand(20, 45),
+    }));
+  }
+
+  function drawStar(s) {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(245,243,236,${s.a})`;
+    ctx.fill();
+  }
+
+  function drawAgent(a) {
+    const glow = 0.45 + 0.3 * Math.sin(a.pulse);
+    // outer glow ring
+    const grad = ctx.createRadialGradient(a.x, a.y, a.r * 0.5, a.x, a.y, a.r * 2.2);
+    grad.addColorStop(0, `hsla(${a.hue},80%,60%,${glow * 0.35})`);
+    grad.addColorStop(1, `hsla(${a.hue},80%,60%,0)`);
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, a.r * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // core circle
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${a.hue},75%,62%,${0.6 + glow * 0.3})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = `hsla(${a.hue},40%,12%,0.85)`;
+    ctx.fill();
+
+    // label
+    ctx.fillStyle = `hsla(${a.hue},70%,72%,${0.7 + glow * 0.25})`;
+    ctx.font = `600 ${Math.round(a.r * 0.52)}px 'SF Mono','Fira Code',monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(a.label, a.x, a.y);
+  }
+
+  function drawLinks() {
+    for (let i = 0; i < agents.length; i++) {
+      for (let j = i + 1; j < agents.length; j++) {
+        const ai = agents[i], aj = agents[j];
+        const dx = aj.x - ai.x, dy = aj.y - ai.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < LINK_DIST) {
+          const alpha = (1 - dist / LINK_DIST) * 0.28;
+          const grad = ctx.createLinearGradient(ai.x, ai.y, aj.x, aj.y);
+          grad.addColorStop(0, `hsla(${ai.hue},70%,60%,${alpha})`);
+          grad.addColorStop(1, `hsla(${aj.hue},70%,60%,${alpha})`);
+          ctx.beginPath();
+          ctx.moveTo(ai.x, ai.y);
+          ctx.lineTo(aj.x, aj.y);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+
+    // stars
+    for (const s of stars) {
+      s.a += s.da;
+      if (s.a > 0.95 || s.a < 0.1) s.da *= -1;
+      s.x += s.dx; s.y += s.dy;
+      if (s.x < 0) s.x = W; if (s.x > W) s.x = 0;
+      if (s.y < 0) s.y = H; if (s.y > H) s.y = 0;
+      drawStar(s);
+    }
+
+    // links
+    drawLinks();
+
+    // agents
+    for (const a of agents) {
+      a.x += a.dx; a.y += a.dy;
+      if (a.x < a.r || a.x > W - a.r) a.dx *= -1;
+      if (a.y < a.r || a.y > H - a.r) a.dy *= -1;
+      a.pulse += a.dpulse;
+      drawAgent(a);
+    }
+
+    frame = requestAnimationFrame(tick);
+  }
+
+  function start() {
+    resize();
+    initStars();
+    initAgents();
+    if (frame) cancelAnimationFrame(frame);
+    tick();
+  }
+
+  // Only run when agent tab is visible
+  const observer = new MutationObserver(() => {
+    const view = document.getElementById('view-agent');
+    if (!view) return;
+    if (view.classList.contains('active')) {
+      start();
+    } else {
+      if (frame) { cancelAnimationFrame(frame); frame = null; }
+    }
+  });
+  const view = document.getElementById('view-agent');
+  if (view) {
+    observer.observe(view, {attributes: true, attributeFilter: ['class']});
+    if (view.classList.contains('active')) start();
+  }
+
+  window.addEventListener('resize', () => {
+    resize();
+    initStars();
+    initAgents();
+  });
+})();
 
 </script>
 </body>
