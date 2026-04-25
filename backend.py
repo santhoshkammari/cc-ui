@@ -159,6 +159,7 @@ async def _run_task(task: dict):
         "opencode":    "opencode",
         "copilot":     "copilot",
         "local":       "vllm",
+        "gemini":      "gemini",
     }
 
     # Map short model names to specific Claude model IDs
@@ -179,9 +180,16 @@ async def _run_task(task: dict):
         extra = task.setdefault("extra", {})
         if not extra.get("vllm_url"):
             extra["vllm_url"] = "http://192.168.170.76:8000"
-        # Empty model string lets vLLM auto-pick the loaded model
         if "vllm_model" not in extra:
             extra["vllm_model"] = ""
+
+    # For "gemini" agent, pass gemini model from extra
+    if model_name == "gemini":
+        extra = task.setdefault("extra", {})
+        if extra.get("gemini_model"):
+            extra["model_override"] = extra["gemini_model"]
+        if extra.get("gemini_api_key"):
+            extra["api_key"] = extra["gemini_api_key"]
 
     log.info("_run_task starting: agent=%s provider=%s prompt=%s", model_name, provider_name, task["prompt"][:60])
     try:
@@ -205,6 +213,13 @@ async def _run_task(task: dict):
         api_key=task.get("extra", {}).get("vllm_key") or task.get("extra", {}).get("api_key") or "",
         extra=task.get("extra", {}),
     )
+
+    # Apply slash-command overrides from extra
+    sc = task.get("extra", {}).get("_slash_overrides", {})
+    if sc.get("model"):
+        config.model = sc["model"]
+    if sc.get("mode"):
+        config.mode = sc["mode"]
 
     history_snapshot = task["history"][:]
     tool_calls: list[list] = []  # [title, content, status]
@@ -591,6 +606,37 @@ async def resume_task(task_id: str):
     task["_stop"] = False
     asyncio.create_task(_run_task(task))
     return {"id": task_id, "status": "running"}
+
+
+@app.post("/tasks/{task_id}/fork")
+async def fork_task(task_id: str):
+    """Fork a task: clone history into a new task with a new session."""
+    original = _tasks.get(task_id)
+    if not original:
+        raise HTTPException(404, "Task not found")
+    new_id = str(uuid.uuid4())
+    forked = {
+        "id": new_id,
+        "label": f"⑂ {original['label']}",
+        "status": "stopped",
+        "history": list(original["history"]),
+        "session_id": None,
+        "cwd": original["cwd"],
+        "mode": original["mode"],
+        "model": original["model"],
+        "prompt": original["prompt"],
+        "created_at": datetime.now().isoformat(),
+        "_stop": False,
+        "total_cost": 0,
+        "usage": {},
+        "branch": original.get("branch", ""),
+        "extra": {**original.get("extra", {}), "fork": True},
+        "advisor": original.get("advisor", ""),
+        "advisor_model": original.get("advisor_model", ""),
+    }
+    _tasks[new_id] = forked
+    _save(forked)
+    return {"id": new_id, "label": forked["label"], "status": "stopped", "forked_from": task_id}
 
 
 @app.delete("/tasks/{task_id}")
@@ -1216,6 +1262,7 @@ _AGENTS = [
     {"id": "opencode",    "name": "OpenCode",    "provider": "opencode", "description": "Open-source agentic coding CLI"},
     {"id": "copilot",     "name": "Copilot",     "provider": "copilot", "description": "GitHub Copilot SDK agent"},
     {"id": "local",       "name": "Local",        "provider": "vllm", "description": "Local vLLM model (Qwen 3.5-9B)"},
+    {"id": "gemini",      "name": "Gemini",       "provider": "gemini", "description": "Google Gemini — fast streaming, great for brainstorming"},
 ]
 
 

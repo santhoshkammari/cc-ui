@@ -707,6 +707,15 @@ a:hover { text-decoration: underline; opacity: 0.85; }
   color: #fff;
   background: var(--green, #3fb950);
 }
+.detail-action-btn.fork {
+  color: var(--purple, #a896d4);
+  border-color: var(--purple, #a896d4);
+  background: none;
+}
+.detail-action-btn.fork:hover {
+  color: #fff;
+  background: var(--purple, #a896d4);
+}
 .detail-action-btn.visible {
   display: inline-block;
 }
@@ -1417,6 +1426,45 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 
 #cb-controls button:hover { opacity: 0.85; }
 #cb-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Advanced panel toggle */
+.cb-toggle-btn {
+  background: transparent !important;
+  border: 1px solid var(--bd) !important;
+  color: var(--tx2) !important;
+  font-weight: 400 !important;
+  padding: 3px 7px !important;
+  font-size: 14px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast) !important;
+}
+.cb-toggle-btn:hover { color: var(--tx0) !important; border-color: var(--orange) !important; opacity: 1 !important; }
+.cb-toggle-btn.active { color: var(--orange) !important; border-color: var(--orange) !important; }
+
+/* Advanced controls panel */
+.cb-advanced-panel {
+  padding: 8px 14px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--bd) 50%, transparent);
+}
+.adv-row { margin-bottom: 6px; }
+.adv-row-inline { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.adv-label { display: block; font-size: 11px; color: var(--tx2); margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.adv-textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--radius-sm);
+  color: var(--tx0); font-size: 12px; padding: 5px 8px; resize: vertical; min-height: 28px; max-height: 120px;
+  outline: none; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+.adv-textarea:focus { border-color: var(--orange); }
+.adv-field { display: flex; flex-direction: column; }
+.adv-field select, .adv-input {
+  background: var(--bg2); border: 1px solid var(--bd); border-radius: var(--radius-sm);
+  color: var(--tx0); font-size: 12px; padding: 4px 6px; outline: none;
+}
+.adv-field select:focus, .adv-input:focus { border-color: var(--orange); }
+.adv-input { width: 80px; }
+.adv-field label { font-size: 12px; color: var(--tx1); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.adv-field label input[type="checkbox"] { accent-color: var(--orange); }
 
 .upload-btn {
   background: transparent !important;
@@ -2333,6 +2381,80 @@ a:hover { text-decoration: underline; opacity: 0.85; }
 .settings-actions button:hover,
 #settings-apply:hover { opacity: 0.9; }
 
+/* ── Docs Content ───────────────────────────────────────────────── */
+.docs-content {
+  background: var(--bg0);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.docs-h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 20px 0 10px;
+}
+.docs-h3:first-child { margin-top: 0; }
+.docs-p {
+  color: var(--tx1);
+  margin-bottom: 12px;
+}
+.docs-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+.docs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.docs-table th {
+  text-align: left;
+  color: var(--tx2);
+  font-weight: 600;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--bd);
+  white-space: nowrap;
+}
+.docs-table td {
+  color: var(--tx1);
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(61,59,52,0.4);
+  vertical-align: top;
+}
+.docs-table tr:last-child td { border-bottom: none; }
+.docs-table td:first-child { color: var(--tx0); }
+.docs-table code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  background: var(--bg2);
+  color: var(--blue);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.status-done {
+  color: var(--green) !important;
+  font-weight: 600;
+}
+.status-todo {
+  color: var(--tx2) !important;
+}
+.docs-list {
+  color: var(--tx1);
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+.docs-list li {
+  margin-bottom: 6px;
+}
+.docs-list li strong {
+  color: var(--tx0);
+}
+
 /* ── Theme Grid ─────────────────────────────────────────────────── */
 #theme-grid {
   display: grid;
@@ -2710,7 +2832,7 @@ textarea:focus-visible {
     <!-- Chat Bar -->
     <div id="chat-bar">
       <div class="chat-input-box" id="chat-dropzone">
-        <textarea id="cb-prompt" placeholder="Ship Features ..." rows="2"></textarea>
+        <textarea id="cb-prompt" placeholder="Type a prompt or /model /effort /system /file /fork …" rows="2"></textarea>
         <div class="chat-attachments" id="cb-attachments"></div>
         <div id="cb-controls">
           <button class="upload-btn" onclick="document.getElementById('cb-file-picker').click()" title="Upload files">
@@ -2722,12 +2844,43 @@ textarea:focus-visible {
             <option value="claude-code">Claude Code</option>
             <option value="opencode">OpenCode</option>
             <option value="copilot">Copilot</option>
+            <option value="gemini">Gemini</option>
           </select>
           <!-- mode is always bypassPermissions, no selector needed -->
           <div style="flex:1"></div>
+          <button class="cb-toggle-btn" id="cb-advanced-toggle" onclick="toggleAdvancedPanel()" title="Advanced options">⚙</button>
           <div class="cwd-wrap">
             <input class="cwd-input" id="cb-cwd" placeholder="~/project" autocomplete="off" />
             <div class="cwd-dropdown" id="cwd-dropdown"></div>
+          </div>
+        </div>
+        <!-- Advanced controls panel (hidden by default) -->
+        <div id="cb-advanced" class="cb-advanced-panel" style="display:none">
+          <div class="adv-row">
+            <label class="adv-label">System Prompt</label>
+            <textarea id="cb-system-prompt" class="adv-textarea" placeholder="Override system prompt…" rows="2"></textarea>
+          </div>
+          <div class="adv-row adv-row-inline">
+            <div class="adv-field">
+              <label class="adv-label">Effort</label>
+              <select id="cb-effort">
+                <option value="">default</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+                <option value="xhigh">xhigh</option>
+                <option value="max">max</option>
+              </select>
+            </div>
+            <div class="adv-field">
+              <label class="adv-label">Max Budget $</label>
+              <input id="cb-budget" type="number" step="0.50" min="0" placeholder="∞" class="adv-input" />
+            </div>
+            <div class="adv-field">
+              <label class="adv-label" style="cursor:pointer">
+                <input type="checkbox" id="cb-thinking" /> Thinking
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -2746,6 +2899,7 @@ textarea:focus-visible {
       <div class="detail-agent-actions" id="detail-agent-actions">
         <button class="detail-action-btn stop" id="detail-stop-btn" onclick="detailStopAgent()" title="Stop agent">⏹ Stop</button>
         <button class="detail-action-btn resume" id="detail-resume-btn" onclick="detailResumeAgent()" title="Resume agent">▶ Resume</button>
+        <button class="detail-action-btn fork" id="detail-fork-btn" onclick="detailForkAgent()" title="Fork session">⑂ Fork</button>
       </div>
       <div class="detail-stats">
         <span id="detail-cost"></span>
@@ -2902,6 +3056,130 @@ textarea:focus-visible {
       <div class="settings-actions">
         <button id="settings-apply">Apply Settings</button>
       </div>
+
+      <!-- ── CLI Reference & Roadmap ──────────────────────────────── -->
+      <div class="settings-section" style="margin-top:40px;">
+        <div class="settings-label">CLI Power Reference &amp; Feature Roadmap</div>
+        <div class="docs-content">
+
+<h3 class="docs-h3">What the chatbox can do today</h3>
+<p class="docs-p">Every message you type is routed through the same provider pipeline the CLIs use. Claude Code, OpenCode, Copilot, and Local (vLLM) are all live. Switching the agent dropdown changes which binary/SDK handles the run — the chatbox is the unified mouth for all of them.</p>
+
+<h3 class="docs-h3">Claude Code flags — supported via UI</h3>
+<div class="docs-table-wrap">
+<table class="docs-table">
+<thead><tr><th>UI Control</th><th>Equivalent CLI flag</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Agent dropdown → Claude Code</td><td><code>claude</code></td><td>Launches with bypassPermissions by default</td></tr>
+<tr><td>Model picker (sonnet/opus/haiku)</td><td><code>--model claude-sonnet-4-6</code></td><td>Aliases resolved on backend</td></tr>
+<tr><td>Mode selector (plan/auto/bypass)</td><td><code>--permission-mode</code></td><td>plan = read-only; auto = AI decides; bypass = no prompts</td></tr>
+<tr><td>CWD input</td><td><code>--add-dir</code> + working directory</td><td>Sets the root for all file tools</td></tr>
+<tr><td>Session ID field</td><td><code>--session-id &lt;uuid&gt;</code></td><td>Resume exact prior conversation</td></tr>
+<tr><td>Continue button</td><td><code>-c / --continue</code></td><td>Resumes most recent session in that CWD</td></tr>
+<tr><td>Send message after task done</td><td>Multi-turn stdin loop</td><td>Keeps session alive, sends follow-up prompt</td></tr>
+<tr><td>Stop button</td><td>Ctrl-C / SIGINT</td><td>Graceful provider.stop()</td></tr>
+<tr><td>Advisor panel</td><td><code>--agents '{"reviewer": {...}}'</code></td><td>Second agent reviews primary output</td></tr>
+<tr><td>Task cost display</td><td>(not in CLI, only JSON output)</td><td>Cost tracked per session in DB</td></tr>
+<tr><td>Scheduler jobs</td><td><code>--print -p "…" | cron</code></td><td>UI native; CLI needs external cron</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="docs-h3">OpenCode flags — supported via UI</h3>
+<div class="docs-table-wrap">
+<table class="docs-table">
+<thead><tr><th>UI Control</th><th>Equivalent CLI flag</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Agent dropdown → OpenCode</td><td><code>opencode run</code></td><td>Headless server mode under the hood</td></tr>
+<tr><td>Model picker</td><td><code>-m provider/model</code></td><td>Format: anthropic/claude-sonnet-4-6</td></tr>
+<tr><td>Continue session</td><td><code>-c --continue</code></td><td>Session persisted in opencode DB</td></tr>
+<tr><td>Session ID field</td><td><code>-s --session &lt;id&gt;</code></td><td>Resume specific session by ID</td></tr>
+<tr><td>Fork checkbox (planned)</td><td><code>--fork</code></td><td>Branch a session without mutating original</td></tr>
+<tr><td>Thinking toggle (planned)</td><td><code>--thinking</code></td><td>Show reasoning blocks in output</td></tr>
+<tr><td>CWD input</td><td><code>--dir</code></td><td>Working directory for the agent</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="docs-h3">Gemini CLI flags — supported via UI</h3>
+<div class="docs-table-wrap">
+<table class="docs-table">
+<thead><tr><th>UI Control</th><th>Equivalent CLI flag</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Agent dropdown → Gemini (planned)</td><td><code>gemini -p "…"</code></td><td>Provider not wired yet — see roadmap</td></tr>
+<tr><td>Model picker</td><td><code>-m gemini-2.5-pro</code></td><td>Any Gemini model string</td></tr>
+<tr><td>Mode → plan</td><td><code>--approval-mode plan</code></td><td>Read-only, no writes</td></tr>
+<tr><td>Mode → auto</td><td><code>--approval-mode auto_edit</code></td><td>Auto-approve edits, prompt for rest</td></tr>
+<tr><td>Mode → bypass</td><td><code>--approval-mode yolo</code></td><td>Auto-approve everything</td></tr>
+<tr><td>Resume session</td><td><code>-r latest</code></td><td>Gemini uses index-based resume</td></tr>
+<tr><td>CWD / extra dirs</td><td><code>--include-directories</code></td><td>Comma-separated extra workspace dirs</td></tr>
+<tr><td>Sandbox toggle (planned)</td><td><code>-s --sandbox</code></td><td>Isolated execution environment</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="docs-h3">Feature Roadmap — CLI parity gaps to close</h3>
+<div class="docs-table-wrap">
+<table class="docs-table">
+<thead><tr><th>Feature</th><th>CLI Source</th><th>Priority</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Gemini provider wiring</td><td>Gemini CLI <code>-p</code> headless</td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Session fork UI</td><td>OpenCode <code>--fork</code>, Claude <code>--fork-session</code></td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Thinking blocks toggle</td><td>OpenCode <code>--thinking</code></td><td>Medium</td><td class="status-done">Done</td></tr>
+<tr><td>Effort level selector</td><td>Claude <code>--effort low/medium/high/xhigh/max</code></td><td>Medium</td><td class="status-done">Done</td></tr>
+<tr><td>Max budget USD input</td><td>Claude <code>--max-budget-usd</code></td><td>Medium</td><td class="status-done">Done</td></tr>
+<tr><td>Allowed/disallowed tools</td><td>Claude <code>--allowedTools / --disallowedTools</code></td><td>Medium</td><td class="status-done">Done</td></tr>
+<tr><td>Custom system prompt</td><td>Claude <code>--system-prompt / --append-system-prompt</code></td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>MCP server config panel</td><td>Claude/Gemini <code>--mcp-config</code></td><td>High</td><td class="status-todo">TODO</td></tr>
+<tr><td>File attachments on prompt</td><td>OpenCode <code>-f --file</code>, Claude <code>--file</code></td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Worktree per task</td><td>Claude/Gemini <code>-w --worktree</code></td><td>Medium</td><td class="status-todo">TODO</td></tr>
+<tr><td>Sandbox toggle</td><td>Gemini <code>-s --sandbox</code></td><td>Low</td><td class="status-todo">TODO</td></tr>
+<tr><td>Session export/import</td><td>OpenCode <code>export / import</code></td><td>Medium</td><td class="status-todo">TODO</td></tr>
+<tr><td>OpenCode stats panel</td><td>OpenCode <code>stats</code> (token usage/cost history)</td><td>Low</td><td class="status-todo">TODO</td></tr>
+<tr><td>PR auto-run (opencode pr)</td><td>OpenCode <code>pr &lt;number&gt;</code></td><td>Medium</td><td class="status-todo">TODO</td></tr>
+<tr><td>Output format (JSON/stream)</td><td>Claude <code>--output-format stream-json</code></td><td>Low</td><td class="status-done">Done (internal)</td></tr>
+<tr><td>Multi-agent (advisor)</td><td>Claude <code>--agents</code></td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Session resume / continue</td><td>Claude <code>-c</code>, OpenCode <code>-c</code></td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Background scheduler</td><td>(CLI needs cron; UI native)</td><td>High</td><td class="status-done">Done</td></tr>
+<tr><td>Git commit/branch/PR from UI</td><td>(CLI needs gh + shell)</td><td>High</td><td class="status-done">Done</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="docs-h3">UI-only superpowers (no CLI equivalent)</h3>
+<ul class="docs-list">
+  <li><strong>Task history DB</strong> — every run is persisted, searchable, resumable. CLI sessions are ephemeral unless you pipe to a file.</li>
+  <li><strong>Multi-agent advisor loop</strong> — one agent generates, another reviews. No CLI does this natively.</li>
+  <li><strong>Scheduler</strong> — cron/delayed/interval jobs fire tasks automatically. No daemon needed.</li>
+  <li><strong>Analytics dashboard</strong> — cost per folder, per model, daily timeline. CLI gives nothing.</li>
+  <li><strong>Git panel</strong> — stage, commit, diff, push, PR create/merge all inside the same window.</li>
+  <li><strong>Parallel providers</strong> — switch between Claude Code, OpenCode, Copilot, Local without re-opening terminals.</li>
+  <li><strong>Soft-delete &amp; trash</strong> — tasks never permanently lost unless you choose.</li>
+  <li><strong>Real-time streaming</strong> — tool calls, thinking blocks, agent groups rendered live.</li>
+</ul>
+
+<h3 class="docs-h3">Chatbox slash commands (planned)</h3>
+<div class="docs-table-wrap">
+<table class="docs-table">
+<thead><tr><th>Command</th><th>What it does</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><code>/model sonnet</code></td><td>Switch model mid-session</td><td class="status-done">Done</td></tr>
+<tr><td><code>/mode plan</code></td><td>Switch permission mode</td><td class="status-done">Done</td></tr>
+<tr><td><code>/effort high</code></td><td>Set Claude effort level</td><td class="status-done">Done</td></tr>
+<tr><td><code>/budget 2.00</code></td><td>Cap spend for this run</td><td class="status-done">Done</td></tr>
+<tr><td><code>/fork</code></td><td>Fork session before next message</td><td class="status-done">Done</td></tr>
+<tr><td><code>/system &lt;text&gt;</code></td><td>Inject system prompt override</td><td class="status-done">Done</td></tr>
+<tr><td><code>/file &lt;path&gt;</code></td><td>Attach a file to the next message</td><td class="status-done">Done</td></tr>
+<tr><td><code>/mcp &lt;server&gt;</code></td><td>Toggle an MCP server on/off</td><td class="status-todo">Planned</td></tr>
+<tr><td><code>/tools Bash,Edit</code></td><td>Restrict available tools</td><td class="status-done">Done</td></tr>
+<tr><td><code>/clear</code></td><td>Clear history (keep session ID)</td><td class="status-done">Done</td></tr>
+</tbody>
+</table>
+</div>
+
+        </div><!-- end docs-content -->
+      </div><!-- end settings-section docs -->
+
     </div>
   </div>
 
@@ -3551,12 +3829,15 @@ function wireSidebarClose() {
 function updateDetailActions() {
   const stopBtn = document.getElementById('detail-stop-btn');
   const resumeBtn = document.getElementById('detail-resume-btn');
+  const forkBtn = document.getElementById('detail-fork-btn');
   if (!stopBtn || !resumeBtn) return;
   const task = tasks.find(t => t.id === detailTaskId);
   const isRunning = task && task.status === 'running';
   const isStopped = task && (task.status === 'stopped' || task.status === 'error');
+  const isDone = task && (task.status === 'done' || task.status === 'stopped' || task.status === 'error');
   stopBtn.classList.toggle('visible', !!isRunning);
   resumeBtn.classList.toggle('visible', !!isStopped);
+  if (forkBtn) forkBtn.classList.toggle('visible', !!isDone);
 }
 
 function openDetailView(taskId) {
@@ -4294,15 +4575,87 @@ function renderConversation(history, container, target) {
 }
 
 // ── Chat / Send ───────────────────────────────────────────────────
+
+function toggleAdvancedPanel() {
+  const panel = document.getElementById('cb-advanced');
+  const btn = document.getElementById('cb-advanced-toggle');
+  if (!panel) return;
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  if (btn) btn.classList.toggle('active', !visible);
+}
+
+function parseSlashCommands(text) {
+  // Returns { prompt, overrides } where overrides mutate task config
+  const overrides = {};
+  const lines = text.split('\n');
+  const kept = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('/model ')) {
+      overrides.model = trimmed.slice(7).trim();
+    } else if (trimmed.startsWith('/mode ')) {
+      overrides.mode = trimmed.slice(6).trim();
+    } else if (trimmed.startsWith('/effort ')) {
+      overrides.effort = trimmed.slice(8).trim();
+    } else if (trimmed.startsWith('/budget ')) {
+      overrides.max_budget_usd = parseFloat(trimmed.slice(8).trim());
+    } else if (trimmed.startsWith('/system ')) {
+      overrides.system_prompt = trimmed.slice(8).trim();
+    } else if (trimmed.startsWith('/file ')) {
+      if (!overrides.files) overrides.files = [];
+      overrides.files.push(trimmed.slice(6).trim());
+    } else if (trimmed.startsWith('/tools ')) {
+      overrides.allowed_tools = trimmed.slice(7).trim().split(',').map(s => s.trim());
+    } else if (trimmed === '/fork') {
+      overrides.fork = true;
+    } else if (trimmed === '/thinking' || trimmed === '/think') {
+      overrides.thinking = true;
+    } else if (trimmed === '/clear') {
+      overrides._clear = true;
+    } else {
+      kept.push(line);
+    }
+  }
+  return { prompt: kept.join('\n').trim(), overrides };
+}
+
+function getAdvancedExtras() {
+  const extras = {};
+  const sp = document.getElementById('cb-system-prompt');
+  if (sp && sp.value.trim()) extras.system_prompt = sp.value.trim();
+  const ef = document.getElementById('cb-effort');
+  if (ef && ef.value) extras.effort = ef.value;
+  const bg = document.getElementById('cb-budget');
+  if (bg && bg.value) extras.max_budget_usd = parseFloat(bg.value);
+  const th = document.getElementById('cb-thinking');
+  if (th && th.checked) extras.thinking = true;
+  return extras;
+}
+
 async function handleSend() {
   const promptEl = document.getElementById('cb-prompt');
   if (!promptEl) return;
-  let prompt = promptEl.value.trim();
-  if (!prompt && !attachments.length) return;
+  let rawText = promptEl.value.trim();
+  if (!rawText && !attachments.length) return;
 
+  // Parse slash commands
+  const { prompt: parsedPrompt, overrides } = parseSlashCommands(rawText);
+
+  // Handle /clear
+  if (overrides._clear) {
+    promptEl.value = '';
+    promptEl.style.height = 'auto';
+    toast('History cleared for next task', 'info');
+    return;
+  }
+
+  let prompt = parsedPrompt;
   if (attachments.length) {
     prompt += '\n\nAttached files:\n' + attachments.map(a => `- ${a}`).join('\n');
   }
+
+  if (!prompt) return;
 
   promptEl.value = '';
   promptEl.style.height = 'auto';
@@ -4319,19 +4672,38 @@ async function handleSend() {
       refreshDetailConversation();
     } catch (e) { toast('Error: ' + e.message, 'error'); }
   } else {
-    const model = document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code';
-    const mode = 'bypassPermissions';
+    let model = overrides.model || (document.getElementById('cb-agent') ? document.getElementById('cb-agent').value : 'claude-code');
+    const mode = overrides.mode || 'bypassPermissions';
     const cwdInput = document.getElementById('cb-cwd') ? document.getElementById('cb-cwd').value.trim() : '';
     const cwd = cwdInput || '';
-    const body = { prompt, model, mode, cwd };
+    const body = { prompt, model, mode, cwd, extra: {} };
+
+    // Merge advanced panel extras
+    Object.assign(body.extra, getAdvancedExtras());
+
+    // Merge slash command overrides into extra
+    if (overrides.effort) body.extra.effort = overrides.effort;
+    if (overrides.max_budget_usd) body.extra.max_budget_usd = overrides.max_budget_usd;
+    if (overrides.system_prompt) body.extra.system_prompt = overrides.system_prompt;
+    if (overrides.files) body.extra.files = overrides.files;
+    if (overrides.allowed_tools) body.extra.allowed_tools = overrides.allowed_tools;
+    if (overrides.fork) body.extra.fork = true;
+    if (overrides.thinking) body.extra.thinking = true;
+
+    // Provider-specific defaults
     if (model === 'local') {
       const storedModel = localStorage.getItem('vllm_model');
-      body.extra = {
-        vllm_url: `http://${localStorage.getItem('vllm_ip') || '192.168.170.76'}:${localStorage.getItem('vllm_port') || '8000'}`,
-        vllm_model: storedModel !== null ? storedModel : '',
-        vllm_key: localStorage.getItem('vllm_key') || 'dummy',
-      };
+      body.extra.vllm_url = `http://${localStorage.getItem('vllm_ip') || '192.168.170.76'}:${localStorage.getItem('vllm_port') || '8000'}`;
+      body.extra.vllm_model = storedModel !== null ? storedModel : '';
+      body.extra.vllm_key = localStorage.getItem('vllm_key') || 'dummy';
     }
+    if (model === 'gemini') {
+      const gKey = localStorage.getItem('gemini_api_key');
+      if (gKey) body.extra.api_key = gKey;
+      const gModel = localStorage.getItem('gemini_model');
+      if (gModel) body.extra.gemini_model = gModel;
+    }
+
     try {
       await api('POST', '/tasks', body);
       toast('Agent launched', 'success');
@@ -4385,6 +4757,16 @@ async function detailResumeAgent() {
     await refreshTasks();
     updateDetailActions();
     refreshDetailConversation();
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function detailForkAgent() {
+  if (!detailTaskId) return;
+  try {
+    const result = await api('POST', `/tasks/${detailTaskId}/fork`);
+    toast('Session forked → ' + (result.label || result.id), 'success');
+    await refreshTasks();
+    if (result.id) openDetailView(result.id);
   } catch (e) { toast('Error: ' + e.message, 'error'); }
 }
 

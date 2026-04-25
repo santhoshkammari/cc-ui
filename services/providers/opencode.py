@@ -44,6 +44,15 @@ class OpenCodeProvider(BaseProvider):
             cmd += ["--session", config.session_id]
         if config.cwd:
             cmd += ["--dir", config.cwd]
+        if config.extra.get("thinking"):
+            cmd += ["--thinking"]
+        if config.extra.get("fork"):
+            cmd += ["--fork"]
+
+        # File attachments via -f flag
+        for f in config.extra.get("files", []):
+            cmd += ["-f", f]
+
         cmd += [prompt]
 
         session_id = None

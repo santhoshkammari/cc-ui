@@ -40,6 +40,28 @@ class ClaudeProvider(BaseProvider):
             model=config.extra.get("model_override"),
         )
 
+        # Extended CLI flags via extra dict
+        if config.extra.get("system_prompt"):
+            opts.system_prompt = config.extra["system_prompt"]
+        if config.extra.get("append_system_prompt"):
+            opts.append_system_prompt = config.extra["append_system_prompt"]
+        if config.extra.get("effort"):
+            opts.effort = config.extra["effort"]
+        if config.extra.get("max_budget_usd"):
+            opts.max_budget_usd = float(config.extra["max_budget_usd"])
+        if config.extra.get("allowed_tools"):
+            opts.allowed_tools = config.extra["allowed_tools"]
+        if config.extra.get("disallowed_tools"):
+            opts.disallowed_tools = config.extra["disallowed_tools"]
+        if config.extra.get("mcp_config"):
+            opts.mcp_config = config.extra["mcp_config"]
+
+        # File attachments: prepend to prompt
+        files = config.extra.get("files", [])
+        if files:
+            file_context = "\n".join(f"[Attached file: {f}]" for f in files)
+            prompt = file_context + "\n\n" + prompt
+
         text_buf = ""
         try:
             async for msg in query(prompt=prompt, options=opts):

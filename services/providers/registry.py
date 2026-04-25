@@ -85,5 +85,11 @@ def _auto_register():
     except ImportError as e:
         log.debug("vLLM provider not available: %s", e)
 
+    try:
+        from .gemini import GeminiProvider
+        register("gemini", GeminiProvider, aliases=["google", "gemini-pro", "gemini-flash"])
+    except ImportError as e:
+        log.debug("Gemini provider not available: %s", e)
+
 
 _auto_register()
