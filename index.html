@@ -1143,6 +1143,9 @@ a:hover { text-decoration: underline; }
 }
 .tg-error { color: var(--red); border-color: rgba(248, 81, 73, 0.3); }
 .tg-pending { color: var(--orange); border-color: rgba(240, 136, 62, 0.3); }
+.tg-thinking-pill { color: var(--tx2); border-color: rgba(139, 148, 158, 0.3); }
+.tg-thinking-pill.active { background: rgba(139, 148, 158, 0.12); color: var(--tx1); border-color: var(--tx2); }
+.tg-thinking-body { color: var(--tx2); font-style: italic; font-size: 12px; }
 
 .tg-pair-content {
   margin-top: 6px;
@@ -3713,8 +3716,12 @@ function renderHistoryHtml(history) {
     if (meta) {
       const title = meta.title || '';
       const isToolUse = title.includes('⚙') || title.includes('\u2699');
+      const isThinking = title.includes('💭');
 
-      if (isToolUse) {
+      if (isThinking) {
+        items.push({ type: 'thinking', content: msg.content });
+        i++;
+      } else if (isToolUse) {
         const toolName = extractToolName(title);
         const category = getToolCategory(toolName);
         let resultMsg = null;
@@ -3751,32 +3758,54 @@ function renderHistoryHtml(history) {
     }
   }
 
-  // Pass 2: Group consecutive tool-pairs by category
+  // Pass 2: Group consecutive tool-pairs by category (thinking absorbed into groups)
   const groups = [];
   let curGroup = null;
   for (const item of items) {
     if (item.type === 'tool-pair') {
       if (curGroup && curGroup.category === item.category) {
         curGroup.pairs.push(item);
+      } else if (curGroup && curGroup.category === null && curGroup.pairs.length === 0) {
+        // Buffered thinking — adopt the incoming tool's category
+        curGroup.category = item.category;
+        curGroup.pairs.push(item);
       } else {
-        if (curGroup) groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs });
-        curGroup = { category: item.category, pairs: [item] };
+        const carry = (curGroup && curGroup.category === null && curGroup.pairs.length === 0) ? curGroup.thinkings : [];
+        if (curGroup && curGroup.pairs.length > 0) groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs, thinkings: curGroup.thinkings });
+        curGroup = { category: item.category, pairs: [item], thinkings: carry };
+      }
+    } else if (item.type === 'thinking') {
+      if (curGroup) {
+        curGroup.thinkings.push(item.content);
+      } else {
+        curGroup = { category: null, pairs: [], thinkings: [item.content] };
       }
     } else {
       if (curGroup) {
-        groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs });
+        if (curGroup.pairs.length > 0) {
+          groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs, thinkings: curGroup.thinkings });
+        } else if (curGroup.thinkings.length > 0) {
+          groups.push({ type: 'thinking-standalone', thinkings: curGroup.thinkings });
+        }
         curGroup = null;
       }
       groups.push(item);
     }
   }
-  if (curGroup) groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs });
+  if (curGroup) {
+    if (curGroup.pairs.length > 0) {
+      groups.push({ type: 'tool-group', category: curGroup.category, pairs: curGroup.pairs, thinkings: curGroup.thinkings });
+    } else if (curGroup.thinkings.length > 0) {
+      groups.push({ type: 'thinking-standalone', thinkings: curGroup.thinkings });
+    }
+  }
 
   // Pass 3: Render
   let gid = 0;
   return groups.map(g => {
     if (g.type === 'tool-group') return renderToolGroupHtml(g, gid++);
     if (g.type === 'agent-group') return renderAgentGroupHtml(g.msg);
+    if (g.type === 'thinking-standalone') return renderThinkingHtml(g.thinkings);
     return g.html;
   }).join('');
 }
@@ -3788,6 +3817,17 @@ function renderToolGroupHtml(group, gidx) {
   const st = _tgState[_tgTarget];
   const isExpanded = st.expanded.has(gidx);
   const activePairIdx = st.activePill[gidx];
+
+  // Render thinking pill + content if present
+  const thinkings = group.thinkings || [];
+  const thinkPill = thinkings.length > 0
+    ? '<button class="tg-pill tg-thinking-pill' + (activePairIdx === 'think' ? ' active' : '') + '" data-pair="think" onclick="toggleToolPair(this)">💭 Thinking</button>'
+    : '';
+  const thinkContent = thinkings.length > 0
+    ? '<div class="tg-pair-content tg-thinking-content" data-pair="think" style="display:' + (activePairIdx === 'think' ? 'block' : 'none') + '">'
+      + thinkings.map(t => '<div class="tg-section"><div class="tg-section-body tg-thinking-body">' + renderMd(t) + '</div></div>').join('')
+      + '</div>'
+    : '';
 
   const pills = group.pairs.map((p, pi) => {
     const icon = p.pending ? '⟳' : (p.resultStatus === 'error' ? '❌' : '✓');
@@ -3813,12 +3853,25 @@ function renderToolGroupHtml(group, gidx) {
   return '<div class="tool-group' + collapsed + '" data-gidx="' + gidx + '">'
     + '<div class="tg-header" onclick="toggleToolGroup(this)">'
     + '<span class="tg-chevron">▶</span>'
-    + '<span class="tg-count">' + count + '</span>'
+    + '<span class="tg-count">' + count + (thinkings.length ? '+💭' : '') + '</span>'
     + '<span class="tg-label">' + catLabel + '</span>'
     + '</div>'
     + '<div class="tg-body">'
-    + '<div class="tg-pills">' + pills + '</div>'
-    + contents
+    + '<div class="tg-pills">' + thinkPill + pills + '</div>'
+    + thinkContent + contents
+    + '</div></div>';
+}
+
+function renderThinkingHtml(thinkings) {
+  if (!thinkings || !thinkings.length) return '';
+  return '<div class="tool-group collapsed" data-gidx="-1">'
+    + '<div class="tg-header" onclick="toggleToolGroup(this)">'
+    + '<span class="tg-chevron">▶</span>'
+    + '<span class="tg-count">💭</span>'
+    + '<span class="tg-label">Thinking</span>'
+    + '</div>'
+    + '<div class="tg-body">'
+    + thinkings.map(t => '<div class="tg-section"><div class="tg-section-body tg-thinking-body">' + renderMd(t) + '</div></div>').join('')
     + '</div></div>';
 }
 
