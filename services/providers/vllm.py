@@ -7,8 +7,8 @@ from typing import AsyncIterator
 
 from .base import BaseProvider, ProviderConfig, ProviderEvent, EventType
 
-DEFAULT_VLLM_URL = "http://localhost:8000"
-DEFAULT_VLLM_MODEL = "/home/ng6309/datascience/santhosh/models/qwen3.5-9b"
+DEFAULT_VLLM_URL = "http://192.168.170.76:8000"
+DEFAULT_VLLM_MODEL = ""  # empty = vLLM auto-picks the loaded model
 
 
 class VLLMProvider(BaseProvider):
@@ -28,10 +28,27 @@ class VLLMProvider(BaseProvider):
         self._stop = False
         base_url = config.base_url or config.extra.get("vllm_url") or DEFAULT_VLLM_URL
         api_key = config.api_key or config.extra.get("vllm_key") or "dummy"
-        model = config.model or config.extra.get("vllm_model") or DEFAULT_VLLM_MODEL
+        # Allow explicit empty string to mean "auto-pick from server"
+        model = config.model if config.model else (config.extra.get("vllm_model") if config.extra.get("vllm_model") else DEFAULT_VLLM_MODEL)
 
         if not base_url.endswith("/v1"):
             base_url = base_url.rstrip("/") + "/v1"
+
+        # Auto-discover model from server if not specified
+        if not model:
+            try:
+                import httpx
+                models_url = base_url + "/models"
+                async with httpx.AsyncClient(timeout=5) as hc:
+                    r = await hc.get(models_url)
+                    data = r.json()
+                    if data.get("data"):
+                        model = data["data"][0]["id"]
+            except Exception:
+                pass
+        if not model:
+            yield ProviderEvent(type=EventType.ERROR, content="No model specified and could not auto-detect from vLLM server")
+            return
 
         messages = []
         if history:
